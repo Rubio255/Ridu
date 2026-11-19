@@ -134,6 +134,7 @@ td.num,th.num{text-align:right}
         <option value="egle">Eglė (Mato mama)</option>
         <option value="d1">Andrius (vairuotojas)</option>
         <option value="d2">Lina (vairuotoja)</option>
+        <option value="d3">Rimas (vairuotojas, tik suaugę)</option>
         <option value="mb">MB (administratorius)</option>
       </select>
     </div>
@@ -149,13 +150,19 @@ td.num,th.num{text-align:right}
 const FUEL_L_100 = 4.8, FUEL_PRICE = 1.8; // Corolla Touring 2.0 hibridas, miestas
 const DEADHEAD = 1.0; // tušti km iki paėmimo vietos ~ tiek pat kiek kelionė
 const DAYS = ["Pr","An","Tr","Kt","Pn","Še","Se"];
-const STATUS = {no_show:"Neatvyko",requested:"Laukia patvirtinimo",confirmed:"Patvirtinta",picked_up:"Vaikas paimtas",delivered:"Nuvežta",rejected:"Atmesta",cancelled:"Atšaukta"};
-const KIND = {home:"Namai",kindergarten:"Darželis",school:"Mokykla",activity:"Būrelis",other:"Kita"};
+const STATUS = {no_show:"Neatvyko",requested:"Laukia patvirtinimo",confirmed:"Patvirtinta",picked_up:"Keleivis paimtas",delivered:"Nuvežta",rejected:"Atmesta",cancelled:"Atšaukta"};
+const KIND = {home:"Namai",kindergarten:"Darželis",school:"Mokykla",activity:"Būrelis",work:"Darbas",clinic:"Poliklinika ar gydytojas",other:"Kita"};
+// Keleiviai: vaikai ir suaugę. Vaikams – kėdutė, globėjai ir perdavimas; suaugusiems – tik pasirenkama palyda.
+// Keleivio tipas lemia laiką grafikui (kainodara v6): vaikas 14 min. su palyda, suaugęs 6 min., vyresnio amžiaus 14 min. su palyda ir pagalba įlipant
+const PAX={child:"Vaikas",adult:"Suaugęs",senior:"Vyresnio amžiaus"};
+const DROPOFF={alone:"Išlipa pats",handover:"Palydėti ir perduoti asmeniui"};
+const NO_SPECIAL="Važiuojame įprastais automobiliais, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų. Sulankstomą vaikštynę ar vežimėlį vežame bagažinėje. Tai ne medicininis pervežimas.";
+const handoverFor=(p,type)=>type==="adult"?p.handover_adult:type==="senior"?p.handover_senior:p.handover_min;
 
 const PRICING_DEFAULTS = {
   // Kainos su PVM, pagal kainodaros skaičiavimą
   base_fee:28.5, included_km:8, per_km:1.2, included_wait_min:10, per_wait_min:0.5, extra_child_fee:17.1, peak_pct:0, min_price:0,
-  handover_min:14, deadhead_min:14,
+  handover_min:14, handover_adult:6, handover_senior:14, deadhead_min:14,
   weekend_pct:25, holiday_pct:25, surcharge_approved:false,
   pkg1_from:8, pkg1_pct:0, pkg2_from:16, pkg2_pct:0,
   morning_start_h:7.25, morning_end_h:8.5, morning_max_kids:3, morning_deliver_h:8,
@@ -183,8 +190,8 @@ const users = {
   egle:{id:"egle",name:"Eglė",contract:"S-2026-03"}
 };
 
-const TERMS_VERSION="2026-11-19.3", FULL_TERMS="https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
-const TERMS=[["Paslauga", "Pavežame jūsų vaiką sutartu maršrutu Vilniuje ir perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."], ["Laikas", "Galimas ±10 min. nukrypimas dėl eismo. Nemokamas laukimas – 10 min., vėliau – laukimo mokestis, po 20 min. kelionė laikoma įvykusia."], ["Atšaukimas", "Daugiau nei 12 val. iki kelionės – nemokamai; 12–2 val. – 50 %; mažiau nei 2 val. ar neatvykus – 100 %. Ligos atveju su gydytojo pažyma – nemokamai. Jei suserga vairuotojas ar sugenda automobilis, skirsime kitą patikrintą vairuotoją ir pranešime; jei nepavyks – kelionę atšauksime be mokesčio, o jos kainą grąžinsime ar įskaitysime į kitą mėnesį. Jei paslauga neteikiama ilgiau nei 5 darbo dienas, galite nutraukti sutartį iš karto."], ["Mokėjimas", "Sąskaita kas mėnesį, apmokėti per 7 dienas. Platformos mokestis – 9,90 €/mėn. šeimai (aplikacija, planavimas, pranešimai, vairuotojų patikra, aptarnavimas); registracijos mokesčio nėra. Pirmą ir paskutinį mėnesį skaičiuojamas proporcingai, nutraukus sutartį – nebeskaičiuojamas."], ["Saugumas", "Vaikai iki 135 cm vežami tinkamoje kėdutėje ar paaukštinime. Pateikite tikslų ūgį, svorį, alergijas ir atnaujinkite pasikeitus."], ["Elgesys", "Vaikas sėdi prisisegęs, netrukdo vairuotojui, nesimuša ir negadina automobilio. Pavojingai besielgiantį vaiką galime sustoti saugioje vietoje ir perduoti jums."], ["Žala", "Už vaiko padarytą žalą automobiliui atsako tėvai (CK 6.275–6.276 str.): realios remonto išlaidos, valymas – 40 €."], ["Du tėvai", "Antrasis tėvas gali būti prijungtas jūsų leidimu. Mes nesprendžiame tėvų ginčų ir vykdome paskutinį patvirtintą tvarkaraštį bei teismo sprendimą, jei jį pateikėte."], ["Nutraukimas", "Abi pusės gali nutraukti sutartį bet kada, įspėjusios prieš 30 d.; sumokėta už neįvykusias keliones grąžinama. Mes galime nutraukti iš karto, jei vaikas elgiasi agresyviai ar pavojingai, padaroma tyčinė žala ir ji neatlyginama, nemokama ilgiau kaip 14 d., tėvų konfliktai trikdo paslaugą, niekas nepasitinka vaiko ar grasinama vairuotojui."], ["Duomenys", "Jūsų ir vaiko duomenis naudojame tik pavežimui ir atsiskaitymui, sveikatos duomenis – tik jūsų sutikimu. Galite juos peržiūrėti, ištaisyti ar ištrinti."], ["Skundai", "Rašykite mums; jei nesusitariame – Valstybinė vartotojų teisių apsaugos tarnyba (vvtat.lrv.lt)."]];
+const TERMS_VERSION="2026-11-19.4", FULL_TERMS="https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
+const TERMS=[["Paslauga", "Pavežame jus, jūsų vaiką ar artimąjį (pvz. vyresnio amžiaus tėvus) sutartu maršrutu Vilniuje. Vaikus perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."], ["Laikas", "Galimas ±10 min. nukrypimas dėl eismo. Nemokamas laukimas – 10 min., vėliau – laukimo mokestis, po 20 min. kelionė laikoma įvykusia."], ["Atšaukimas", "Daugiau nei 12 val. iki kelionės – nemokamai; 12–2 val. – 50 %; mažiau nei 2 val. ar neatvykus – 100 %. Ligos atveju su gydytojo pažyma – nemokamai. Jei suserga vairuotojas ar sugenda automobilis, skirsime kitą patikrintą vairuotoją ir pranešime; jei nepavyks – kelionę atšauksime be mokesčio, o jos kainą grąžinsime ar įskaitysime į kitą mėnesį. Jei paslauga neteikiama ilgiau nei 5 darbo dienas, galite nutraukti sutartį iš karto."], ["Mokėjimas", "Sąskaita kas mėnesį, apmokėti per 7 dienas. Platformos mokestis – 9,90 €/mėn. šeimai (aplikacija, planavimas, pranešimai, vairuotojų patikra, aptarnavimas); registracijos mokesčio nėra. Pirmą ir paskutinį mėnesį skaičiuojamas proporcingai, nutraukus sutartį – nebeskaičiuojamas."], ["Saugumas", "Vaikai iki 135 cm vežami tinkamoje kėdutėje ar paaukštinime. Pateikite tikslų ūgį, svorį, alergijas ir atnaujinkite pasikeitus."], ["Elgesys", "Vaikas sėdi prisisegęs, netrukdo vairuotojui, nesimuša ir negadina automobilio. Pavojingai besielgiantį vaiką galime sustoti saugioje vietoje ir perduoti jums."], ["Žala", "Už vaiko padarytą žalą automobiliui atsako tėvai (CK 6.275–6.276 str.): realios remonto išlaidos, valymas – 40 €."], ["Du tėvai", "Antrasis tėvas gali būti prijungtas jūsų leidimu. Mes nesprendžiame tėvų ginčų ir vykdome paskutinį patvirtintą tvarkaraštį bei teismo sprendimą, jei jį pateikėte."], ["Nutraukimas", "Abi pusės gali nutraukti sutartį bet kada, įspėjusios prieš 30 d.; sumokėta už neįvykusias keliones grąžinama. Mes galime nutraukti iš karto, jei keleivis (vaikas ar suaugęs) elgiasi agresyviai ar pavojingai, yra apsvaigęs ar priekabiauja, padaroma tyčinė žala ir ji neatlyginama, nemokama ilgiau kaip 14 d., tėvų konfliktai trikdo paslaugą, niekas nepasitinka vaiko ar grasinama vairuotojui."], ["Duomenys", "Jūsų ir keleivio duomenis naudojame tik pavežimui ir atsiskaitymui, sveikatos duomenis – tik jūsų sutikimu. Galite juos peržiūrėti, ištaisyti ar ištrinti."], ["Suaugę keleiviai", "Užsakydami kitam suaugusiajam, patvirtinate, kad jis sutinka keliauti ir kad jo duomenis pateikiate su jo žinia. Už savo elgesį ir žalą suaugęs keleivis atsako pats. Važinėjame įprastais automobiliais be specialios įrangos, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų; sulankstomas priemones (vaikštynė, sulankstomas vežimėlis) vežame bagažinėje. Tai ne medicininis pervežimas."], ["Skundai", "Rašykite mums; jei nesusitariame – Valstybinė vartotojų teisių apsaugos tarnyba (vvtat.lrv.lt)."]];
 const CONSENTS=[{"key": "terms", "label": "Susipažinau ir sutinku su Paslaugų teikimo taisyklėmis", "req": true}, {"key": "privacy", "label": "Susipažinau su Privatumo politika", "req": true}, {"key": "guardian", "label": "Patvirtinu, kad esu vaiko tėvas, motina ar teisėtas atstovas ir turiu teisę spręsti dėl jo pavežimo", "req": true}, {"key": "health", "label": "Sutinku, kad būtų tvarkomi vaiko sveikatos duomenys (alergijos, ligos), kad vairuotojas galėtų suteikti pagalbą", "req": false}, {"key": "alone", "label": "Leidžiu paleisti vaiką prie paskirties vietos vieną, be perdavimo asmens", "req": false}, {"key": "news", "label": "Sutinku gauti naujienas el. paštu", "req": false}];
 const SHORT={terms:"Taisyklės",privacy:"Privatumas",guardian:"Atstovas",health:"Sveikatos duomenys",alone:"Paleisti vieną",news:"Naujienos"};
 function seedConsents(){const at=isoAdd(-30)+"T10:00:00Z",mk=keys=>Object.fromEntries(CONSENTS.map(c=>[c.key,{granted:keys.includes(c.key),version:TERMS_VERSION,at}]));
@@ -194,15 +201,20 @@ function addMonthsIso(iso,m){const d=new Date(iso+"T12:00:00");d.setMonth(d.getM
 const fmtD=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("lt-LT",{year:"numeric",month:"long",day:"numeric"}):"–";
 function seedDrivers(){const doc=(name,days,no)=>({name,until:days==null?null:isoAdd(days),no:no||""});
   return [
-    {id:"d1",name:"Andrius",phone:"+370 612 34567",cert:"IV pažyma Nr. 1234567",car:"Toyota Corolla Touring, 2019",plate:"KTN 482",seats:"2 kėdutės, 1 paaukštinimas",days:[1,2,3,4,5],active:true,pct:null,
+    {id:"d1",name:"Andrius",phone:"+370 612 34567",cert:"IV pažyma Nr. 1234567",car:"Toyota Corolla Touring, 2019",plate:"KTN 482",seats:"2 kėdutės, 1 paaukštinimas",days:[1,2,3,4,5],active:true,pct:null,childQr:true,childSeats:true,
      docs:[doc("Individualios veiklos pažyma",null,"Nr. 1234567"),doc("Vairuotojo pažymėjimas (B)",900),doc("Automobilio draudimas (TPVCA)",160),doc("Techninė apžiūra",300),doc("Pažyma apie teistumą",250)]},
-    {id:"d2",name:"Lina",phone:"+370 698 76543",cert:"IV pažyma Nr. 7654321",car:"Volkswagen Touran, 2020",plate:"HBL 117",seats:"3 kėdutės",days:[1,2,3,4],active:true,pct:null,absences:[{id:"ab1",reason:"repair",from:isoAdd(1),to:isoAdd(6),note:"Sankabos remontas servise"}],
+    {id:"d2",name:"Lina",phone:"+370 698 76543",cert:"IV pažyma Nr. 7654321",car:"Volkswagen Touran, 2020",plate:"HBL 117",seats:"3 kėdutės",days:[1,2,3,4],active:true,pct:null,childQr:true,childSeats:true,absences:[{id:"ab1",reason:"repair",from:isoAdd(1),to:isoAdd(6),note:"Sankabos remontas servise"}],
      docs:[doc("Individualios veiklos pažyma",null,"Nr. 7654321"),doc("Vairuotojo pažymėjimas (B)",1400),doc("Automobilio draudimas (TPVCA)",18),doc("Techninė apžiūra",120),doc("Pažyma apie teistumą",-5)]}
   ]}
 const SEED_DRIVER={a1:"d2",a2:"d1",a3:"d1",a4:"d1",a5:"d2"};
-function ensureDrivers(st){if(st.drivers)return;st.drivers=seedDrivers();
+function ensureDrivers(st){if(st.drivers)return;st.drivers=[...seedDrivers(),DRIVER_RIMAS()];
   st.subs.forEach(x=>{x.driver=x.driver||SEED_DRIVER[x.id]||"d1"});
   st.trips.forEach(t=>{const sb=st.subs.find(x=>x.id===t.series);t.driver=t.driver||(sb?sb.driver:t.child==="c3"?"d2":"d1")})}
+const ADULT_ONA=()=>({id:"c4",type:"senior",self:false,name:"Ona (Eglės mama)",age:78,booster:"",dropoff:"alone",handoverTo:"",consentAt:isoAdd(-12),notes:"Laukti prie laiptinės, paskambinti atvykus.",guardians:["egle"]});
+const ADULT_PLACES=()=>[{id:"p10",owner:"egle",label:"Mamos namai (Karoliniškės)",kind:"home",address:"Karoliniškės, Vilnius",lat:54.6870,lng:25.2120},{id:"p11",owner:"egle",label:"Poliklinika (Antakalnis)",kind:"clinic",address:"Antakalnio g., Vilnius",lat:54.7010,lng:25.3060}];
+const ADULT_SUB=()=>({id:"a6",no:"S-2026-007",payer:"egle",child:"c4",from:"p10",to:"p11",weekdays:[3],time:"14:30",status:"active",perTrip:0,monthly:0,bid:null,start:isoAdd(-10),driver:"d3"});
+const DRIVER_RIMAS=()=>({id:"d3",name:"Rimas",phone:"+370 655 11223",cert:"IV pažyma Nr. 3344556",car:"Škoda Octavia, 2021",plate:"LMR 905",seats:"–",days:[1,2,3,4,5],active:true,pct:null,childQr:false,childSeats:false,absences:[],
+  docs:[{name:"Individualios veiklos pažyma",until:null,no:"Nr. 3344556"},{name:"Vairuotojo pažymėjimas (B)",until:isoAdd(1100),no:""},{name:"Automobilio draudimas (TPVCA)",until:isoAdd(200),no:""},{name:"Techninė apžiūra",until:isoAdd(400),no:""},{name:"Pažyma apie teistumą",until:isoAdd(300),no:""}]});
 function seed(){
   const places = [
     {id:"p1",owner:"rasa",label:"Rasos namai",kind:"home",address:"Žirmūnų g., Vilnius",lat:54.7085,lng:25.2985},
@@ -213,12 +225,14 @@ function seed(){
     {id:"p6",owner:"rasa",label:"Baseinas (Lazdynai)",kind:"activity",address:"Erfurto g., Vilnius",lat:54.6720,lng:25.2090},
     {id:"p7",owner:"egle",label:"Eglės namai",kind:"home",address:"Fabijoniškės, Vilnius",lat:54.7280,lng:25.2460},
     {id:"p8",owner:"egle",label:"Mokykla Šeškinėje",kind:"school",address:"Šeškinė, Vilnius",lat:54.7180,lng:25.2480},
-    {id:"p9",owner:"egle",label:"Dailės studija (Senamiestis)",kind:"activity",address:"Pilies g., Vilnius",lat:54.6840,lng:25.2900}
+    {id:"p9",owner:"egle",label:"Dailės studija (Senamiestis)",kind:"activity",address:"Pilies g., Vilnius",lat:54.6840,lng:25.2900},
+    ...ADULT_PLACES()
   ];
   const children = [
     {id:"c1",name:"Ugnė",age:5,booster:"Kėdutė",notes:"Alergija riešutams. Perduoti tik auklėtojai.",guardians:["rasa","tomas"]},
     {id:"c2",name:"Jonas",age:9,booster:"Paaukštinimas",notes:"Krepšinio aprangą pasiima pats.",guardians:["rasa","tomas"]},
-    {id:"c3",name:"Matas",age:8,booster:"Paaukštinimas",notes:"",guardians:["egle"]}
+    {id:"c3",name:"Matas",age:8,booster:"Paaukštinimas",notes:"",guardians:["egle"]},
+    ADULT_ONA()
   ];
   const st = {places,children,pricing:{...PRICING_DEFAULTS},trips:[],subs:[],seq:1};
   st.subs.push(
@@ -226,7 +240,8 @@ function seed(){
     {id:"a2",no:"S-2026-006",payer:"tomas",child:"c2",from:"p4",to:"p5",weekdays:[2,4],time:"15:30",status:"active",perTrip:29.5,monthly:0,bid:null,start:isoAdd(-20)},
     {id:"a3",payer:"rasa",child:"c1",from:"p1",to:"p3",weekdays:[1,2,3,4,5],time:"07:45",status:"pending",perTrip:29.5,monthly:0,bid:null},
     {id:"a4",no:"S-2026-001",payer:"rasa",child:"c2",from:"p4",to:"p6",weekdays:[1,3,5],time:"14:00",status:"ended",perTrip:27.4,monthly:356,bid:null,months:3,start:isoAdd(-190),end:isoAdd(-98),endReason:"Baigėsi terminas"},
-    {id:"a5",no:"S-2026-002",payer:"egle",child:"c3",from:"p8",to:"p9",weekdays:[2],time:"17:00",status:"ended",perTrip:31.2,monthly:135,bid:null,months:1,start:isoAdd(-150),end:isoAdd(-75),endReason:"Nutraukė klientas"}
+    {id:"a5",no:"S-2026-002",payer:"egle",child:"c3",from:"p8",to:"p9",weekdays:[2],time:"17:00",status:"ended",perTrip:31.2,monthly:135,bid:null,months:1,start:isoAdd(-150),end:isoAdd(-75),endReason:"Nutraukė klientas"},
+    ADULT_SUB()
   );
 
   const today = startOfDay(new Date());
@@ -279,7 +294,7 @@ function quote(p,{k,wait=0,extra=0,peak=false,handover=0,day="workday"}){
 
 function addTrip(st,t){
   const f=st.places.find(p=>p.id===t.from), to=st.places.find(p=>p.id===t.to);
-  const k=km(f,to), ho=st.pricing.handover_min;
+  const k=km(f,to), ho=handoverFor(st.pricing,(st.children.find(c=>c.id===t.child)||{}).type);
   const q=quote(st.pricing,{k,wait:t.wait,extra:t.extra,peak:isPeak(t.at),handover:ho,day:dayType(t.at)});
   st.trips.push({id:"t"+(st.seq++),...t,km:k,drive:minutes(k),handover:ho,min:minutes(k)+ho+(t.wait||0),price:q.total,fromLabel:f.label,toLabel:to.label});
 }
@@ -315,6 +330,10 @@ if(MODE==="mb"){document.querySelector('.role').hidden=true;{const sm=document.q
 if(MODE==="client"){roleOpts.filter(o=>!users[o.value]).forEach(o=>o.remove());document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 if(!S.v10){S.pricing.driver_pct=70;S.pricing.platform_fee=9.9;S.v10=true}
+if(!S.v11){S.children.forEach(c=>{c.type=c.type||"child"});S.drivers.forEach(d=>{if(d.childQr==null){d.childQr=d.id!=="d3";d.childSeats=d.id!=="d3"}});
+  if(!S.drivers.some(d=>d.id==="d3"))S.drivers.push(DRIVER_RIMAS());if(!S.children.some(c=>c.id==="c4"))S.children.push(ADULT_ONA());
+  ADULT_PLACES().forEach(p=>{if(!S.places.some(x=>x.id===p.id))S.places.push(p)});if(!S.subs.some(x=>x.id==="a6"))S.subs.push(ADULT_SUB());S.v11=true}
+S.children.forEach(c=>{c.type=c.type||"child"});
 let tripFilter="all", moving=null, contractFilter="active", occDrv=null;
 if(S.users) Object.assign(users,S.users);
 function toLocalInput(iso){const d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
@@ -326,6 +345,15 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.set
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const child=id=>S.children.find(c=>c.id===id);
+const isKid=id=>(child(id)?.type||"child")==="child";
+// Vaikus veža tik vairuotojai su patikrintu QR kodu darbui su vaikais ir vaikiškomis kėdutėmis
+const childOk=d=>!!(d&&d.childQr&&d.childSeats);
+const canCarry=(d,cid)=>!isKid(cid)||childOk(d);
+const paxLabel=c=>c.type&&c.type!=="child"?`${esc(c.name)}${c.age?`, ${c.age} m.`:""}`:`${esc(c.name)}, ${c.age} m.`;
+const paxTag=c=>c.type==="child"||!c.type?esc(c.booster||"Vaikas"):c.self?"Aš pats":PAX[c.type];
+const paxNeeds=c=>c.type==="child"||!c.type?"":[c.type==="senior"?"Palyda iki durų ir pagalba įlipant":"",c.self?"":DROPOFF[c.dropoff||"alone"]+(c.dropoff==="handover"&&c.handoverTo?": "+esc(c.handoverTo):"")].filter(Boolean).join(" · ");
+const hasKids=u=>S.children.some(c=>(c.type||"child")==="child"&&c.guardians.includes(u));
+const reqFor=(x,u)=>x.key==="guardian"?hasKids(u):x.req;
 const fmtDay=d=>{const t=startOfDay(new Date()),x=startOfDay(d),diff=Math.round((x-t)/864e5);
   const base=d.toLocaleDateString("lt-LT",{weekday:"long",month:"long",day:"numeric"});
   return diff===0?"Šiandien, "+base:diff===1?"Rytoj, "+base:diff===-1?"Vakar, "+base:base[0].toUpperCase()+base.slice(1)};
@@ -335,7 +363,7 @@ function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTi
 const TABS={
   mb:[["dispatch","Paskirstymas"],["day","Kalendorius"],["drivers","Vairuotojai"],["contracts","Sutartys"],["clients","Klientai ir sąskaitos"],["payouts","Atsiskaitymai"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]],
   driver:[["day","Mano kalendorius"],["subs","Mano užsakymai"],["contracts","Sutartys"],["earn","Uždarbis"],["me","Mano duomenys"]],
-  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["contracts","Sutartys"],["kids","Vaikai ir adresai"],["terms","Sąlygos"]],
+  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["contracts","Sutartys"],["kids","Keleiviai ir adresai"],["terms","Sąlygos"]],
   owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["contracts","Sutartys"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]]
 };
 function isDriver(){return S.drivers.some(d=>d.id===role)}
@@ -357,7 +385,7 @@ function affectedTrips(){const now=new Date();return S.trips.filter(t=>["request
 // Pakaitinis vairuotojas: aktyvus, dokumentai galioja, tą dieną dirba ir nėra nedarbingas, laikas laisvas
 function substitutes(t){const iso=dayIso(t.at),wd=new Date(t.at).getDay()||7;
   const need=t.min+S.pricing.deadhead_min+S.pricing.gap_min, lim=S.pricing.day_limit_h*60, tried=t.offer?.tried||[];
-  return S.drivers.filter(d=>d.id!==t.driver&&!tried.includes(d.id)&&d.active&&!d.docs.some(x=>docState(x)==="bad")&&d.days.includes(wd)&&!absenceOn(d,iso)
+  return S.drivers.filter(d=>d.id!==t.driver&&!tried.includes(d.id)&&d.active&&canCarry(d,t.child)&&!d.docs.some(x=>docState(x)==="bad")&&d.days.includes(wd)&&!absenceOn(d,iso)
       &&!slotProblem(new Date(t.at),t.min,t.id,d.id)&&dayLoad(new Date(t.at),need,d.id)<=lim)
     .sort((a,b)=>dayLoad(new Date(t.at),0,a.id)-dayLoad(new Date(t.at),0,b.id))}
 // Pasiūlymas pakaitiniam vairuotojui: jis turi priimti arba atsisakyti. Neatsakius per 2 val. (ar likus 1 val. iki kelionės) siūloma kitam.
@@ -391,7 +419,7 @@ function tripRow(t,{owner=false,conflict=false}={}){
   let actions="";
   if(owner){
     if(t.status==="requested") actions=`<button class="btn ok" data-act="confirmed" data-id="${t.id}">Patvirtinti</button><button class="btn bad" data-act="rejected" data-id="${t.id}">Atmesti</button>`;
-    else if(t.status==="confirmed") actions=`<button class="btn primary" data-act="picked_up" data-id="${t.id}">Vaikas paimtas</button><button class="btn" data-act="no_show" data-id="${t.id}">Neatvyko</button>`;
+    else if(t.status==="confirmed") actions=`<button class="btn primary" data-act="picked_up" data-id="${t.id}">Keleivis paimtas</button><button class="btn" data-act="no_show" data-id="${t.id}">Neatvyko</button>`;
     else if(t.status==="picked_up") actions=`<button class="btn ok" data-act="delivered" data-id="${t.id}">Nuvežtas</button>`;
     if(["requested","confirmed"].includes(t.status)){
       if(moving===t.id) actions=`<label class="small" for="mv_${t.id}">Naujas laikas</label><input type="datetime-local" id="mv_${t.id}" value="${toLocalInput(t.at)}" style="font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn primary" data-move-save="${t.id}">Išsaugoti</button><button class="btn" data-move-cancel="1">Atšaukti keitimą</button>`;
@@ -404,14 +432,14 @@ function tripRow(t,{owner=false,conflict=false}={}){
   return `<div class="trip">
     <div class="time">${fmtTime(d)}${owner?`<small>${t.min} min</small>`:""}</div>
     <div class="body">
-      <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${eur(t.price)}</span></div>
+      <div class="spread"><span class="row"><b>${esc(c.name)}</b>${c.type&&c.type!=="child"?`<span class="tag">${paxTag(c)}</span>`:""}<span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${eur(t.price)}</span></div>
       <div class="route">${esc(t.fromLabel)} <span class="arrow">→</span> ${esc(t.toLabel)}</div>
-      <div class="small muted">${owner?`${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · `:""}užsakė ${esc(by)} · moka ${esc(payer)}${owner&&t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} vaik.`:""}</div>
+      <div class="small muted">${owner?`${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · `:""}užsakė ${esc(by)} · moka ${esc(payer)}${owner&&t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} kel.`:""}${owner&&paxNeeds(c)?` · ${paxNeeds(c)}`:""}</div>
       ${t.note?`<div class="small">Pastaba: ${esc(t.note)}</div>`:""}
       ${t.subNote?`<div class="small"><b>${esc(t.subNote)}</b></div>`:""}
       ${!owner&&drv(t.driver)?`<div class="small muted">Vairuotojas ${esc(drv(t.driver).name)} · ${esc(drv(t.driver).car)}${drv(t.driver).plate?` · ${esc(drv(t.driver).plate)}`:""}</div>`:""}
       ${owner&&absenceOn(drv(t.driver),dayIso(t.at))&&["requested","confirmed"].includes(t.status)?`<div class="warnbox">Vairuotojas tą dieną negali dirbti: ${ABS[absenceOn(drv(t.driver),dayIso(t.at)).reason].toLowerCase()}. ${isMB()?"Perduokite kelionę kitam vairuotojui.":"MB perduos kelionę kitam vairuotojui."}</div>`:""}
-      ${owner&&isMB()?`<div class="row small"><label for="tdrv_${t.id}">Vairuotojas</label><select id="tdrv_${t.id}" data-assign-trip="${t.id}">${S.drivers.map(d=>`<option value="${d.id}" ${d.id===t.driver?"selected":""}>${esc(d.name)}</option>`).join("")}</select></div>`:""}
+      ${owner&&isMB()?`<div class="row small"><label for="tdrv_${t.id}">Vairuotojas</label><select id="tdrv_${t.id}" data-assign-trip="${t.id}">${S.drivers.filter(d=>d.id===t.driver||canCarry(d,t.child)).map(d=>`<option value="${d.id}" ${d.id===t.driver?"selected":""}>${esc(d.name)}${canCarry(d,t.child)?"":" (neturi leidimo vežti vaikų)"}</option>`).join("")}</select></div>`:""}
       ${conflict?`<div class="warnbox">${esc(slotProblem(new Date(t.at),t.min,t.id,t.driver))}</div>`:""}
       ${owner?`<a class="small" href="${mapsUrl(S.places.find(p=>p.id===t.from)||{},S.places.find(p=>p.id===t.to)||{})}" target="_blank" rel="noopener">Maršrutas Google Maps</a>`:""}
       ${actions?`<div class="row">${actions}</div>`:""}
@@ -435,6 +463,7 @@ function hasConflict(t){
 }
 
 function myChildren(){return S.children.filter(c=>c.guardians.includes(role))}
+const myPassengers=myChildren;
 function myTrips(){const ids=myChildren().map(c=>c.id);return S.trips.filter(t=>ids.includes(t.child))}
 
 function vTrips(v){
@@ -443,7 +472,7 @@ function vTrips(v){
   const shared=myChildren().some(c=>c.guardians.length>1);
   v.innerHTML=`<div class="spread"><h2>Sveiki, ${esc(users[role].name)}</h2><div class="row"><button class="btn primary" data-go="sub">+ Ilgalaikis užsakymas</button>${S.pricing.single_enabled?'<button class="btn" data-go="book">+ Vienos dienos</button>':""}</div></div>
   ${S.pricing.single_enabled?filterBar():""}
-  ${shared?`<p class="small muted" style="margin:0">Matote visas savo vaikų keliones, taip pat tas, kurias užsakė kitas tėvas. Kiekviena kelionė apmokama to, kas ją užsakė.</p>`:""}
+  ${shared?`<p class="small muted" style="margin:0">Matote visas savo keleivių keliones, taip pat tas, kurias užsakė kitas tėvas. Kiekviena kelionė apmokama to, kas ją užsakė.</p>`:""}
   ${groupByDay(up,{})||`<div class="card empty">Artimiausių kelionių nėra.</div>`}
   <div class="card"><h3>Ankstesnės kelionės</h3><div>${past.map(t=>tripRow(t)).join("")||'<div class="empty">Dar nebuvo.</div>'}</div></div>`;
 }
@@ -456,7 +485,7 @@ function vBook(v){
   <form class="card" id="bookForm">
     <h2>Vienos dienos kelionė</h2>
     <p class="small muted" style="margin:0">Vienkartinė kelionė pasirinktą dieną. Jei vežti reikia reguliariai, rinkitės <a href="#" data-go="sub">ilgalaikį užsakymą</a>, jis pigesnis.</p>
-    <div class="field"><label for="bChild">Vaikas</label><select id="bChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
+    <div class="field"><label for="bChild">Keleivis</label><select id="bChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
     <div class="two">
       <div class="field"><label for="bFrom">Iš kur paimti</label><select id="bFrom">${opt}</select></div>
       <div class="field"><label for="bTo">Kur nuvežti</label><select id="bTo">${opt}</select></div>
@@ -479,7 +508,7 @@ function vBook(v){
     const box=$("#quoteBox");
     if(!f||!t||f.id===t.id){box.innerHTML=`<h2>Kaina</h2><p class="muted">Pasirinkite skirtingas paėmimo ir nuvežimo vietas.</p>`;return}
     const k=km(f,t), at=new Date($("#bDate").value+"T"+$("#bTime").value);
-    const ho=S.pricing.handover_min, wait=+$("#bWait").value||0, dt=dayType(at);
+    const ho=handoverFor(S.pricing,child($("#bChild")?.value)?.type), wait=+$("#bWait").value||0, dt=dayType(at);
     const q=quote(S.pricing,{k,wait,extra:+$("#bExtra").value||0,peak:isPeak(at),handover:ho,day:dt});
     const wds=[...document.querySelectorAll('input[name=wd]:checked')].length;
     const need=minutes(k)+ho+wait+S.pricing.deadhead_min+S.pricing.gap_min, over=!isNaN(at)&&dayLoad(at,need)>S.pricing.day_limit_h*60;
@@ -517,11 +546,22 @@ function vBook(v){
 
 function vKids(v){
   const kids=myChildren(), pl=S.places.filter(p=>p.owner===role);
-  v.innerHTML=`<div class="grid2"><div class="card"><h2>Vaikai</h2>
-    ${kids.map(c=>`<div class="child"><div class="spread"><b>${esc(c.name)}, ${c.age} m.</b><span class="tag">${esc(c.booster)}</span></div>
-      <div class="small muted">Globėjai: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>
-      ${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}
-    <p class="small muted" style="margin:0">Vaikus ir globėjus įrašo savininkas pagal sutartį.</p></div>
+  v.innerHTML=`<div class="grid2"><div class="card"><h2>Keleiviai</h2>
+    ${kids.map(c=>`<div class="child"><div class="spread"><b>${paxLabel(c)}</b><span class="tag">${paxTag(c)}</span></div>
+      <div class="small muted">${c.type&&c.type!=="child"?"Užsakyti gali":"Globėjai"}: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>
+      ${paxNeeds(c)?`<div class="small">${paxNeeds(c)}</div>`:""}${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}
+    <p class="small muted" style="margin:0">Galite užsakyti sau, savo vaikui ar kitam žmogui, pavyzdžiui, tėvams. Vaikus ir jų globėjus įrašo MB pagal sutartį. ${NO_SPECIAL}</p>
+    <form id="paxForm"><h2>Pridėti suaugusį keleivį</h2>
+      <div class="field"><label for="pxWho">Kas važiuos</label><select id="pxWho"><option value="self">Aš pats</option><option value="other">Kitas suaugęs</option></select></div>
+      <div class="field"><label for="pxName">Vardas</label><input id="pxName" required value="${esc(users[role]?.name||"")}"></div>
+      <label class="row small" for="pxSenior"><input type="checkbox" id="pxSenior"> Vyresnio amžiaus: palydėti iki durų ir padėti įlipti</label>
+      <div id="pxOther" hidden>
+        <div class="field"><label for="pxDrop">Atvykus</label><select id="pxDrop">${Object.entries(DROPOFF).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
+        <div class="field" id="pxToF" hidden><label for="pxTo">Kam perduoti</label><input id="pxTo" placeholder="Pvz. dukrai Eglei arba registratūroje"></div>
+        <label class="row small" for="pxOk" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="pxOk" style="width:20px;height:20px;flex:none;margin-top:2px"> <span>Patvirtinu, kad keleivis sutinka būti vežamas ir jo duomenis pateikiu su jo žinia <span class="small" style="color:var(--bad)">privaloma</span></span></label>
+      </div>
+      <div class="field"><label for="pxNotes">Pastabos vairuotojui (be sveikatos duomenų)</label><input id="pxNotes" placeholder="Pvz. laukti prie laiptinės"></div>
+      <button class="btn primary" type="submit">Pridėti keleivį</button></form></div>
     <div class="card"><h2>Mano adresai</h2>
     <div>${pl.map(p=>`<div class="child"><div class="spread"><b>${esc(p.label)}</b><span class="tag">${KIND[p.kind]}</span></div><div class="small muted">${esc(p.address)}</div></div>`).join("")||'<div class="empty">Adresų dar nėra.</div>'}</div>
     <form id="placeForm">
@@ -531,6 +571,11 @@ function vKids(v){
       <button class="btn primary" type="submit">Pridėti adresą</button>
       <span class="small muted">Tikroje versijoje adresas bus surastas žemėlapyje. Demo jį padeda atsitiktinai Vilniuje.</span>
     </form></div></div>`;
+  const pxSync=()=>{const other=$("#pxWho").value==="other";$("#pxOther").hidden=!other;$("#pxOk").required=other;$("#pxToF").hidden=$("#pxDrop").value!=="handover"};
+  $("#pxWho").addEventListener("change",()=>{$("#pxName").value=$("#pxWho").value==="self"?(users[role]?.name||""):"";pxSync()});$("#pxDrop").addEventListener("change",pxSync);pxSync();
+  $("#paxForm").addEventListener("submit",e=>{e.preventDefault();const self=$("#pxWho").value==="self";
+    if(!self&&!$("#pxOk").checked){toast("Pažymėkite, kad keleivis sutinka");return}
+    S.children.push({id:"c"+Date.now(),type:$("#pxSenior").checked?"senior":"adult",self,name:$("#pxName").value.trim(),age:null,booster:"",dropoff:self?"alone":$("#pxDrop").value,handoverTo:self?"":$("#pxTo").value.trim(),consentAt:self?null:isoAdd(0),notes:$("#pxNotes").value.trim(),guardians:[role]});save();render();toast("Keleivis pridėtas")});
   $("#placeForm").addEventListener("submit",e=>{e.preventDefault();
     S.places.push({id:"p"+Date.now(),owner:role,label:$("#pLabel").value.trim(),kind:$("#pKind").value,address:$("#pAddr").value.trim(),lat:54.66+Math.random()*0.08,lng:25.20+Math.random()*0.12});
     save();render();toast("Adresas pridėtas")});
@@ -584,23 +629,25 @@ function vClients(v){
   v.innerHTML=`<div class="card"><div class="spread"><h2>Sąskaitos už ${month}</h2><span class="small muted">Skaičiuojama pagal tai, kas moka už kelionę. Sumos su PVM.</span></div>
     <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Vienos d. kel.</th><th class="num">Įvykdyta</th><th class="num">Vienos dienos, €</th><th class="num">Paketo nuolaida</th><th class="num">Ilgalaikiai, €</th><th class="num">Įskaityta, €</th><th class="num">Platformos mokestis, €</th><th class="num">Mokėti, €</th></tr></thead>
     <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}<div class="small muted">${consentTxt(r.u.id)}</div></td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num">${r.sub?eur(r.sub):"–"}</td><td class="num">${r.credit?"−"+eur(r.credit):"–"}</td><td class="num">${r.fee?eur(r.fee):"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
-    <p class="small muted" style="margin:0">Platformos mokestis ${eur(S.pricing.platform_fee)} / mėn. šeimai skaičiuojamas proporcingai sutarties dienoms. Jei vaiką moka abu tėvai, mokestis dalijamas per pusę. Jis neimamas, jei visas mėnesio keliones atšaukėme mes. Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
+    <p class="small muted" style="margin:0">Platformos mokestis ${eur(S.pricing.platform_fee)} / mėn. šeimai skaičiuojamas proporcingai sutarties dienoms. Jei keliones moka keli šeimos nariai, mokestis dalijamas per pusę. Jis neimamas, jei visas mėnesio keliones atšaukėme mes. Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
     <div class="grid2"><form class="card" id="newClient"><h2>Naujas klientas</h2>
       <div class="two"><div class="field"><label for="ncName">Vardas</label><input id="ncName" required></div><div class="field"><label for="ncContract">Sutarties nr.</label><input id="ncContract" placeholder="S-2026-04"></div></div>
       <div class="two"><div class="field"><label for="ncEmail">El. paštas</label><input id="ncEmail" type="email"></div><div class="field"><label for="ncPhone">Telefonas</label><input id="ncPhone"></div></div>
       <button class="btn primary" type="submit">Pridėti klientą</button><span class="small muted">Tikroje versijoje klientas gaus kvietimą el. paštu.</span></form>
-    <form class="card" id="newChild"><h2>Naujas vaikas</h2>
+    <form class="card" id="newChild"><h2>Naujas keleivis</h2>
+      <div class="field"><label for="nkType">Keleivis</label><select id="nkType"><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Vyresnio amžiaus</option></select></div>
       <div class="two"><div class="field"><label for="nkName">Vardas</label><input id="nkName" required></div><div class="field"><label for="nkAge">Amžius</label><input id="nkAge" type="number" min="1" max="18" value="7"></div></div>
-      <div class="field"><label for="nkSeat">Sėdynė</label><select id="nkSeat"><option>Kėdutė</option><option>Paaukštinimas</option><option>Nereikia</option></select></div>
-      <div class="field"><label for="nkNotes">Pastabos (alergijos, kam galima perduoti)</label><input id="nkNotes"></div>
-      <div class="field"><span class="lbl">Globėjai</span>${Object.values(users).map(u=>`<label class="row small" for="ng_${u.id}"><input type="checkbox" id="ng_${u.id}" name="ng" value="${u.id}"> ${esc(u.name)}</label>`).join("")}</div>
+      <div class="field"><label for="nkSeat">Sėdynė (vaikui)</label><select id="nkSeat"><option>Kėdutė</option><option>Paaukštinimas</option><option>Nereikia</option></select></div>
+      <div class="field"><label for="nkNotes">Pastabos (vaikui – alergijos, kam galima perduoti)</label><input id="nkNotes"></div>
+      <div class="field"><span class="lbl">Kas gali užsakyti (vaikui – globėjai)</span>${Object.values(users).map(u=>`<label class="row small" for="ng_${u.id}"><input type="checkbox" id="ng_${u.id}" name="ng" value="${u.id}"> ${esc(u.name)}</label>`).join("")}</div>
       <button class="btn primary" type="submit">Pridėti vaiką</button></form></div>
-    <div class="card"><h2>Vaikai ir globėjai</h2>${S.children.map(c=>`<div class="child"><div class="spread"><b>${esc(c.name)}, ${c.age} m.</b><span class="tag">${esc(c.booster)}</span></div><div class="small muted">Globėjai: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}</div>`;
+    <div class="card"><h2>Keleiviai</h2>${S.children.map(c=>`<div class="child"><div class="spread"><b>${paxLabel(c)}</b><span class="tag">${paxTag(c)}</span></div><div class="small muted">${c.type&&c.type!=="child"?"Užsakyti gali":"Globėjai"}: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>${paxNeeds(c)?`<div class="small">${paxNeeds(c)}</div>`:""}${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}</div>`;
 }
 
 document.addEventListener("change",e=>{
   const at=e.target.closest("[data-assign-trip]");if(at){const t=S.trips.find(x=>x.id===at.dataset.assignTrip);if(t){t.driver=at.value;save();render();toast(`Kelionė priskirta: ${drvName(t.driver)}`)}return}
   if(e.target.id==="occDrv"){occDrv=e.target.value;render();return}
+  const cq=e.target.closest("[data-childqr],[data-childseats]");if(cq){const d=drv(cq.dataset.childqr||cq.dataset.childseats);if(cq.dataset.childqr)d.childQr=cq.checked;else d.childSeats=cq.checked;save();render();toast(childOk(d)?`${d.name} gali vežti vaikus`:`${d.name} veš tik suaugusius`);return}
   const md=e.target.closest("[data-myday]");if(md){const d=drv(role),w=+md.dataset.myday;d.days=md.checked?[...new Set([...d.days,w])].sort():d.days.filter(x=>x!==w);save();toast("Darbo dienos išsaugotos");return}
 });
 document.addEventListener("submit",e=>{
@@ -612,8 +659,8 @@ document.addEventListener("submit",e=>{
       docs:[doc("Individualios veiklos pažyma",null,$("#ndCert").value.trim()),doc("Automobilio draudimas (TPVCA)",$("#ndIns").value),doc("Pažyma apie teistumą",$("#ndCrim").value)]});
     save();render();toast("Vairuotojas pridėtas");return}
   if(e.target.id==="newClient"){e.preventDefault();const id="u"+Date.now();users[id]={id,name:$("#ncName").value.trim(),contract:$("#ncContract").value.trim()||"–",email:$("#ncEmail").value.trim(),phone:$("#ncPhone").value.trim()};S.users={...users};save();render();toast("Klientas pridėtas")}
-  if(e.target.id==="newChild"){e.preventDefault();const g=[...document.querySelectorAll('input[name=ng]:checked')].map(x=>x.value);if(!g.length){toast("Pažymėkite bent vieną globėją");return}
-    S.children.push({id:"c"+Date.now(),name:$("#nkName").value.trim(),age:+$("#nkAge").value||0,booster:$("#nkSeat").value,notes:$("#nkNotes").value.trim(),guardians:g});save();render();toast("Vaikas pridėtas")}
+  if(e.target.id==="newChild"){e.preventDefault();const g=[...document.querySelectorAll('input[name=ng]:checked')].map(x=>x.value);if(!g.length){toast("Pažymėkite, kas gali užsakyti");return}
+    const ty=$("#nkType").value,ad=ty!=="child";S.children.push({id:"c"+Date.now(),type:ty,self:false,dropoff:"alone",name:$("#nkName").value.trim(),age:+$("#nkAge").value||0,booster:ad?"":$("#nkSeat").value,notes:$("#nkNotes").value.trim(),guardians:g});save();render();toast("Keleivis pridėtas")}
 });
 function vIncome(v){
   const p=S.pricing, mt=monthTrips().filter(t=>billable(t)&&!t.long);
@@ -626,11 +673,11 @@ function vIncome(v){
   const groups=[
     ["Kelionės kaina su PVM",[["base_fee","Bazinė kaina vienam vaikui, €"],["included_km","Įskaičiuota km"],["per_km","Kiekvienas papildomas km, €"],["included_wait_min","Įskaičiuotas laukimas, min"],["per_wait_min","Papildoma laukimo minutė, €"],["extra_child_fee","Brolis ar sesuo toje pačioje kelionėje, €"]]],
     ["Mėnesio paketai",[["pkg1_from","1 paketas nuo, kelionių"],["pkg1_pct","1 paketo nuolaida, %"],["pkg2_from","2 paketas nuo, kelionių"],["pkg2_pct","2 paketo nuolaida, %"]]],
-    ["Laikas grafikui, min",[["handover_min","Parkavimas ir palyda iki durų"],["deadhead_min","Privažiavimas iki kito paėmimo"],["gap_min","Privaloma pertrauka tarp kelionių"]]],
+    ["Laikas grafikui, min",[["handover_min","Vaikas: parkavimas ir palyda iki durų"],["handover_adult","Suaugęs: išlaipinimas"],["handover_senior","Vyresnio amžiaus: palyda ir pagalba"],["deadhead_min","Privažiavimas iki kito paėmimo"],["gap_min","Privaloma pertrauka tarp kelionių"]]],
     ["Savaitgaliai ir šventės",[["weekend_pct","Savaitgalio priemoka, %"],["holiday_pct","Švenčių dienų priemoka, %"]]],
-    ["Abonementų kaina",[["minute_rate","Automobilio minutė, €"],["km_rate","Kilometras, €"],["empty_km","Tušti km iki paėmimo"],["share2","Vaiko dalis, kai vežami 2, %"],["share3","Vaiko dalis, kai vežami 3, %"],["share4","Vaiko dalis, kai vežami 4, %"],["commit3_pct","Nuolaida įsipareigojus 3 mėn., %"],["commit9_pct","Nuolaida įsipareigojus 9 mėn., %"]]],
+    ["Abonementų kaina",[["minute_rate","Automobilio minutė, €"],["km_rate","Kilometras, €"],["empty_km","Tušti km iki paėmimo"],["share2","Keleivio dalis, kai vežami 2, %"],["share3","Keleivio dalis, kai vežami 3, %"],["share4","Vaiko dalis, kai vežami 4, %"],["commit3_pct","Nuolaida įsipareigojus 3 mėn., %"],["commit9_pct","Nuolaida įsipareigojus 9 mėn., %"]]],
     ["Paklausa ir aukcionas",[["occ_m1","Koeficientas, kai valanda užimta iki 50%"],["occ_m2","50–80%"],["occ_m3","80–95%"],["occ_m4","Virš 95% (aukciono minimumas)"],["bid_step_pct","Mažiausias pasiūlymo žingsnis, %"],["bid_close_day","Pasiūlymai baigiasi mėnesio dieną"]]],
-    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["morning_start_h","Rytinio maršruto pradžia, val. (7.25 = 07:15)"],["morning_end_h","Rytinio maršruto pabaiga, val."],["morning_deliver_h","Visi nuvežti iki, val."],["morning_max_kids","Vaikų rytiniame maršrute"],["afternoon_start_h","Popietės pradžia, val."],["afternoon_end_h","Popietės pabaiga, val."],["afternoon_max_trips","Kelionių po pietų"],["cancel_hours","Vėlyvas atšaukimas, likus mažiau nei val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"],["very_late_hours","Labai vėlyvas, likus mažiau nei val."],["very_late_pct","Labai vėlyvo ar neatvykus mokestis, %"]]],
+    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["morning_start_h","Rytinio maršruto pradžia, val. (7.25 = 07:15)"],["morning_end_h","Rytinio maršruto pabaiga, val."],["morning_deliver_h","Visi nuvežti iki, val."],["morning_max_kids","Keleivių rytiniame maršrute"],["afternoon_start_h","Popietės pradžia, val."],["afternoon_end_h","Popietės pabaiga, val."],["afternoon_max_trips","Kelionių po pietų"],["cancel_hours","Vėlyvas atšaukimas, likus mažiau nei val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"],["very_late_hours","Labai vėlyvas, likus mažiau nei val."],["very_late_pct","Labai vėlyvo ar neatvykus mokestis, %"]]],
     ["Vairuotojai ir MB",[["driver_pct","Vairuotojui nuo kainos be PVM, %"],["platform_fee","Platformos mokestis šeimai per mėn. su PVM, €"],["mb_costs","MB pastovios išlaidos per mėn., €"],["vat_pct","PVM, %"],["tax_pct","Mokesčiai MB, % nuo pelno"],["target","MB tikslas į rankas, €"]]],
     ["Vairuotojo automobilio išlaidos (uždarbio skaičiavimui)",[["cost_insurance","Draudimas, €"],["cost_wash","Plovimas, €"],["cost_service","Priežiūra, €"]]]
   ];
@@ -655,7 +702,7 @@ function vIncome(v){
 }
 
 /* ---------- Kainų puslapis ---------- */
-const PRICE_HTML='<div class="wrap">\n<header>\n  <div class="eyebrow">Ridu · vaikų pavėžėjimas Vilniuje<\/div>\n  <h1>Abonementai<\/h1>\n  <p class="lead">Pagal savaitės grafiką paimame vaiką iš darželio, mokyklos ar namų ir nuvežame į būrelį arba kitą sutartą vietą. Vaiką palydime iki durų ar trenerio. Visos kainos nurodytos su PVM.<\/p>\n  <div class="route" aria-hidden="true"><span class="dot"><\/span>Darželis / mokykla / namai<span class="seg"><\/span><span class="dot"><\/span>Būrelis<span class="seg"><\/span><span class="dot"><\/span>Namai<\/div>\n<\/header>\n\n<section aria-labelledby="cmp-h" class="cmp">\n  <div class="sec-head"><h2 id="cmp-h">Ar apsimoka? Palyginkite<\/h2><p>Įveskite savo maršrutą. Iškart matysite, kiek kainuoja abonementas ir kiek kainuoja vežioti vaiką patiems.<\/p><\/div>\n  <form class="cmp-form" id="cmp" >\n    <div class="quick">\n      <label for="km">Atstumas, km<input id="km" type="number" min="1" max="40" step="0.5" value="8"><\/label>\n      <label for="tpw">Kelionių per savaitę<input id="tpw" type="number" min="1" max="14" step="1" value="2"><\/label>\n      <label for="kids">Vaikų kelionėje<select id="kids"><option value="1">1<\/option><option value="2">2<\/option><option value="3">3<\/option><option value="4">4<\/option><\/select><\/label>\n      <label for="method">Vežiotumėte<select id="method"><option value="1" selected>darbo laiku<\/option><option value="0.45">laisvalaikiu<\/option><\/select><\/label>\n    <\/div>\n\n    <div class="verdict" id="verdict" aria-live="polite">\n      <div class="verdict-badge" id="v-badge">Apsimoka<\/div>\n      <div class="verdict-text" id="v-text"><\/div>\n    <\/div>\n\n    <div class="duo">\n      <div class="side us">\n        <div class="eyebrow">Mūsų abonementas<\/div>\n        <div class="amount" id="a-sub">0 €<\/div>\n        <div class="bar"><span id="b-sub"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b>0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n      <div class="side self">\n        <div class="eyebrow">Vežiojant patiems<\/div>\n        <div class="amount" id="a-self">0 €<\/div>\n        <div class="bar"><span id="b-self"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b id="a-hours">0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n    <\/div>\n\n    <div class="gain">\n      <h3>Ką atgaunate su abonementu<\/h3>\n      <div class="table-wrap"><table class="gain-t">\n        <thead><tr><th><\/th><th class="price">Per mėnesį<\/th><th class="price">Per mokslo metus (9 mėn.)<\/th><\/tr><\/thead>\n        <tbody>\n          <tr><td>Laikas, kurio nereikia vairuoti, laukti ir parkuotis<\/td><td class="price" id="g-h1"><\/td><td class="price" id="g-h9"><\/td><\/tr>\n          <tr><td>Kilometrai, kurių nereikia nuvažiuoti<\/td><td class="price" id="g-k1"><\/td><td class="price" id="g-k9"><\/td><\/tr>\n          <tr><td>Sutaupytas kuras ir automobilio dėvėjimasis<\/td><td class="price" id="g-c1"><\/td><td class="price" id="g-c9"><\/td><\/tr>\n          <tr><td>Sutaupytas parkavimas<\/td><td class="price" id="g-p1"><\/td><td class="price" id="g-p9"><\/td><\/tr>\n          <tr><td>Jūsų laiko vertė<\/td><td class="price" id="g-t1"><\/td><td class="price" id="g-t9"><\/td><\/tr>\n          <tr class="sum"><td>Iš viso atgaunate<\/td><td class="price" id="g-s1"><\/td><td class="price" id="g-s9"><\/td><\/tr>\n          <tr><td>Abonemento kaina<\/td><td class="price" id="g-a1"><\/td><td class="price" id="g-a9"><\/td><\/tr>\n          <tr class="res"><td id="g-rl">Rezultatas<\/td><td class="price" id="g-r1"><\/td><td class="price" id="g-r9"><\/td><\/tr>\n        <\/tbody>\n      <\/table><\/div>\n    <\/div>\n\n    <details>\n      <summary>Tikslinti skaičiavimą<\/summary>\n      <div class="more">\n        <label for="slot">Laikas<select id="slot"><option value="0.9">Rytas po 9 val. arba ankstyva popietė<\/option><option value="1" selected>Kitas laikas<\/option><option value="1.15">Nuo 15 iki 17 val.<\/option><\/select><\/label>\n        <label for="term">Sutarties trukmė<select id="term"><option value="0">1 mėnuo<\/option><option value="0.05" selected>3 mėnesiai<\/option><option value="0.10">Mokslo metai<\/option><\/select><\/label>\n        <label for="extra">Jūsų kelias iki vaiko ir atgal, km<input id="extra" type="number" min="0" max="60" step="1" value="6"><\/label>\n        <label for="carkm">Automobilio kaina už km, €<input id="carkm" type="number" min="0" max="2" step="0.01" value="0.30"><\/label>\n        <label for="park">Parkavimas kelionei, €<input id="park" type="number" min="0" max="20" step="0.5" value="1"><\/label>\n        <label for="wait">Laukimas kelionei, min.<input id="wait" type="number" min="0" max="120" step="1" value="5"><\/label>\n        <label for="wage">Atlyginimas prieš mokesčius, €/mėn.<input id="wage" type="number" min="0" max="20000" step="50" value="2600"><\/label>\n        <label class="check" for="wk"><input id="wk" type="checkbox">Kelionės savaitgalį<\/label>\n      <\/div>\n    <\/details>\n    <details>\n      <summary>Kaip suskaičiuota<\/summary>\n      <div class="rows">\n        <div><span>Abonementas: vienos kelionės kaina vaikui<\/span><span id="out-trip">0 €<\/span><\/div>\n        <div><span>Patiems: kuras ir automobilio dėvėjimasis<\/span><span id="self-car">0 €<\/span><\/div>\n        <div><span>Patiems: parkavimas<\/span><span id="self-park">0 €<\/span><\/div>\n        <div><span>Patiems: Jūsų laikas<\/span><span id="self-time">0 €<\/span><\/div>\n      <\/div>\n      <p class="note">0,30 €/km apima kurą, padangas, remontą ir automobilio vertės mažėjimą. Laiko vertė = atlyginimas prieš mokesčius ÷ 168 val. (2 600 € ≈ Vilniaus regiono vidurkis, ≈ 15,5 €/val.). Darbo laikas vertinamas 100%, laisvalaikis 45% valandos vertės. Kiekvienai kelionei pridedama 15 min. parkuotis ir palydėti vaiką bei Jūsų nurodytas laukimas.<\/p>\n    <\/details>\n  <\/form>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Abonementai<\/h2><p>Nuolatinės kelionės pagal savaitės grafiką. Kaina užfiksuojama visam sutarties laikotarpiui. Tikslią kainą pagal Jūsų adresus ir laiką parodys aplikacija.<\/p><\/div>\n  <div class="table-wrap"><table>\n    <thead><tr><th>Abonemento pavyzdys (iki 8 km)<\/th><th class="price">Kaina vaikui<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Būrelis 2 kartus per savaitę<small>Mokykla → būrelis, mokslo metų sutartis<\/small><\/td><td class="price">nuo 275 €/mėn.<\/td><\/tr>\n      <tr><td>Būrelis 2 kartus per savaitę, keli vaikai iš tos pačios klasės<small>Vežame 3 vaikus kartu<\/small><\/td><td class="price">nuo 124 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien rytą į mokyklą ar darželį<small>Bendras rytinis maršrutas su keliais vaikais, pristatome iki pamokų pradžios<\/small><\/td><td class="price">nuo 375 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, du broliai ar seserys<\/td><td class="price">nuo 413 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, vienas vaikas<\/td><td class="price">nuo 688 €/mėn.<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p class="note">Kuo ilgesnė sutartis ir kuo daugiau vaikų važiuoja kartu, tuo mažesnė kaina kiekvienam.<\/p>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Kai pasirinktas laikas užimtas<\/h2><p>Populiariausi laikai užsipildo pirmiausia. Aplikacijoje galite užsiregistruoti į norimą laiką ir pateikti savo pasiūlymą. Vietos kitam mėnesiui paskirstomos kiekvieno mėnesio 25 d. Esami klientai savo abonementą pratęsia ta pačia kaina.<\/p><\/div>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Sauga ir sąlygos<\/h2><\/div>\n  <ul class="plain">\n    <li>Vaikiškos kėdutės ir busteriai pagal vaiko ūgį ir svorį, kaip reikalauja KET.<\/li>\n    <li>Vaiką palydime iki durų, į patalpas arba perduodame treneriui.<\/li>\n    <li>Tarp kelionių planuojama privaloma pertrauka, kad vairuotojas niekada neskubėtų.<\/li>\n    <li>Licencijuotas keleivių vežimas, apdraustas automobilis, neteistumo pažyma pateikiama paprašius.<\/li>\n    <li>Atšaukimas likus mažiau nei 12 val.: 50% kelionės kainos. Likus mažiau nei 2 val. arba vaikui neatvykus: 100%.<\/li>\n    <li>Ridu tėvams: sutartyje nurodoma, kas gali paimti vaiką ir kuris iš tėvų apmoka kiekvieną savaitę.<\/li>\n  <\/ul>\n<\/section>\n\n<footer>Kainos galioja nuo 2026 m. lapkričio. Visos kainos su 21% PVM. <span class="pill">Preliminari skaičiuoklė<\/span><\/footer>\n<\/div>\n';
+const PRICE_HTML='<div class="wrap">\n<header>\n  <div class="eyebrow">Ridu · pavežimas Vilniuje<\/div>\n  <h1>Abonementai<\/h1>\n  <p class="lead">Pagal savaitės grafiką paimame vaiką iš darželio, mokyklos ar namų ir nuvežame į būrelį arba kitą sutartą vietą. Vaiką palydime iki durų ar trenerio. Visos kainos nurodytos su PVM.<\/p>\n  <div class="route" aria-hidden="true"><span class="dot"><\/span>Darželis / mokykla / namai<span class="seg"><\/span><span class="dot"><\/span>Būrelis<span class="seg"><\/span><span class="dot"><\/span>Namai<\/div>\n<\/header>\n\n<section aria-labelledby="cmp-h" class="cmp">\n  <div class="sec-head"><h2 id="cmp-h">Ar apsimoka? Palyginkite<\/h2><p>Įveskite savo maršrutą. Iškart matysite, kiek kainuoja abonementas ir kiek kainuoja vežioti vaiką patiems.<\/p><\/div>\n  <form class="cmp-form" id="cmp" >\n    <div class="quick">\n      <label for="km">Atstumas, km<input id="km" type="number" min="1" max="40" step="0.5" value="8"><\/label>\n      <label for="tpw">Kelionių per savaitę<input id="tpw" type="number" min="1" max="14" step="1" value="2"><\/label>\n      <label for="kids">Vaikų kelionėje<select id="kids"><option value="1">1<\/option><option value="2">2<\/option><option value="3">3<\/option><option value="4">4<\/option><\/select><\/label>\n      <label for="method">Vežiotumėte<select id="method"><option value="1" selected>darbo laiku<\/option><option value="0.45">laisvalaikiu<\/option><\/select><\/label>\n    <\/div>\n\n    <div class="verdict" id="verdict" aria-live="polite">\n      <div class="verdict-badge" id="v-badge">Apsimoka<\/div>\n      <div class="verdict-text" id="v-text"><\/div>\n    <\/div>\n\n    <div class="duo">\n      <div class="side us">\n        <div class="eyebrow">Mūsų abonementas<\/div>\n        <div class="amount" id="a-sub">0 €<\/div>\n        <div class="bar"><span id="b-sub"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b>0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n      <div class="side self">\n        <div class="eyebrow">Vežiojant patiems<\/div>\n        <div class="amount" id="a-self">0 €<\/div>\n        <div class="bar"><span id="b-self"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b id="a-hours">0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n    <\/div>\n\n    <div class="gain">\n      <h3>Ką atgaunate su abonementu<\/h3>\n      <div class="table-wrap"><table class="gain-t">\n        <thead><tr><th><\/th><th class="price">Per mėnesį<\/th><th class="price">Per mokslo metus (9 mėn.)<\/th><\/tr><\/thead>\n        <tbody>\n          <tr><td>Laikas, kurio nereikia vairuoti, laukti ir parkuotis<\/td><td class="price" id="g-h1"><\/td><td class="price" id="g-h9"><\/td><\/tr>\n          <tr><td>Kilometrai, kurių nereikia nuvažiuoti<\/td><td class="price" id="g-k1"><\/td><td class="price" id="g-k9"><\/td><\/tr>\n          <tr><td>Sutaupytas kuras ir automobilio dėvėjimasis<\/td><td class="price" id="g-c1"><\/td><td class="price" id="g-c9"><\/td><\/tr>\n          <tr><td>Sutaupytas parkavimas<\/td><td class="price" id="g-p1"><\/td><td class="price" id="g-p9"><\/td><\/tr>\n          <tr><td>Jūsų laiko vertė<\/td><td class="price" id="g-t1"><\/td><td class="price" id="g-t9"><\/td><\/tr>\n          <tr class="sum"><td>Iš viso atgaunate<\/td><td class="price" id="g-s1"><\/td><td class="price" id="g-s9"><\/td><\/tr>\n          <tr><td>Abonemento kaina<\/td><td class="price" id="g-a1"><\/td><td class="price" id="g-a9"><\/td><\/tr>\n          <tr class="res"><td id="g-rl">Rezultatas<\/td><td class="price" id="g-r1"><\/td><td class="price" id="g-r9"><\/td><\/tr>\n        <\/tbody>\n      <\/table><\/div>\n    <\/div>\n\n    <details>\n      <summary>Tikslinti skaičiavimą<\/summary>\n      <div class="more">\n        <label for="slot">Laikas<select id="slot"><option value="0.9">Rytas po 9 val. arba ankstyva popietė<\/option><option value="1" selected>Kitas laikas<\/option><option value="1.15">Nuo 15 iki 17 val.<\/option><\/select><\/label>\n        <label for="term">Sutarties trukmė<select id="term"><option value="0">1 mėnuo<\/option><option value="0.05" selected>3 mėnesiai<\/option><option value="0.10">Mokslo metai<\/option><\/select><\/label>\n        <label for="extra">Jūsų kelias iki vaiko ir atgal, km<input id="extra" type="number" min="0" max="60" step="1" value="6"><\/label>\n        <label for="carkm">Automobilio kaina už km, €<input id="carkm" type="number" min="0" max="2" step="0.01" value="0.30"><\/label>\n        <label for="park">Parkavimas kelionei, €<input id="park" type="number" min="0" max="20" step="0.5" value="1"><\/label>\n        <label for="wait">Laukimas kelionei, min.<input id="wait" type="number" min="0" max="120" step="1" value="5"><\/label>\n        <label for="wage">Atlyginimas prieš mokesčius, €/mėn.<input id="wage" type="number" min="0" max="20000" step="50" value="2600"><\/label>\n        <label class="check" for="wk"><input id="wk" type="checkbox">Kelionės savaitgalį<\/label>\n      <\/div>\n    <\/details>\n    <details>\n      <summary>Kaip suskaičiuota<\/summary>\n      <div class="rows">\n        <div><span>Abonementas: vienos kelionės kaina vaikui<\/span><span id="out-trip">0 €<\/span><\/div>\n        <div><span>Patiems: kuras ir automobilio dėvėjimasis<\/span><span id="self-car">0 €<\/span><\/div>\n        <div><span>Patiems: parkavimas<\/span><span id="self-park">0 €<\/span><\/div>\n        <div><span>Patiems: Jūsų laikas<\/span><span id="self-time">0 €<\/span><\/div>\n      <\/div>\n      <p class="note">0,30 €/km apima kurą, padangas, remontą ir automobilio vertės mažėjimą. Laiko vertė = atlyginimas prieš mokesčius ÷ 168 val. (2 600 € ≈ Vilniaus regiono vidurkis, ≈ 15,5 €/val.). Darbo laikas vertinamas 100%, laisvalaikis 45% valandos vertės. Kiekvienai kelionei pridedama 15 min. parkuotis ir palydėti vaiką bei Jūsų nurodytas laukimas.<\/p>\n    <\/details>\n  <\/form>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Abonementai<\/h2><p>Nuolatinės kelionės pagal savaitės grafiką. Kaina užfiksuojama visam sutarties laikotarpiui. Tikslią kainą pagal Jūsų adresus ir laiką parodys aplikacija.<\/p><\/div>\n  <div class="table-wrap"><table>\n    <thead><tr><th>Abonemento pavyzdys (iki 8 km)<\/th><th class="price">Kaina vaikui<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Būrelis 2 kartus per savaitę<small>Mokykla → būrelis, mokslo metų sutartis<\/small><\/td><td class="price">nuo 275 €/mėn.<\/td><\/tr>\n      <tr><td>Būrelis 2 kartus per savaitę, keli vaikai iš tos pačios klasės<small>Vežame 3 vaikus kartu<\/small><\/td><td class="price">nuo 124 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien rytą į mokyklą ar darželį<small>Bendras rytinis maršrutas su keliais vaikais, pristatome iki pamokų pradžios<\/small><\/td><td class="price">nuo 375 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, du broliai ar seserys<\/td><td class="price">nuo 413 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, vienas vaikas<\/td><td class="price">nuo 688 €/mėn.<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p class="note">Kuo ilgesnė sutartis ir kuo daugiau vaikų važiuoja kartu, tuo mažesnė kaina kiekvienam.<\/p>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Kai pasirinktas laikas užimtas<\/h2><p>Populiariausi laikai užsipildo pirmiausia. Aplikacijoje galite užsiregistruoti į norimą laiką ir pateikti savo pasiūlymą. Vietos kitam mėnesiui paskirstomos kiekvieno mėnesio 25 d. Esami klientai savo abonementą pratęsia ta pačia kaina.<\/p><\/div>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Sauga ir sąlygos<\/h2><\/div>\n  <ul class="plain">\n    <li>Vaikiškos kėdutės ir busteriai pagal vaiko ūgį ir svorį, kaip reikalauja KET.<\/li>\n    <li>Vaiką palydime iki durų, į patalpas arba perduodame treneriui.<\/li>\n    <li>Tarp kelionių planuojama privaloma pertrauka, kad vairuotojas niekada neskubėtų.<\/li>\n    <li>Licencijuotas keleivių vežimas, apdraustas automobilis, neteistumo pažyma pateikiama paprašius.<\/li>\n    <li>Atšaukimas likus mažiau nei 12 val.: 50% kelionės kainos. Likus mažiau nei 2 val. arba vaikui neatvykus: 100%.<\/li>\n    <li>Ridu tėvams: sutartyje nurodoma, kas gali paimti vaiką ir kuris iš tėvų apmoka kiekvieną savaitę.<\/li>\n  <\/ul>\n<\/section>\n\n<footer>Kainos galioja nuo 2026 m. lapkričio. Visos kainos su 21% PVM. <span class="pill">Preliminari skaičiuoklė<\/span><\/footer>\n<\/div>\n';
 function initPrices(P){
   var MIN_RATE=P.minute_rate, KM_RATE=P.km_rate, HANDOVER=P.handover_min, DEADHEAD=P.deadhead_min, BREAK_MIN=P.gap_min, EMPTY_KM=P.empty_km;
   var WEEKEND=P.weekend_pct/100, BASE=P.base_fee, INCL_KM=8, EXTRA_KM=1.2, MIN_PER_KM=2.75;
@@ -722,8 +769,8 @@ function vPrices(v){v.innerHTML='<div class="pp">'+PRICE_HTML+'</div>';const f=v
 /* ---------- Abonementai ---------- */
 const SUB_ON=["active","pending"];
 // Automobilio minutės, kurias užima viena abonemento kelionė
-function carMin(k){const p=S.pricing;return minutes(k)+p.handover_min+p.deadhead_min+p.gap_min}
-function subCarMin(s){const f=S.places.find(x=>x.id===s.from),t=S.places.find(x=>x.id===s.to);return carMin(km(f,t))}
+function carMin(k,type){const p=S.pricing;return minutes(k)+handoverFor(p,type)+p.deadhead_min+p.gap_min}
+function subCarMin(s){const f=S.places.find(x=>x.id===s.from),t=S.places.find(x=>x.id===s.to);return carMin(km(f,t),child(s.child)?.type)}
 // Užimtumas: parduotos automobilio minutės savaitės dienos valandos lange / 60 min
 function winOcc(wd,hour,ignore,d){return S.subs.filter(s=>s.id!==ignore&&(!d||s.driver===d)&&SUB_ON.includes(s.status)&&s.weekdays.includes(wd)&&+s.time.slice(0,2)===hour).reduce((a,s)=>a+subCarMin(s),0)/60}
 function occMult(o){const p=S.pricing;return o>=0.95?p.occ_m4:o>=0.8?p.occ_m3:o>=0.5?p.occ_m2:p.occ_m1}
@@ -736,10 +783,10 @@ function inAfternoon(time){const p=S.pricing,m=tToMin(time);return m>=hToMin(p.a
 function windowsText(){const p=S.pricing;return `rytais ${hmT(hToMin(p.morning_start_h))}–${hmT(hToMin(p.morning_end_h))} ir po pietų ${hmT(hToMin(p.afternoon_start_h))}–${hmT(hToMin(p.afternoon_end_h))}`}
 function morningKids(wd,ignore,d){return S.subs.filter(s=>s.id!==ignore&&(!d||s.driver===d)&&SUB_ON.includes(s.status)&&s.weekdays.includes(wd)&&isMorning(s.time)).reduce((a,s)=>a+1+(s.extra||0),0)}
 function afternoonTrips(wd,ignore,d){return S.subs.filter(s=>s.id!==ignore&&(!d||s.driver===d)&&SUB_ON.includes(s.status)&&s.weekdays.includes(wd)&&inAfternoon(s.time)).length}
-function subQuote({from,to,weekdays,time,extra=0,months=1},ignore,onlyDriver){
+function subQuote({from,to,weekdays,time,extra=0,months=1,child:cid},ignore,onlyDriver){
   const p=S.pricing, f=S.places.find(x=>x.id===from), t=S.places.find(x=>x.id===to);
   if(!f||!t||f.id===t.id||!weekdays.length) return null;
-  const k=km(f,t), cm=carMin(k), hour=+time.slice(0,2), kids=Math.min(4,1+extra);
+  const k=km(f,t), cm=carMin(k,child(cid)?.type), hour=+time.slice(0,2), kids=Math.min(4,1+extra);
   const carTrip=p.minute_rate*cm+p.km_rate*(k+p.empty_km);
   const share=kids===1?1:p["share"+kids]/100, childTrip=carTrip*share;
   const morning=isMorning(time), outside=!morning&&!inAfternoon(time);
@@ -749,7 +796,7 @@ function subQuote({from,to,weekdays,time,extra=0,months=1},ignore,onlyDriver){
     else{occ=Math.max(...weekdays.map(w=>winOcc(w,hour,ignore,d)));const occAfter=Math.max(...weekdays.map(w=>winOcc(w,hour,ignore,d)+cm/60));
       full=occ>0.95||occAfter>1||Math.max(...weekdays.map(w=>afternoonTrips(w,ignore,d)))>=p.afternoon_max_trips}
     return {d,occ,full}};
-  const cands=(onlyDriver?[drv(onlyDriver)].filter(Boolean):activeDrivers().filter(d=>weekdays.every(w=>d.days.includes(w))&&!d.docs.some(x=>docState(x)==="bad"))).map(d=>evalD(d.id)).sort((a,b)=>(a.full-b.full)||(a.occ-b.occ));
+  const cands=(onlyDriver?[drv(onlyDriver)].filter(Boolean):activeDrivers().filter(d=>weekdays.every(w=>d.days.includes(w))&&!d.docs.some(x=>docState(x)==="bad")&&canCarry(d,cid))).map(d=>evalD(d.id)).sort((a,b)=>(a.full-b.full)||(a.occ-b.occ));
   const best=cands[0]||{d:null,occ:1,full:true}, occ=best.occ, full=best.full, driver=best.d;
   const mult=full?p.occ_m4:occMult(occ);
   const commit=months>=9?p.commit9_pct:months>=3?p.commit3_pct:0;
@@ -779,14 +826,14 @@ function vSub(v){
   <form class="card" id="subForm">
     <h2>Ilgalaikis užsakymas</h2>
     <p class="small muted" style="margin:0">Pastovus savaitės grafikas už fiksuotą mėnesio kainą, pigiau nei pavienės kelionės.</p>
-    <div class="field"><label for="sChild">Vaikas</label><select id="sChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
+    <div class="field"><label for="sChild">Keleivis</label><select id="sChild">${kids.map(c=>`<option value="${c.id}">${paxLabel(c)}</option>`).join("")}</select><span class="small muted">${NO_SPECIAL}</span></div>
     <div class="two"><div class="field"><label for="sFrom">Iš kur paimti</label><select id="sFrom">${opt}</select></div>
     <div class="field"><label for="sTo">Kur nuvežti</label><select id="sTo">${opt}</select></div></div>
     <div class="field"><span class="lbl">Savaitės dienos</span><div class="days">${DAYS.slice(0,5).map((d,i)=>`<label><input type="checkbox" name="swd" value="${i+1}" id="swd${i+1}" ${i===1||i===3?"checked":""}><span>${d}</span></label>`).join("")}</div></div>
     <div class="two"><div class="field"><label for="sPeriod">Kada</label><select id="sPeriod"><option value="pm">Po pietų (${hmT(hToMin(P.afternoon_start_h))}–${hmT(hToMin(P.afternoon_end_h))})</option><option value="am">Rytinis maršrutas (nuvežama iki ${hmT(hToMin(P.morning_deliver_h))})</option></select></div>
     <div class="field" id="sTimeField"><label for="sTime">Paėmimo laikas</label><input type="time" id="sTime" value="14:00" min="${hmT(hToMin(P.afternoon_start_h))}" max="${hmT(hToMin(P.afternoon_end_h))}"></div></div>
     <div class="two">
-    <div class="field"><label for="sExtra">Brolis ar sesuo kartu</label><input type="number" id="sExtra" min="0" max="3" value="0"></div></div>
+    <div class="field"><label for="sExtra">Kartu važiuoja dar keleivių</label><input type="number" id="sExtra" min="0" max="3" value="0"></div></div>
     <div class="field"><label for="sMonths">Įsipareigojimas</label><select id="sMonths"><option value="1">1 mėnuo</option><option value="3">3 mėnesiai</option><option value="9">9 mėnesiai</option></select></div>
     <div id="subQuote" aria-live="polite"></div>
   </form>
@@ -802,12 +849,12 @@ function vSub(v){
     const minBid=q.monthly, occTxt=Math.round(q.occ*100), feeNow=famPaysFee(read().child)?0:P.platform_fee;
     box.innerHTML=`<div class="quote">
       <div class="line"><span>${q.perWeek} k./sav., apie ${q.n} kelionės per mėnesį</span><span>${eur(q.perTrip)} / kel.</span></div>
-      <div class="line"><span>Kelionės per mėnesį${q.kids>1?` (${q.kids} vaikai)`:""}</span><span>${eur(q.monthly)}</span></div>
+      <div class="line"><span>Kelionės per mėnesį${q.kids>1?` (${q.kids} keleiviai)`:""}</span><span>${eur(q.monthly)}</span></div>
       <div class="line"><span>Platformos mokestis šeimai${feeNow?"":" (jau mokate)"}</span><span>${feeNow?eur(feeNow):"–"}</span></div>
       <div class="line total"><span>Iš viso per mėnesį</span><span class="price">${eur(q.monthly+feeNow)}</span></div></div>
       <p class="small muted" style="margin:0">Platformos mokestis apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Pirmą ir paskutinį mėnesį jis skaičiuojamas pagal dienas.</p>
       <a class="small" href="${mapsUrl(q.f,q.t)}" target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>
-      ${q.morning?`<p class="small muted" style="margin:0">Rytinis maršrutas bendras keliems vaikams. Tikslų paėmimo laiką nurodys vairuotojas.</p>`:""}
+      ${q.morning?`<p class="small muted" style="margin:0">Rytinis maršrutas bendras keliems keleiviams. Tikslų paėmimo laiką nurodys vairuotojas.</p>`:""}
       ${q.full?`<div class="warnbox">${q.morning?"Rytinis maršrutas šiomis dienomis pilnas.":"Šis laikas užimtas."} Galite pateikti pasiūlymą kitam mėnesiui iki ${P.bid_close_day} d., ir vairuotojas su jumis susisieks.</div>
         <div class="field"><label for="sBid">Jūsų mėnesio kaina, € (ne mažiau ${eur(minBid)})</label><input type="number" id="sBid" step="1" min="${minBid}" value="${minBid}"></div>
         <button class="btn primary" type="submit">Pateikti pasiūlymą</button>`
@@ -824,12 +871,12 @@ function vSub(v){
 
 function activateSub(s){s.start=s.start||isoAdd(0);s.months=s.months||1;if(s.months>1)s.end=addMonthsIso(s.start,s.months);s.no=s.no||("S-"+new Date().getFullYear()+"-"+String(S.subs.filter(x=>x.no).length+1).padStart(3,"0"))}
 function contractState(s){if(s.status==="ended")return "ended";if(s.status==="active"&&s.end&&s.end<isoAdd(0))return "renew";return s.status}
-function hasReq(u){const c=S.consents[u]||{};return CONSENTS.filter(x=>x.req).every(x=>c[x.key]?.granted&&c[x.key].version===TERMS_VERSION)}
+function hasReq(u){const c=S.consents[u]||{};return CONSENTS.filter(x=>reqFor(x,u)).every(x=>c[x.key]?.granted&&c[x.key].version===TERMS_VERSION)}
 function consentTxt(u){if(!hasReq(u))return "Dar nesutiko su sąlygomis";const c=S.consents[u],at=CONSENTS.map(x=>c[x.key]?.at).filter(Boolean).sort().pop();
   return `Sutiko ${new Date(at).toLocaleDateString("lt-LT")}: ${CONSENTS.filter(x=>c[x.key]?.granted).map(x=>SHORT[x.key]).join(", ")}`}
 const termsHtml=()=>`<div class="card"><h2>Paslaugų teikimo sąlygos</h2><ol style="margin:0;padding-left:20px;display:grid;gap:8px">${TERMS.map(([t,b])=>`<li><b>${esc(t)}.</b> ${esc(b)}</li>`).join("")}</ol>
   <p class="small muted" style="margin:0">Sąlygų versija ${TERMS_VERSION}. <a href="${FULL_TERMS}" target="_blank" rel="noopener">Pilnos taisyklės ir privatumo politika</a></p></div>`;
-const consentForm=(submit)=>{const c=S.consents[role]||{};return `<form class="card" id="consentForm"><h2>Sutikimai</h2>${CONSENTS.map(x=>`<label class="row" for="cs_${x.key}" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="cs_${x.key}" name="${x.key}" ${c[x.key]?.granted&&c[x.key].version===TERMS_VERSION?"checked":""} ${x.req?"required":""} style="width:20px;height:20px;flex:none;margin-top:2px"><span>${esc(x.label)} <span class="small ${x.req?"":"muted"}" style="${x.req?"color:var(--bad)":""}">${x.req?"privaloma":"savanoriška"}</span></span></label>`).join("")}
+const consentForm=(submit)=>{const c=S.consents[role]||{};return `<form class="card" id="consentForm"><h2>Sutikimai</h2>${CONSENTS.map(x=>`<label class="row" for="cs_${x.key}" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="cs_${x.key}" name="${x.key}" ${c[x.key]?.granted&&c[x.key].version===TERMS_VERSION?"checked":""} ${reqFor(x,role)?"required":""} style="width:20px;height:20px;flex:none;margin-top:2px"><span>${esc(x.label)} <span class="small ${reqFor(x,role)?"":"muted"}" style="${reqFor(x,role)?"color:var(--bad)":""}">${reqFor(x,role)?"privaloma":x.key==="guardian"?"jei vežame vaiką":"savanoriška"}</span></span></label>`).join("")}
   <p class="small muted" style="margin:0">Savanoriškus sutikimus galite bet kada pakeisti skiltyje „Sąlygos“.</p><button class="btn primary" type="submit">${submit}</button></form>`};
 function bindConsent(msg){$("#consentForm").addEventListener("submit",e=>{e.preventDefault();const cur=S.consents[role]||{},now=new Date().toISOString();
   S.consents[role]=Object.fromEntries(CONSENTS.map(x=>{const g=$("#cs_"+x.key).checked,o=cur[x.key];return [x.key,o&&o.granted===g&&o.version===TERMS_VERSION?o:{granted:g,version:TERMS_VERSION,at:now}]}));save();render();toast(msg)})}
@@ -901,6 +948,8 @@ function vDrivers(v){
   const p=S.pricing;
   v.innerHTML=`<div class="grid2">${S.drivers.map(d=>{const m=driverMonth(d);return `<div class="card"><div class="spread"><h2>${esc(d.name)}</h2><span class="pill ${d.active?"s-confirmed":"s-rejected"}">${d.active?"Aktyvus":"Neaktyvus"}</span></div>
     <div class="small muted">${esc(d.phone)} · ${esc(d.cert)}</div><div class="small">${esc(d.car)}${d.plate?` · ${esc(d.plate)}`:""} · ${esc(d.seats)}</div>
+    <div class="row small"><label for="cq_${d.id}"><input type="checkbox" id="cq_${d.id}" data-childqr="${d.id}" ${d.childQr?"checked":""}> QR kodas darbui su vaikais patikrintas</label><label for="cs_${d.id}x"><input type="checkbox" id="cs_${d.id}x" data-childseats="${d.id}" ${d.childSeats?"checked":""}> Turi vaikiškas kėdutes</label></div>
+    <div class="small">${childOk(d)?'<span class="pill s-delivered">Veža vaikus ir suaugusius</span>':'<span class="pill s-requested">Veža tik suaugusius</span>'}</div>
     <div class="small">Dirba: ${d.days.map(w=>DAYS[w-1]).join(", ")||"–"} · šį mėnesį ${m.subs} sutartys, ${eur(m.payout)} išmokai</div>
     <div class="field"><span class="lbl">Dokumentai</span>${d.docs.map(x=>`<div class="spread small"><span>${esc(x.name)}${x.no?" · "+esc(x.no):""}</span><span class="pill ${docState(x)==="bad"?"s-rejected":docState(x)==="warn"?"s-requested":"s-delivered"}">${x.until?(docState(x)==="bad"?"Pasibaigė ":"Iki ")+fmtD(x.until):"Galioja"}</span></div>`).join("")}</div>
     ${(d.absences||[]).filter(a=>a.to>=isoAdd(0)).map(a=>`<div class="warnbox">${ABS[a.reason]}: ${fmtD(a.from)} – ${fmtD(a.to)}</div>`).join("")}

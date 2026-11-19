@@ -27,7 +27,7 @@ export function Shell({ title, name, tabs, children }: { title: string; name: st
 }
 
 export const STATUS_LT: Record<string, [string, string]> = {
-  scheduled: ["Suplanuota", "p-info"], picked_up: ["Vaikas paimtas", "p-accent"], delivered: ["Nuvežta", "p-ok"],
+  scheduled: ["Suplanuota", "p-info"], picked_up: ["Keleivis paimtas", "p-accent"], delivered: ["Nuvežta", "p-ok"],
   cancelled: ["Atšaukta", "p-bad"], no_show: ["Neatvyko", "p-bad"],
   pending: ["Laukia patvirtinimo", "p-warn"], active: ["Galioja", "p-ok"], rejected: ["Atmesta", "p-bad"], ended: ["Baigta", "p-bad"],
 };

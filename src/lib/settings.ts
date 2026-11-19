@@ -18,6 +18,8 @@ export type Settings = {
   bid_close_day: number;
   // Grafikas
   handover_min: number;
+  handover_adult: number;
+  handover_senior: number;
   deadhead_min: number;
   gap_min: number;
   day_limit_h: number;
@@ -69,6 +71,8 @@ export const DEFAULT_SETTINGS: Settings = {
   commit9_pct: 10,
   bid_close_day: 25,
   handover_min: 14,
+  handover_adult: 6,
+  handover_senior: 14,
   deadhead_min: 14,
   gap_min: 10,
   day_limit_h: 7.5,
@@ -105,7 +109,7 @@ export function withDefaults(data: unknown): Settings {
 export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][] }[] = [
   { title: "Ilgalaikių užsakymų kaina", fields: [
     ["minute_rate", "Automobilio minutė, €"], ["km_rate", "Kilometras, €"], ["empty_km", "Tušti km iki paėmimo"],
-    ["share2", "Vaiko dalis, kai vežami 2, %"], ["share3", "Vaiko dalis, kai vežami 3, %"], ["share4", "Vaiko dalis, kai vežami 4, %"],
+    ["share2", "Keleivio dalis, kai vežami 2, %"], ["share3", "Keleivio dalis, kai vežami 3, %"], ["share4", "Keleivio dalis, kai vežami 4, %"],
     ["commit3_pct", "Nuolaida įsipareigojus 3 mėn., %"], ["commit9_pct", "Nuolaida įsipareigojus 9 mėn., %"],
   ]},
   { title: "Paklausa ir aukcionas", fields: [
@@ -114,9 +118,9 @@ export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][
   ]},
   { title: "Darbo laikas", fields: [
     ["morning_start", "Rytinio maršruto pradžia"], ["morning_end", "Rytinio maršruto pabaiga"], ["morning_deliver_by", "Visi nuvežti iki"],
-    ["morning_max_kids", "Vaikų rytiniame maršrute"], ["afternoon_start", "Popietės pradžia"], ["afternoon_end", "Popietės pabaiga"],
+    ["morning_max_kids", "Keleivių rytiniame maršrute"], ["afternoon_start", "Popietės pradžia"], ["afternoon_end", "Popietės pabaiga"],
     ["afternoon_max_trips", "Kelionių po pietų"], ["day_limit_h", "Darbo valandų per dieną"],
-    ["handover_min", "Parkavimas ir palyda, min"], ["deadhead_min", "Privažiavimas iki kito paėmimo, min"], ["gap_min", "Pertrauka tarp kelionių, min"],
+    ["handover_min", "Vaikas: parkavimas ir palyda, min"], ["handover_adult", "Suaugęs: išlaipinimas, min"], ["handover_senior", "Vyresnio amžiaus: palyda ir pagalba, min"], ["deadhead_min", "Privažiavimas iki kito paėmimo, min"], ["gap_min", "Pertrauka tarp kelionių, min"],
   ]},
   { title: "Atšaukimas ir priemokos", fields: [
     ["cancel_hours", "Vėlyvas atšaukimas, likus mažiau nei val."], ["late_cancel_pct", "Vėlyvo atšaukimo mokestis, %"],

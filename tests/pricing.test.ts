@@ -38,3 +38,11 @@ test("Vilniaus laikas: žiemą UTC+2, vasarą UTC+3", () => {
   assert.equal(vilniusToDate("2026-12-01", "07:15").toISOString(), "2026-12-01T05:15:00.000Z");
   assert.equal(vilniusToDate("2026-07-01", "07:15").toISOString(), "2026-07-01T04:15:00.000Z");
 });
+
+test("suaugusiam be palydos – trumpesnis laikas ir pigiau, vyresnio amžiaus kaip vaikui", async () => {
+  const { blockMin } = await import("../src/lib/pricing");
+  assert.equal(blockMin(S, 14, "adult"), 14 + 6 + 14 + 10);
+  assert.equal(blockMin(S, 14, "senior"), blockMin(S, 14, "child"));
+  const child = quoteSubscription(S, [], req), adult = quoteSubscription(S, [], { ...req, passenger: "adult" });
+  assert.ok(adult.ok && child.ok && adult.monthly < child.monthly);
+});

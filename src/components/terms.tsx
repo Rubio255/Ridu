@@ -1,5 +1,5 @@
 import { saveConsents } from "@/app/actions";
-import { CONSENTS, FULL_TERMS_URL, TERMS, TERMS_VERSION } from "@/lib/terms";
+import { CONSENTS, FULL_TERMS_URL, TERMS, TERMS_VERSION, isRequired } from "@/lib/terms";
 import type { ConsentState } from "@/lib/consents";
 
 export function TermsList() {
@@ -15,17 +15,17 @@ export function TermsList() {
 }
 
 // Sutikimai: atskiri, iš anksto nepažymėti. Pažymėta lieka tik tai, ką klientas jau patvirtino šioje versijoje.
-export function ConsentForm({ state, next, submit }: { state: ConsentState; next?: string; submit: string }) {
+export function ConsentForm({ state, next, submit, hasKids = true }: { state: ConsentState; next?: string; submit: string; hasKids?: boolean }) {
   return (
     <form action={saveConsents} className="card">
       <h2 className="font-bold">Sutikimai</h2>
       {next && <input type="hidden" name="next" value={next} />}
       {CONSENTS.map((c) => {
-        const on = !!state[c.key]?.granted && state[c.key]?.version === TERMS_VERSION;
+        const on = !!state[c.key]?.granted && state[c.key]?.version === TERMS_VERSION, req = isRequired(c, hasKids);
         return (
           <label key={c.key} className="flex items-start gap-3">
-            <input type="checkbox" name={c.key} defaultChecked={on} required={c.required} className="mt-1 h-5 w-5 flex-none" />
-            <span>{c.label} <span className={`text-xs ${c.required ? "text-[var(--bad)]" : "muted"}`}>{c.required ? "privaloma" : "savanoriška"}</span></span>
+            <input type="checkbox" name={c.key} defaultChecked={on} required={req} className="mt-1 h-5 w-5 flex-none" />
+            <span>{c.label} <span className={`text-xs ${req ? "text-[var(--bad)]" : "muted"}`}>{req ? "privaloma" : c.key === "guardian" ? "jei vežame vaiką" : "savanoriška"}</span></span>
           </label>
         );
       })}

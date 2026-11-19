@@ -3,16 +3,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { requireOwner, requireProfile, requireStaff, requireDriver, loadSettings, type Profile } from "@/lib/auth";
-import { bestDriverQuote, loadDrivers, affectedTrips, absenceOn, ABSENCE_LT } from "@/lib/drivers";
+import { bestDriverQuote, loadDrivers, affectedTrips, absenceOn, ABSENCE_LT, childOk } from "@/lib/drivers";
 import { offerNext } from "@/lib/offers";
 import { familyAlreadyPays } from "@/lib/fees-server";
 import { geocode, route } from "@/lib/maps";
-import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/pricing";
+import { quoteSubscription, blockMin, cancelFeePct, type SubLike, type PassengerType } from "@/lib/pricing";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { addDays, vilniusToday, vilniusToDate, toMin, fmtTime } from "@/lib/time";
 import { generateTrips } from "@/lib/trips";
-import { CONSENTS, TERMS_VERSION } from "@/lib/terms";
-import { loadConsents } from "@/lib/consents";
+import { CONSENTS, TERMS_VERSION, isRequired } from "@/lib/terms";
+import { loadConsents, clientHasKids } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
 import { DAYS } from "@/lib/time";
 
@@ -26,15 +26,15 @@ export async function signOut() {
 
 async function existingSubs(): Promise<SubLike[]> {
   const { data } = await supabaseAdmin().from("subscriptions")
-    .select("id, weekdays, period, pickup_time, extra_kids, drive_min, status").in("status", ["active", "pending"]);
+    .select("id, weekdays, period, pickup_time, extra_kids, drive_min, status, passenger_type").in("status", ["active", "pending"]);
   const s = await loadSettings();
-  return (data ?? []).map((x) => ({ ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min) }));
+  return (data ?? []).map((x) => ({ ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min, x.passenger_type) }));
 }
 
 
 async function assertGuardian(childId: string, profileId: string) {
   const { data } = await supabaseAdmin().from("child_guardians").select("child_id").eq("child_id", childId).eq("profile_id", profileId).maybeSingle();
-  if (!data) throw new Error("Neturite teisės užsakyti šiam vaikui.");
+  if (!data) throw new Error("Neturite teisės užsakyti šiam keleiviui.");
 }
 
 type SubInput = { child_id: string; from_place_id: string; to_place_id: string; weekdays: number[]; period: "am" | "pm"; pickup_time: string; extra_kids: number; months: number };
@@ -44,20 +44,21 @@ async function computeQuote(me: string, input: SubInput) {
   const db = supabaseAdmin();
   const { data: places } = await db.from("places").select("id, address, lat, lng").in("id", [input.from_place_id, input.to_place_id]);
   const f = places?.find((p) => p.id === input.from_place_id), t = places?.find((p) => p.id === input.to_place_id);
-  if (!f || !t || f.id === t.id) return { s: DEFAULT_SETTINGS, q: null, r: null, driver: null, error: "Pasirinkite skirtingas paėmimo ir nuvežimo vietas." };
+  if (!f || !t || f.id === t.id) return { s: DEFAULT_SETTINGS, q: null, r: null, req: null, driver: null, error: "Pasirinkite skirtingas paėmimo ir nuvežimo vietas." };
   const s = await loadSettings();
   const time = input.period === "am" ? s.morning_start : input.pickup_time;
   const dep = vilniusToDate(addDays(vilniusToday(), 7), time);
   const r = await route(f.lat != null ? f : null, t.lat != null ? t : null, dep);
-  const req = { ...input, pickup_time: time, km: r.km, driveMin: r.min };
+  const { data: pax } = await db.from("children").select("passenger_type").eq("id", input.child_id).single();
+  const req = { ...input, pickup_time: time, km: r.km, driveMin: r.min, passenger: (pax?.passenger_type ?? "child") as PassengerType };
   // Kaina skaičiuojama pagal laisviausią tinkamą vairuotoją
   const best = await bestDriverQuote(s, req);
-  if (best) return { s, q: best.q, r, driver: best.driver as string | null, error: null };
+  if (best) return { s, q: best.q, r, req, driver: best.driver as string | null, error: null };
   // Nėra laisvo vairuotojo: kaina pagal visą parką, galimas tik pasiūlymas
   const subs = await existingSubs();
   const q = quoteSubscription(s, subs, req);
   if (q.ok) q.full = true;
-  return { s, q, r, driver: null as string | null, error: q.ok ? null : q.reason ?? "Negalima užsakyti." };
+  return { s, q, r, req, driver: null as string | null, error: q.ok ? null : q.reason ?? "Negalima užsakyti." };
 }
 
 /* ---------- Klientas (tėvai) ---------- */
@@ -73,7 +74,7 @@ export async function quoteAction(input: SubInput) {
 
 export async function createSubscription(input: SubInput, bidMonthly?: number) {
   const me = await requireProfile();
-  const { s, q, r, driver, error } = await computeQuote(me.id, input);
+  const { s, q, r, req, driver, error } = await computeQuote(me.id, input);
   if (!q || !r || error) return { ok: false as const, error };
   let monthly = q.monthly, perTrip = q.perTrip, isBid = false;
   if (q.full) {
@@ -85,7 +86,7 @@ export async function createSubscription(input: SubInput, bidMonthly?: number) {
     child_id: input.child_id, payer_id: me.id, from_place_id: input.from_place_id, to_place_id: input.to_place_id,
     weekdays: input.weekdays, period: input.period, pickup_time: input.period === "am" ? s.morning_start : input.pickup_time,
     extra_kids: input.extra_kids, months: input.months, km: r.km, drive_min: r.min,
-    per_trip_eur: perTrip, monthly_eur: monthly, is_bid: isBid, status: "pending", driver_id: driver,
+    per_trip_eur: perTrip, monthly_eur: monthly, is_bid: isBid, status: "pending", driver_id: driver, passenger_type: req?.passenger ?? "child",
   });
   if (e) return { ok: false as const, error: "Nepavyko išsaugoti. Bandykite dar kartą." };
   const when = `${input.weekdays.map((w) => DAYS[w - 1]).join(", ")} ${input.period === "am" ? "rytas" : input.pickup_time}`;
@@ -141,7 +142,7 @@ export async function decideSubscription(fd: FormData) {
   const db = supabaseAdmin();
   const { data: sub } = await db.from("subscriptions").select("child_id, pickup_time, monthly_eur, is_bid, driver_id, weekdays, child:children(first_name)").eq("id", id).single();
   if (!sub) return;
-  const name = (sub.child as unknown as { first_name: string } | null)?.first_name ?? "vaiko";
+  const name = (sub.child as unknown as { first_name: string } | null)?.first_name ?? "keleivio";
   if (decision === "active") {
     const time = String(fd.get("pickup_time") ?? "");
     const driverId = String(fd.get("driver_id") ?? "") || sub.driver_id;
@@ -168,9 +169,9 @@ export async function decideSubscription(fd: FormData) {
 }
 
 const STATUS_MSG: Record<string, [string, string]> = {
-  picked_up: ["Vaikas paimtas", "paimtas ir vežamas"],
-  delivered: ["Vaikas nuvežtas", "saugiai nuvežtas"],
-  no_show: ["Vaikas neatvyko", "nebuvo paėmimo vietoje"],
+  picked_up: ["Keleivis paimtas", "paimtas ir vežamas"],
+  delivered: ["Keleivis nuvežtas", "saugiai nuvežtas"],
+  no_show: ["Keleivis neatvyko", "nebuvo paėmimo vietoje"],
 };
 
 export async function setTripStatus(fd: FormData) {
@@ -181,7 +182,7 @@ export async function setTripStatus(fd: FormData) {
   const db = supabaseAdmin();
   const { data: t } = await db.from("trips").update({ status }).eq("id", id).select("child_id, pickup_at, to_label, child:children(first_name)").single();
   if (t) {
-    const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Vaikas";
+    const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Keleivis";
     const [title, verb] = STATUS_MSG[status];
     await notifyGuardians(t.child_id, title, `${name} ${verb}${status === "delivered" ? ` (${t.to_label})` : ""}, ${fmtTime(new Date().toISOString())}.`);
   }
@@ -208,6 +209,13 @@ export async function assignTrip(fd: FormData) {
   await requireOwner();
   const id = String(fd.get("id")), driverId = String(fd.get("driver_id") ?? "");
   if (!driverId) return;
+  const db0 = supabaseAdmin();
+  const [{ data: tr }, { data: dr }] = await Promise.all([
+    db0.from("trips").select("child:children(passenger_type)").eq("id", id).single(),
+    db0.from("drivers").select("child_qr_verified, child_seats").eq("profile_id", driverId).single(),
+  ]);
+  const pt = (tr?.child as unknown as { passenger_type?: PassengerType } | null)?.passenger_type ?? "child";
+  if (pt === "child" && !(dr && childOk(dr))) throw new Error("Šis vairuotojas neturi patikrinto QR kodo darbui su vaikais ar vaikiškų kėdučių.");
   const { data: t } = await supabaseAdmin().from("trips").update({ driver_id: driverId }).eq("id", id).select("pickup_at, to_label").single();
   if (t) await notifyProfiles([driverId], "Jums priskirta kelionė", `${whenLt(t.pickup_at)} į ${t.to_label}.`, "/vairuotojas");
   revalidatePath("/savininkas"); revalidatePath("/vairuotojas");
@@ -238,6 +246,7 @@ export async function updateDriver(fd: FormData) {
   const patch: Record<string, unknown> = {};
   if (fd.has("payout_pct")) { const v = String(fd.get("payout_pct")).trim(); patch.payout_pct = v === "" ? null : Math.min(100, Math.max(0, parseFloat(v.replace(",", ".")))); }
   if (fd.has("active")) patch.active = fd.get("active") === "1";
+  if (fd.has("child_flags")) { patch.child_qr_verified = fd.get("child_qr_verified") === "on"; patch.child_seats = fd.get("child_seats") === "on"; }
   await supabaseAdmin().from("drivers").update(patch).eq("profile_id", id);
   revalidatePath("/savininkas", "layout");
 }
@@ -289,13 +298,33 @@ export async function setClientActive(fd: FormData) {
 export async function addChild(fd: FormData) {
   await requireOwner();
   const db = supabaseAdmin();
+  const pt = String(fd.get("passenger_type") ?? "child") as PassengerType;
+  if (!["child", "adult", "senior"].includes(pt)) throw new Error("Neteisingas keleivio tipas.");
   const { data: c } = await db.from("children").insert({
-    first_name: String(fd.get("first_name")), birth_year: Number(fd.get("birth_year")) || null,
-    seat: String(fd.get("seat") ?? "Kėdutė"), notes: String(fd.get("notes") ?? "") || null,
+    first_name: String(fd.get("first_name")), birth_year: Number(fd.get("birth_year")) || null, passenger_type: pt,
+    seat: pt === "child" ? String(fd.get("seat") ?? "Kėdutė") : null, notes: String(fd.get("notes") ?? "") || null,
   }).select("id").single();
   const guardians = fd.getAll("guardians").map(String).filter(Boolean);
   if (c && guardians.length) await db.from("child_guardians").insert(guardians.map((g) => ({ child_id: c.id, profile_id: g })));
   revalidatePath("/savininkas/klientai");
+}
+
+// Klientas pats prideda suaugusį keleivį: save arba kitą žmogų (pvz., tėvus). Vaikus įrašo MB.
+// Suaugusiųjų sveikatos ar judumo duomenys nerenkami.
+export async function addPassenger(fd: FormData) {
+  const me = await requireProfile();
+  const self = fd.get("who") === "self", name = String(fd.get("first_name") ?? "").trim();
+  if (!name) throw new Error("Įrašykite vardą.");
+  if (!self && fd.get("consent") !== "on") throw new Error("Patvirtinkite, kad keleivis sutinka būti vežamas.");
+  const dropoff = !self && fd.get("dropoff") === "handover" ? "handover" : "alone";
+  const db = supabaseAdmin();
+  const { data: c } = await db.from("children").insert({
+    first_name: name, passenger_type: fd.get("senior") === "on" ? "senior" : "adult", is_self: self, dropoff,
+    handover_to: dropoff === "handover" ? String(fd.get("handover_to") ?? "").trim() || null : null,
+    consent_at: self ? null : new Date().toISOString(), notes: String(fd.get("notes") ?? "").trim() || null, seat: null,
+  }).select("id").single();
+  if (c) await db.from("child_guardians").insert({ child_id: c.id, profile_id: me.id });
+  revalidatePath("/tevai", "layout");
 }
 
 export async function saveSettings(fd: FormData) {
@@ -339,8 +368,8 @@ export async function requestSubscriptionChange(fd: FormData) {
 export async function saveConsents(fd: FormData) {
   const me = await requireProfile();
   const cur = await loadConsents(me.id);
-  const rows = CONSENTS.map((c) => ({ c, granted: fd.get(c.key) === "on" }));
-  if (rows.some(({ c, granted }) => c.required && !granted)) throw new Error("Pažymėkite visus privalomus punktus.");
+  const rows = CONSENTS.map((c) => ({ c, granted: fd.get(c.key) === "on" })), kids = await clientHasKids(me.id);
+  if (rows.some(({ c, granted }) => isRequired(c, kids) && !granted)) throw new Error("Pažymėkite visus privalomus punktus.");
   const changed = rows.filter(({ c, granted }) => cur[c.key]?.granted !== granted || cur[c.key]?.version !== TERMS_VERSION)
     .map(({ c, granted }) => ({ profile_id: me.id, key: c.key, granted, terms_version: TERMS_VERSION }));
   if (changed.length) await supabaseAdmin().from("consents").insert(changed);
@@ -415,7 +444,7 @@ export async function cancelForProvider(fd: FormData) {
   const why = a ? ABSENCE_LT[a.reason].toLowerCase() : "vairuotojas negali vežti";
   await db.from("trips").update({ status: "cancelled", cancel_fee_pct: 0, credit_eur: t.price_eur, status_note: `Atšaukta dėl vairuotojo (${why}). Mokestis netaikomas, kaina įskaitoma į sąskaitą.` }).eq("id", id);
   await db.from("trip_offers").update({ status: "withdrawn" }).eq("trip_id", id).eq("status", "pending");
-  const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Vaiko";
+  const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Keleivio";
   await notifyGuardians(t.child_id, "Kelionė atšaukta", `${name} kelionė ${whenLt(t.pickup_at)} atšaukta, nes vairuotojas negali vežti (${why}). Mokestis netaikomas, ${eurLt(t.price_eur)} įskaitysime į sąskaitą.`);
   revalidatePath("/savininkas", "layout"); revalidatePath("/tevai");
 }

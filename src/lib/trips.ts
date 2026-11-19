@@ -22,7 +22,7 @@ export async function generateTrips(subId?: string, days = 28) {
       rows.push({
         subscription_id: sb.id, child_id: sb.child_id, payer_id: sb.payer_id, driver_id: sb.driver_id,
         from_label: sb.from.label, to_label: sb.to.label, from_address: sb.from.address, to_address: sb.to.address,
-        pickup_at: at.toISOString(), block_min: blockMin(s, sb.drive_min), price_eur: Number(sb.per_trip_eur) * (1 + sb.extra_kids),
+        pickup_at: at.toISOString(), block_min: blockMin(s, sb.drive_min, sb.passenger_type), price_eur: Number(sb.per_trip_eur) * (1 + sb.extra_kids),
       });
     }
   }

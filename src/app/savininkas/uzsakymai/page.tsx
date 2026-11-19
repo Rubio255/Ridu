@@ -14,7 +14,7 @@ export default async function Page() {
     .select("*, child:children(first_name), payer:profiles(full_name, email, phone), from:places!subscriptions_from_place_id_fkey(label, address), to:places!subscriptions_to_place_id_fkey(label, address)")
     .in("status", ["pending", "active"]).order("created_at");
   const subs = data ?? [];
-  const lite: SubLike[] = subs.map((x) => ({ ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min) }));
+  const lite: SubLike[] = subs.map((x) => ({ ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min, x.passenger_type) }));
   const pending = subs.filter((x) => x.status === "pending").sort((a, b) => Number(b.is_bid) - Number(a.is_bid) || b.monthly_eur - a.monthly_eur);
   const active = subs.filter((x) => x.status === "active");
   const hours = [13, 14, 15, 16, 17, 18];
@@ -26,7 +26,7 @@ export default async function Page() {
         <b>{x.payer.full_name || x.payer.email} · {x.child.first_name}{x.extra_kids ? ` +${x.extra_kids}` : ""} · {x.weekdays.map((w: number) => DAYS[w - 1]).join(", ")} · {x.period === "am" ? "rytas" : String(x.pickup_time).slice(0, 5)}</b>
         <span className="num font-bold">{eur(x.monthly_eur)}/mėn.</span>
       </div>
-      <div className="text-sm muted">{x.from.label} → {x.to.label} · {Number(x.km).toFixed(1)} km, {x.drive_min} min kelio · {eur(x.per_trip_eur)} už kelionę vienam vaikui · {x.months} mėn.{x.is_bid ? " · aukciono pasiūlymas" : ""} · vairuotojas {dname(x.driver_id)}</div>
+      <div className="text-sm muted">{x.from.label} → {x.to.label} · {Number(x.km).toFixed(1)} km, {x.drive_min} min kelio · {eur(x.per_trip_eur)} už kelionę vienam keleiviui · {x.months} mėn.{x.is_bid ? " · aukciono pasiūlymas" : ""} · vairuotojas {dname(x.driver_id)}</div>
       {x.owner_note && <div className="rounded-lg bg-[var(--warn-bg)] p-2 text-sm font-semibold text-[var(--warn)]">{x.owner_note}</div>}
       {x.status === "pending" ? (
         <form action={decideSubscription} className="flex flex-wrap items-end gap-2">
@@ -54,7 +54,7 @@ export default async function Page() {
           {pending.length ? pending.map((x) => <Row key={x.id} x={x} />) : <p className="text-sm muted">Naujų prašymų nėra.</p>}</section>
         <section className="card content-start"><h2 className="font-bold">Užimtumas</h2>
           <div className="overflow-x-auto"><table><thead><tr><th></th>{DAYS.slice(0, 5).map((d) => <th key={d}>{d}</th>)}</tr></thead><tbody>
-            <tr><td>Rytas, vaikai</td>{[1, 2, 3, 4, 5].map((w) => { const n = morningKids(lite, w); return <td key={w}><span className={`pill ${pill(n, s.morning_max_kids)}`}>{n}/{s.morning_max_kids}</span></td>; })}</tr>
+            <tr><td>Rytas, keleiviai</td>{[1, 2, 3, 4, 5].map((w) => { const n = morningKids(lite, w); return <td key={w}><span className={`pill ${pill(n, s.morning_max_kids)}`}>{n}/{s.morning_max_kids}</span></td>; })}</tr>
             <tr><td>Popietė, kel.</td>{[1, 2, 3, 4, 5].map((w) => { const n = afternoonTrips(lite, w); return <td key={w}><span className={`pill ${pill(n, s.afternoon_max_trips)}`}>{n}/{s.afternoon_max_trips}</span></td>; })}</tr>
             {hours.map((h) => <tr key={h}><td>{h}:00</td>{[1, 2, 3, 4, 5].map((w) => { const o = hourOccupancy(lite, w, h); return <td key={w}><span className={`pill ${o > 0.95 ? "p-bad" : o >= 0.5 ? "p-warn" : "p-ok"}`}>{Math.round(o * 100)}%</span></td>; })}</tr>)}
           </tbody></table></div>

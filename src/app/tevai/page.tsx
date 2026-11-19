@@ -31,7 +31,7 @@ export default async function Page() {
         <h1 className="text-xl font-bold">Sveiki{me.full_name ? `, ${me.full_name.split(" ")[0]}` : ""}</h1>
         <Link href="/tevai/uzsakyti" className="btn btn-primary">+ Ilgalaikis užsakymas</Link>
       </div>
-      {!kids?.length && <div className="card muted">Jūsų paskyroje dar nėra vaikų. Vairuotojas juos įrašys pagal sutartį.</div>}
+      {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje „Keleiviai ir adresai“. Vaikus įrašo MB pagal sutartį.</div>}
 
       <section className="card">
         <h2 className="font-bold">Mano ilgalaikiai užsakymai</h2>

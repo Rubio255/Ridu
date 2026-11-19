@@ -1,3 +1,4 @@
+import { PASSENGER_LT, type PassengerType } from "@/lib/pricing";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { inviteClient, addChild, setClientActive } from "@/app/actions";
 import { CONSENTS, TERMS_VERSION } from "@/lib/terms";
@@ -40,23 +41,24 @@ export default async function Page() {
         ))}
       </section>
       <section className="card content-start">
-        <h2 className="font-bold">Pridėti vaiką</h2>
+        <h2 className="font-bold">Pridėti keleivį</h2>
         <form action={addChild} className="grid gap-3">
+          <label className="grid gap-1 text-sm font-semibold muted">Keleivis<select name="passenger_type" className="input">{Object.entries(PASSENGER_LT).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="grid gap-1 text-sm font-semibold muted">Vardas<input name="first_name" required className="input" /></label>
             <label className="grid gap-1 text-sm font-semibold muted">Gimimo metai<input name="birth_year" type="number" className="input" /></label>
-            <label className="grid gap-1 text-sm font-semibold muted">Sėdynė<select name="seat" className="input"><option>Kėdutė</option><option>Paaukštinimas</option><option>Nereikia</option></select></label>
+            <label className="grid gap-1 text-sm font-semibold muted">Sėdynė (vaikui)<select name="seat" className="input"><option>Kėdutė</option><option>Paaukštinimas</option><option>Nereikia</option></select></label>
           </div>
-          <label className="grid gap-1 text-sm font-semibold muted">Pastabos (alergijos, kam galima perduoti)<textarea name="notes" rows={2} className="input" /></label>
-          <fieldset className="grid gap-1"><legend className="text-sm font-semibold muted">Globėjai (abu tėvai gali turėti atskiras paskyras)</legend>
+          <label className="grid gap-1 text-sm font-semibold muted">Pastabos (vaikui – alergijos, kam galima perduoti; suaugusiam – be sveikatos duomenų)<textarea name="notes" rows={2} className="input" /></label>
+          <fieldset className="grid gap-1"><legend className="text-sm font-semibold muted">Kas gali užsakyti (vaikui – globėjai, abu tėvai gali turėti atskiras paskyras)</legend>
             {(clients ?? []).map((c) => <label key={c.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="guardians" value={c.id} />{c.full_name || c.email}</label>)}
           </fieldset>
-          <button className="btn btn-primary">Pridėti vaiką</button>
+          <button className="btn btn-primary">Pridėti keleivį</button>
         </form>
-        <h2 className="pt-2 font-bold">Vaikai</h2>
+        <h2 className="pt-2 font-bold">Keleiviai</h2>
         {(kids ?? []).map((k) => (
-          <div key={k.id} className="border-t border-[var(--line)] pt-3"><b>{k.first_name}</b>{k.birth_year ? `, ${k.birth_year} m.` : ""} <span className="text-xs muted">{k.seat}</span>
-            <div className="text-sm muted">Globėjai: {k.guardians.map((g: { profile: { full_name: string; email: string } }) => g.profile.full_name || g.profile.email).join(", ") || "nėra"}</div></div>
+          <div key={k.id} className="border-t border-[var(--line)] pt-3"><b>{k.first_name}</b>{k.birth_year ? `, ${k.birth_year} m.` : ""} <span className="text-xs muted">{k.passenger_type === "child" ? k.seat : PASSENGER_LT[k.passenger_type as PassengerType]}</span>
+            <div className="text-sm muted">{k.passenger_type === "child" ? "Globėjai" : "Užsakyti gali"}: {k.guardians.map((g: { profile: { full_name: string; email: string } }) => g.profile.full_name || g.profile.email).join(", ") || "nėra"}</div></div>
         ))}
       </section>
     </div>

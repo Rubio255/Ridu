@@ -1,3 +1,4 @@
+import { PASSENGER_LT, type PassengerType } from "@/lib/pricing";
 import { loadSettings } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { setTripStatus, cancelTrip, moveTrip, assignTrip } from "@/app/actions";
@@ -12,7 +13,7 @@ const hm = (m: number) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, 
 export async function Calendar({ driverId }: { driverId?: string }) {
   const s = await loadSettings();
   const from = new Date(Date.now() - 12 * 36e5), until = new Date(Date.now() + 8 * 864e5);
-  let tq = supabaseAdmin().from("trips").select("*, child:children(first_name, notes), payer:profiles!trips_payer_id_fkey(full_name, phone)")
+  let tq = supabaseAdmin().from("trips").select("*, child:children(first_name, notes, passenger_type, dropoff, handover_to), payer:profiles!trips_payer_id_fkey(full_name, phone)")
     .gte("pickup_at", from.toISOString()).lte("pickup_at", until.toISOString()).neq("status", "cancelled").order("pickup_at");
   if (driverId) tq = tq.eq("driver_id", driverId);
   const [{ data: trips }, drivers] = await Promise.all([tq, driverId ? Promise.resolve([]) : loadDrivers()]);
@@ -42,9 +43,11 @@ export async function Calendar({ driverId }: { driverId?: string }) {
               <div key={t.id} className="grid grid-cols-[56px_1fr] gap-3 border-t border-[var(--line)] pt-3">
                 <div className="num text-lg font-bold">{fmtTime(t.pickup_at)}<div className="text-xs font-normal muted">{t.block_min} min</div></div>
                 <div className="grid min-w-0 gap-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><b>{t.child.first_name}</b><Pill s={t.status} /></span><span className="num font-bold">{eur(t.price_eur)}</span></div>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><b>{t.child.first_name}</b>{t.child.passenger_type !== "child" && <span className="pill p-info">{PASSENGER_LT[t.child.passenger_type as PassengerType]}</span>}<Pill s={t.status} /></span><span className="num font-bold">{eur(t.price_eur)}</span></div>
                   <div className="break-words font-semibold">{t.from_label} <span className="muted font-normal">→</span> {t.to_label}</div>
                   <div className="text-sm muted">{t.from_address} → {t.to_address} · moka {t.payer?.full_name}{t.payer?.phone ? `, ${t.payer.phone}` : ""}</div>
+                  {t.child.passenger_type === "senior" && <div className="text-sm">Palydėti iki durų ir padėti įlipti.</div>}
+                  {t.child.passenger_type !== "child" && t.child.dropoff === "handover" && <div className="text-sm">Perduoti{t.child.handover_to ? `: ${t.child.handover_to}` : " asmeniui"}.</div>}
                   {t.child.notes && <div className="text-sm">Pastaba: {t.child.notes}</div>}
                   {!driverId && (
                     <form action={assignTrip} className="flex flex-wrap items-center gap-2 text-sm"><input type="hidden" name="id" value={t.id} />

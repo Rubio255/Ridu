@@ -1,10 +1,11 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase/server";
-import { blockMin, quoteSubscription, type SubLike } from "./pricing";
+import { blockMin, quoteSubscription, type SubLike, type PassengerType } from "./pricing";
 import type { Settings } from "./settings";
 import { vilniusToday, weekday } from "./time";
 
 export type DriverRow = { profile_id: string; cert_no: string; car: string | null; seats: string | null; workdays: number[]; payout_pct: number | null; active: boolean;
+  child_qr_verified: boolean; child_seats: boolean;
   profile: { full_name: string; email: string | null; phone: string | null }; docs: { id: string; name: string; number: string | null; valid_until: string | null }[];
   absences: { id: string; reason: "sick" | "repair" | "other"; starts_on: string; ends_on: string; note: string | null }[] };
 
@@ -16,14 +17,17 @@ export async function loadDrivers(): Promise<DriverRow[]> {
 export const docState = (until: string | null) => !until ? "ok" : until < vilniusToday() ? "bad" : (new Date(until).getTime() - Date.now()) / 864e5 < 30 ? "warn" : "ok";
 export const payoutPct = (s: Settings, d: { payout_pct: number | null }) => d.payout_pct ?? s.driver_pct;
 // Užsakymai skiriami tik aktyviems vairuotojams su galiojančiais dokumentais
+// Vaikus veža tik vairuotojai su patikrintu QR kodu darbui su vaikais ir kėdutėmis
+export const childOk = (d: Pick<DriverRow, "child_qr_verified" | "child_seats">) => d.child_qr_verified && d.child_seats;
+export const canCarry = (d: DriverRow, passenger: PassengerType = "child") => passenger !== "child" || childOk(d);
 export const assignable = (d: DriverRow) => d.active && !d.docs.some((x) => docState(x.valid_until) === "bad");
 
 export async function subsByDriver(s: Settings) {
-  const { data } = await supabaseAdmin().from("subscriptions").select("id, weekdays, period, pickup_time, extra_kids, drive_min, status, driver_id").in("status", ["active", "pending"]);
+  const { data } = await supabaseAdmin().from("subscriptions").select("id, weekdays, period, pickup_time, extra_kids, drive_min, status, driver_id, passenger_type").in("status", ["active", "pending"]);
   const map = new Map<string, SubLike[]>();
   for (const x of data ?? []) {
     if (!x.driver_id) continue;
-    const lite = { ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min) };
+    const lite = { ...x, pickup_time: String(x.pickup_time).slice(0, 5), block_min: blockMin(s, x.drive_min, x.passenger_type) };
     map.set(x.driver_id, [...(map.get(x.driver_id) ?? []), lite]);
   }
   return map;
@@ -32,7 +36,7 @@ export async function subsByDriver(s: Settings) {
 // Parenka laisviausią tinkamą vairuotoją ir jo užimtumu pagrįstą kainą
 export async function bestDriverQuote(s: Settings, input: Parameters<typeof quoteSubscription>[2], ignoreId?: string) {
   const [drivers, bySub] = await Promise.all([loadDrivers(), subsByDriver(s)]);
-  const cands = drivers.filter((d) => assignable(d) && input.weekdays.every((w) => d.workdays.includes(w)));
+  const cands = drivers.filter((d) => assignable(d) && canCarry(d, input.passenger) && input.weekdays.every((w) => d.workdays.includes(w)));
   const results = cands.map((d) => {
     const subs = (bySub.get(d.profile_id) ?? []).filter((x) => x.id !== ignoreId);
     const q = quoteSubscription(s, subs, input);
@@ -63,8 +67,10 @@ export async function substitutesFor(s: Settings, drivers: DriverRow[], t: TripL
   const day1 = new Date(day0.getTime() + 2 * 864e5); day0.setTime(day0.getTime() - 864e5);
   const { data } = await supabaseAdmin().from("trips").select("id, pickup_at, block_min, driver_id, status").eq("status", "scheduled").gte("pickup_at", day0.toISOString()).lt("pickup_at", day1.toISOString());
   const wd = weekday(vilniusDay(t.pickup_at));
+  const { data: pax } = await supabaseAdmin().from("trips").select("child:children(passenger_type)").eq("id", t.id).single();
+  const passenger = ((pax?.child as unknown as { passenger_type?: PassengerType } | null)?.passenger_type ?? "child");
   const start = new Date(t.pickup_at).getTime(), end = start + t.block_min * 6e4, gap = s.gap_min * 6e4;
-  return drivers.filter((d) => d.profile_id !== t.driver_id && assignable(d) && d.workdays.includes(wd) && !absenceOn(d, t.pickup_at))
+  return drivers.filter((d) => d.profile_id !== t.driver_id && assignable(d) && canCarry(d, passenger) && d.workdays.includes(wd) && !absenceOn(d, t.pickup_at))
     .filter((d) => !(data ?? []).some((o) => o.driver_id === d.profile_id && o.id !== t.id && new Date(o.pickup_at).getTime() < end + gap && start < new Date(o.pickup_at).getTime() + o.block_min * 6e4 + gap))
     .map((d) => ({ d, load: (data ?? []).filter((o) => o.driver_id === d.profile_id && vilniusDay(o.pickup_at) === vilniusDay(t.pickup_at)).reduce((a, o) => a + o.block_min, 0) }))
     .filter((x) => x.load + t.block_min <= s.day_limit_h * 60) // neviršyti darbo dienos ribos

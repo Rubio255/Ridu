@@ -25,8 +25,8 @@ export function SubForm({ kids, places, hours }: {
     return () => clearTimeout(t);
   }, [f]);
 
-  if (!kids.length) return <div className="card muted">Jūsų paskyroje dar nėra vaikų. Vairuotojas juos įrašys pagal sutartį.</div>;
-  if (places.length < 2) return <div className="card">Pirmiausia pridėkite bent du adresus skiltyje „Vaikai ir adresai“ (pvz. namus ir mokyklą).</div>;
+  if (!kids.length) return <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje „Keleiviai ir adresai“. Vaikus įrašo MB pagal sutartį.</div>;
+  if (places.length < 2) return <div className="card">Pirmiausia pridėkite bent du adresus skiltyje „Keleiviai ir adresai“ (pvz. namus ir mokyklą ar darbą).</div>;
 
   const set = (patch: Partial<typeof f>) => setF((x) => ({ ...x, ...patch }));
   const from = places.find((p) => p.id === f.from_place_id), to = places.find((p) => p.id === f.to_place_id);
@@ -43,7 +43,7 @@ export function SubForm({ kids, places, hours }: {
       <div className="card">
         <h1 className="text-xl font-bold">Ilgalaikis užsakymas</h1>
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
-        <label className="grid gap-1 text-sm font-semibold muted">Vaikas
+        <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold muted">Iš kur paimti
@@ -81,12 +81,12 @@ export function SubForm({ kids, places, hours }: {
           <>
             <div className="grid gap-2 rounded-lg bg-[var(--surface-2)] p-3 num">
               <div className="flex justify-between text-sm"><span>{f.weekdays.length} k./sav., apie {q.tripsPerMonth} kelionės per mėn.</span><span>{eur(q.perTrip)} / kel.</span></div>
-              <div className="flex justify-between text-sm"><span>Kelionės per mėnesį{q.kids > 1 ? ` (${q.kids} vaikai)` : ""}</span><span>{eur(q.monthly)}</span></div>
+              <div className="flex justify-between text-sm"><span>Kelionės per mėnesį{q.kids > 1 ? ` (${q.kids} keleiviai)` : ""}</span><span>{eur(q.monthly)}</span></div>
               <div className="flex justify-between text-sm"><span>Platformos mokestis šeimai{q.platformFee ? "" : " (jau mokate)"}</span><span>{q.platformFee ? eur(q.platformFee) : "–"}</span></div>
               <div className="flex justify-between border-t border-[var(--line)] pt-2 font-bold"><span>Iš viso per mėnesį</span><span className="text-xl">{eur(q.monthly + q.platformFee)}</span></div>
             </div>
             <p className="text-sm muted">Platformos mokestis apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Pirmą ir paskutinį mėnesį jis skaičiuojamas pagal dienas.</p>
-            {f.period === "am" && <p className="text-sm muted">Rytinis maršrutas bendras keliems vaikams. Tikslų paėmimo laiką nurodys vairuotojas.</p>}
+            {f.period === "am" && <p className="text-sm muted">Rytinis maršrutas bendras keliems keleiviams. Tikslų paėmimo laiką nurodys vairuotojas.</p>}
             {from && to && <a className="text-sm underline" href={mapsLink(from.address, to.address)} target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>}
             {q.full ? (
               <>

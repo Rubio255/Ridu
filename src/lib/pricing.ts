@@ -12,7 +12,11 @@ export type SubLike = {
   status: string;
 };
 
-export const blockMin = (s: Settings, driveMin: number) => driveMin + s.handover_min + s.deadhead_min + s.gap_min;
+export type PassengerType = "child" | "adult" | "senior";
+export const PASSENGER_LT: Record<PassengerType, string> = { child: "Vaikas", adult: "Suaugęs", senior: "Vyresnio amžiaus" };
+// Laikas išlaipinti (kainodara v6): vaikas ir vyresnio amžiaus su palyda iki durų, suaugęs be palydos
+export const handoverFor = (s: Settings, t: PassengerType = "child") => t === "adult" ? s.handover_adult : t === "senior" ? s.handover_senior : s.handover_min;
+export const blockMin = (s: Settings, driveMin: number, t: PassengerType = "child") => driveMin + handoverFor(s, t) + s.deadhead_min + s.gap_min;
 
 export function inAfternoon(s: Settings, time: string) {
   const m = toMin(time);
@@ -53,10 +57,10 @@ export type Quote = {
 export function quoteSubscription(
   s: Settings,
   existing: SubLike[],
-  req: { weekdays: number[]; period: "am" | "pm"; pickup_time: string; extra_kids: number; months: number; km: number; driveMin: number },
+  req: { weekdays: number[]; period: "am" | "pm"; pickup_time: string; extra_kids: number; months: number; km: number; driveMin: number; passenger?: PassengerType },
 ): Quote {
   const kids = Math.min(4, 1 + Math.max(0, req.extra_kids));
-  const bm = blockMin(s, req.driveMin);
+  const bm = blockMin(s, req.driveMin, req.passenger);
   const empty: Quote = { ok: false, full: false, perTrip: 0, monthly: 0, tripsPerMonth: 0, kids,
     internal: { carTrip: 0, occupancy: 0, multiplier: 1, commitPct: 0, blockMin: bm } };
   const wds = req.weekdays.filter((w) => w >= 1 && w <= 5);

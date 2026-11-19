@@ -1,13 +1,13 @@
 // Paslaugų sąlygos (trumpa versija). Šaltinis: /mnt/project-files/salygos/salygos-aplikacijai.md
 // PROJEKTAS: prieš naudojimą turi peržiūrėti teisininkas. Pakeitus tekstą, padidinkite TERMS_VERSION:
 // tada visi klientai bus paprašyti sutikti iš naujo.
-export const TERMS_VERSION = "2026-11-19.3";
+export const TERMS_VERSION = "2026-11-19.4";
 export const FULL_TERMS_URL = "https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
 
 export const TERMS: [string, string][] = [
   [
     "Paslauga",
-    "Pavežame jūsų vaiką sutartu maršrutu Vilniuje ir perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."
+    "Pavežame jus, jūsų vaiką ar artimąjį (pvz. vyresnio amžiaus tėvus) sutartu maršrutu Vilniuje. Vaikus perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."
   ],
   [
     "Laikas",
@@ -39,11 +39,15 @@ export const TERMS: [string, string][] = [
   ],
   [
     "Nutraukimas",
-    "Abi pusės gali nutraukti sutartį bet kada, įspėjusios prieš 30 d.; sumokėta už neįvykusias keliones grąžinama. Mes galime nutraukti iš karto, jei vaikas elgiasi agresyviai ar pavojingai, padaroma tyčinė žala ir ji neatlyginama, nemokama ilgiau kaip 14 d., tėvų konfliktai trikdo paslaugą, niekas nepasitinka vaiko ar grasinama vairuotojui."
+    "Abi pusės gali nutraukti sutartį bet kada, įspėjusios prieš 30 d.; sumokėta už neįvykusias keliones grąžinama. Mes galime nutraukti iš karto, jei keleivis (vaikas ar suaugęs) elgiasi agresyviai ar pavojingai, yra apsvaigęs ar priekabiauja, padaroma tyčinė žala ir ji neatlyginama, nemokama ilgiau kaip 14 d., tėvų konfliktai trikdo paslaugą, niekas nepasitinka vaiko ar grasinama vairuotojui."
   ],
   [
     "Duomenys",
-    "Jūsų ir vaiko duomenis naudojame tik pavežimui ir atsiskaitymui, sveikatos duomenis – tik jūsų sutikimu. Galite juos peržiūrėti, ištaisyti ar ištrinti."
+    "Jūsų ir keleivio duomenis naudojame tik pavežimui ir atsiskaitymui, sveikatos duomenis – tik jūsų sutikimu. Galite juos peržiūrėti, ištaisyti ar ištrinti."
+  ],
+  [
+    "Suaugę keleiviai",
+    "Užsakydami kitam suaugusiajam, patvirtinate, kad jis sutinka keliauti ir kad jo duomenis pateikiate su jo žinia. Už savo elgesį ir žalą suaugęs keleivis atsako pats. Važinėjame įprastais automobiliais be specialios įrangos, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų; sulankstomas priemones (vaikštynė, sulankstomas vežimėlis) vežame bagažinėje. Tai ne medicininis pervežimas."
   ],
   [
     "Skundai",
@@ -84,3 +88,6 @@ export const CONSENTS: { key: ConsentKey; label: string; required: boolean }[] =
     "required": false
   }
 ];
+
+// Atstovo patvirtinimas privalomas tik tiems klientams, kurie užsako vaikams
+export const isRequired = (c: { key: ConsentKey; required: boolean }, hasKids: boolean) => c.key === "guardian" ? hasKids : c.required;

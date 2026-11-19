@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase/server";
-import { CONSENTS, TERMS_VERSION, type ConsentKey } from "./terms";
+import { CONSENTS, TERMS_VERSION, isRequired, type ConsentKey } from "./terms";
 
 export type ConsentState = Partial<Record<ConsentKey, { granted: boolean; version: string; at: string }>>;
 
@@ -10,4 +10,10 @@ export async function loadConsents(profileId: string): Promise<ConsentState> {
 }
 
 // Ar klientas sutiko su visais privalomais punktais dabartinėje sąlygų versijoje
-export const hasRequired = (s: ConsentState) => CONSENTS.filter((c) => c.required).every((c) => s[c.key]?.granted && s[c.key]?.version === TERMS_VERSION);
+export const hasRequired = (s: ConsentState, hasKids = true) => CONSENTS.filter((c) => isRequired(c, hasKids)).every((c) => s[c.key]?.granted && s[c.key]?.version === TERMS_VERSION);
+
+// Ar klientas yra bent vieno vaiko keleivio globėjas
+export async function clientHasKids(profileId: string) {
+  const { data } = await supabaseAdmin().from("child_guardians").select("child:children!inner(passenger_type)").eq("profile_id", profileId).eq("child.passenger_type", "child").limit(1);
+  return (data ?? []).length > 0;
+}

@@ -1,4 +1,4 @@
-# Ridu · vaikų pavėžėjimas
+# Ridu · pavežimas Vilniuje pagal sutartį
 
 Ilgalaikių vaikų pavėžėjimo užsakymų aplikacija Vilniuje (Next.js + Supabase + Vercel).
 
