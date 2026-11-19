@@ -19,6 +19,7 @@
   --brand:#5fc2b4; --brand-fg:#062420; --accent:#f5c53a; --accent-fg:#1e1a00;
   --ok:#6fd49c; --ok-bg:#163526; --warn:#f0c062; --warn-bg:#3a2e10; --bad:#f2958c; --bad-bg:#3d1916; --info:#8dbcf0; --info-bg:#172a40; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.2}
@@ -61,7 +62,7 @@ main .wrap{padding-block:20px 48px;display:grid;gap:16px}
 .s-confirmed{background:var(--info-bg);color:var(--info)}
 .s-picked_up{background:var(--accent);color:var(--accent-fg)}
 .s-delivered{background:var(--ok-bg);color:var(--ok)}
-.s-rejected,.s-cancelled{background:var(--bad-bg);color:var(--bad)}
+.s-rejected,.s-cancelled,.s-no_show{background:var(--bad-bg);color:var(--bad)}
 .tag{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
 .price{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums}
 .btn{font:inherit;font-weight:600;font-size:.88rem;border-radius:8px;padding:7px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface-2);color:var(--fg)}
@@ -146,7 +147,7 @@ td.num,th.num{text-align:right}
 const FUEL_L_100 = 4.8, FUEL_PRICE = 1.8; // Corolla Touring 2.0 hibridas, miestas
 const DEADHEAD = 1.0; // tušti km iki paėmimo vietos ~ tiek pat kiek kelionė
 const DAYS = ["Pr","An","Tr","Kt","Pn","Še","Se"];
-const STATUS = {requested:"Laukia patvirtinimo",confirmed:"Patvirtinta",picked_up:"Vaikas paimtas",delivered:"Nuvežta",rejected:"Atmesta",cancelled:"Atšaukta"};
+const STATUS = {no_show:"Neatvyko",requested:"Laukia patvirtinimo",confirmed:"Patvirtinta",picked_up:"Vaikas paimtas",delivered:"Nuvežta",rejected:"Atmesta",cancelled:"Atšaukta"};
 const KIND = {home:"Namai",kindergarten:"Darželis",school:"Mokykla",activity:"Būrelis",other:"Kita"};
 
 const PRICING_DEFAULTS = {
@@ -279,9 +280,12 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||!S.trips||!S.v8) {S=seed();S.v8=true}
+if(MODE==="admin"){document.querySelector('.role').hidden=true;document.querySelector('.logo small').textContent="Administravimas";}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
-let tripFilter="all";
+let tripFilter="all", moving=null;
+if(S.users) Object.assign(users,S.users);
+function toLocalInput(iso){const d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
 let role="rasa", tab=null;
 try{role=localStorage.getItem(KEY+"-role")||"rasa"}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+"-role",role)}catch(e){}}
@@ -303,6 +307,7 @@ function isOwner(){return role==="owner"}
 
 function render(){
   if(MODE==="client"&&role==="owner")role="rasa";
+  if(MODE==="admin")role="owner";
   $("#roleSel").value=role;
   const tabs=TABS[isOwner()?"owner":"parent"].filter(t=>t[0]!=="book"||S.pricing.single_enabled);
   if(!tabs.find(t=>t[0]===tab)) tab=tabs[0][0];
@@ -317,8 +322,12 @@ function tripRow(t,{owner=false,conflict=false}={}){
   let actions="";
   if(owner){
     if(t.status==="requested") actions=`<button class="btn ok" data-act="confirmed" data-id="${t.id}">Patvirtinti</button><button class="btn bad" data-act="rejected" data-id="${t.id}">Atmesti</button>`;
-    else if(t.status==="confirmed") actions=`<button class="btn primary" data-act="picked_up" data-id="${t.id}">Vaikas paimtas</button>`;
+    else if(t.status==="confirmed") actions=`<button class="btn primary" data-act="picked_up" data-id="${t.id}">Vaikas paimtas</button><button class="btn" data-act="no_show" data-id="${t.id}">Neatvyko</button>`;
     else if(t.status==="picked_up") actions=`<button class="btn ok" data-act="delivered" data-id="${t.id}">Nuvežtas</button>`;
+    if(["requested","confirmed"].includes(t.status)){
+      if(moving===t.id) actions=`<label class="small" for="mv_${t.id}">Naujas laikas</label><input type="datetime-local" id="mv_${t.id}" value="${toLocalInput(t.at)}" style="font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn primary" data-move-save="${t.id}">Išsaugoti</button><button class="btn" data-move-cancel="1">Atšaukti keitimą</button>`;
+      else actions+=`<button class="btn" data-move="${t.id}">Perkelti</button><button class="btn bad" data-act="cancelled" data-id="${t.id}">Atšaukti kelionę</button>`;
+    }
   } else if((t.status==="requested"||t.status==="confirmed")&&d>new Date()){
     const fee=cancelFeePct(t);
     actions=`<button class="btn" data-act="cancelled" data-id="${t.id}">Atšaukti${fee?` (mokestis ${fee}%)`:""}</button>`;
@@ -481,9 +490,24 @@ function vClients(v){
     <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Vienos d. kel.</th><th class="num">Įvykdyta</th><th class="num">Vienos dienos, €</th><th class="num">Paketo nuolaida</th><th class="num">Ilgalaikiai, €</th><th class="num">Mokėti, €</th></tr></thead>
     <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}</td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num">${r.sub?eur(r.sub):"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
     <p class="small muted" style="margin:0">Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
+    <div class="grid2"><form class="card" id="newClient"><h2>Naujas klientas</h2>
+      <div class="two"><div class="field"><label for="ncName">Vardas</label><input id="ncName" required></div><div class="field"><label for="ncContract">Sutarties nr.</label><input id="ncContract" placeholder="S-2026-04"></div></div>
+      <div class="two"><div class="field"><label for="ncEmail">El. paštas</label><input id="ncEmail" type="email"></div><div class="field"><label for="ncPhone">Telefonas</label><input id="ncPhone"></div></div>
+      <button class="btn primary" type="submit">Pridėti klientą</button><span class="small muted">Tikroje versijoje klientas gaus kvietimą el. paštu.</span></form>
+    <form class="card" id="newChild"><h2>Naujas vaikas</h2>
+      <div class="two"><div class="field"><label for="nkName">Vardas</label><input id="nkName" required></div><div class="field"><label for="nkAge">Amžius</label><input id="nkAge" type="number" min="1" max="18" value="7"></div></div>
+      <div class="field"><label for="nkSeat">Sėdynė</label><select id="nkSeat"><option>Kėdutė</option><option>Paaukštinimas</option><option>Nereikia</option></select></div>
+      <div class="field"><label for="nkNotes">Pastabos (alergijos, kam galima perduoti)</label><input id="nkNotes"></div>
+      <div class="field"><span class="lbl">Globėjai</span>${Object.values(users).map(u=>`<label class="row small" for="ng_${u.id}"><input type="checkbox" id="ng_${u.id}" name="ng" value="${u.id}"> ${esc(u.name)}</label>`).join("")}</div>
+      <button class="btn primary" type="submit">Pridėti vaiką</button></form></div>
     <div class="card"><h2>Vaikai ir globėjai</h2>${S.children.map(c=>`<div class="child"><div class="spread"><b>${esc(c.name)}, ${c.age} m.</b><span class="tag">${esc(c.booster)}</span></div><div class="small muted">Globėjai: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}</div>`;
 }
 
+document.addEventListener("submit",e=>{
+  if(e.target.id==="newClient"){e.preventDefault();const id="u"+Date.now();users[id]={id,name:$("#ncName").value.trim(),contract:$("#ncContract").value.trim()||"–",email:$("#ncEmail").value.trim(),phone:$("#ncPhone").value.trim()};S.users={...users};save();render();toast("Klientas pridėtas")}
+  if(e.target.id==="newChild"){e.preventDefault();const g=[...document.querySelectorAll('input[name=ng]:checked')].map(x=>x.value);if(!g.length){toast("Pažymėkite bent vieną globėją");return}
+    S.children.push({id:"c"+Date.now(),name:$("#nkName").value.trim(),age:+$("#nkAge").value||0,booster:$("#nkSeat").value,notes:$("#nkNotes").value.trim(),guardians:g});save();render();toast("Vaikas pridėtas")}
+});
 function vIncome(v){
   const p=S.pricing, mt=monthTrips().filter(t=>billable(t)&&!t.long);
   const gross=Object.keys(users).reduce((a,u)=>{const ts=mt.filter(t=>t.payer===u),s=ts.reduce((x,t)=>x+t.price,0);return a+s*(1-pkgPct(ts.length)/100)},0);
@@ -708,11 +732,15 @@ document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;render();return}
   const fl=e.target.closest("[data-filter]");if(fl){tripFilter=fl.dataset.filter;render();return}
   const go=e.target.closest("[data-go]");if(go){e.preventDefault();tab=go.dataset.go;render();return}
+  const mv=e.target.closest("[data-move]");if(mv){moving=mv.dataset.move;render();return}
+  if(e.target.closest("[data-move-cancel]")){moving=null;render();return}
+  const ms=e.target.closest("[data-move-save]");if(ms){const t=S.trips.find(x=>x.id===ms.dataset.moveSave),v=$("#mv_"+ms.dataset.moveSave).value;const d=new Date(v);
+    if(t&&!isNaN(d)){const prob=slotProblem(d,t.min,t.id);t.at=d.toISOString();moving=null;save();render();toast(prob?"Perkelta, bet: "+prob:"Kelionė perkelta. Tėvams išsiųstas pranešimas.")}return}
   const a=e.target.closest("[data-act]");
   if(a){const t=S.trips.find(x=>x.id===a.dataset.id);if(!t)return;
     if(a.dataset.act==="cancelled"&&a.dataset.sure!=="1"){a.dataset.sure="1";a.textContent="Tikrai atšaukti?";a.classList.add("bad");return}
     t.status=a.dataset.act;save();render();
-    toast({confirmed:"Patvirtinta. Tėvams išsiųstas pranešimas.",rejected:"Atmesta. Tėvams išsiųstas pranešimas.",picked_up:"Tėvams pranešta, kad vaikas paimtas.",delivered:"Tėvams pranešta, kad vaikas nuvežtas.",cancelled:"Kelionė atšaukta."}[t.status])}
+    toast({confirmed:"Patvirtinta. Tėvams išsiųstas pranešimas.",rejected:"Atmesta. Tėvams išsiųstas pranešimas.",picked_up:"Tėvams pranešta, kad vaikas paimtas.",delivered:"Tėvams pranešta, kad vaikas nuvežtas.",cancelled:"Kelionė atšaukta. Tėvams išsiųstas pranešimas.",no_show:"Pažymėta, kad vaikas neatvyko."}[t.status])}
 });
 $("#roleSel").addEventListener("change",e=>{role=e.target.value;tab=null;save();render()});
 $("#resetBtn").addEventListener("click",e=>{const b=e.currentTarget;if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Tikrai atkurti?";return}
