@@ -133,13 +133,15 @@ const KIND = {home:"Namai",kindergarten:"Darželis",school:"Mokykla",activity:"B
 
 const PRICING_DEFAULTS = {
   // Kainos su PVM, pagal kainodaros skaičiavimą
-  base_fee:25, included_km:8, per_km:1.2, included_wait_min:10, per_wait_min:0.5, extra_child_fee:15, peak_pct:0, min_price:0,
+  base_fee:28.5, included_km:8, per_km:1.2, included_wait_min:10, per_wait_min:0.5, extra_child_fee:17.1, peak_pct:0, min_price:0,
   handover_min:14, deadhead_min:14,
   weekend_pct:25, holiday_pct:25, surcharge_approved:false,
   pkg1_from:8, pkg1_pct:0, pkg2_from:16, pkg2_pct:0,
+  morning_start_h:7.25, morning_end_h:8.5, morning_max_kids:3, morning_deliver_h:8,
+  afternoon_start_h:13.5, afternoon_end_h:18.5, afternoon_max_trips:5,
   day_limit_h:7.5, break_start_h:12, break_min:0, gap_min:10,
   // Abonementai (kainodara v2)
-  minute_rate:0.48, km_rate:0.12, empty_km:6, share2:60, share3:45, share4:37,
+  minute_rate:0.56, km_rate:0.12, empty_km:6, share2:60, share3:45, share4:37,
   occ_m1:0.90, occ_m2:1.00, occ_m3:1.15, occ_m4:1.30, commit3_pct:5, commit9_pct:10,
   bid_step_pct:5, bid_close_day:25, single_enabled:false,
   cancel_hours:12, late_cancel_pct:50, very_late_hours:2, very_late_pct:100,
@@ -258,7 +260,7 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
-if(!S||!S.trips||!S.v7) {S=seed();S.v7=true}
+if(!S||!S.trips||!S.v8) {S=seed();S.v8=true}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 let tripFilter="all";
@@ -381,7 +383,8 @@ function vBook(v){
     const q=quote(S.pricing,{k,wait,extra:+$("#bExtra").value||0,peak:isPeak(at),handover:ho,day:dt});
     const wds=[...document.querySelectorAll('input[name=wd]:checked')].length;
     const need=minutes(k)+ho+wait+S.pricing.deadhead_min+S.pricing.gap_min, over=!isNaN(at)&&dayLoad(at,need)>S.pricing.day_limit_h*60;
-    const prob=isNaN(at)?"":slotProblem(at,minutes(k)+ho+wait);
+    const hhmm=$("#bTime").value||"00:00";
+    const prob=isNaN(at)?"":(!isMorning(hhmm)&&!inAfternoon(hhmm))?`Vairuotojas dirba ${windowsText()}.`:slotProblem(at,minutes(k)+ho+wait);
     const full=over||!!prob;
     box.dataset.full=full?"1":"";
     const surNote=dt!=="workday"&&!S.pricing.surcharge_approved?`<div class="warnbox">${dt==="holiday"?"Šventinė diena":"Savaitgalis"}: kaina bus patikslinta, kai vairuotojas patvirtins priemoką.</div>`:"";
@@ -478,7 +481,7 @@ function vIncome(v){
     ["Savaitgaliai ir šventės",[["weekend_pct","Savaitgalio priemoka, %"],["holiday_pct","Švenčių dienų priemoka, %"]]],
     ["Abonementų kaina",[["minute_rate","Automobilio minutė, €"],["km_rate","Kilometras, €"],["empty_km","Tušti km iki paėmimo"],["share2","Vaiko dalis, kai vežami 2, %"],["share3","Vaiko dalis, kai vežami 3, %"],["share4","Vaiko dalis, kai vežami 4, %"],["commit3_pct","Nuolaida įsipareigojus 3 mėn., %"],["commit9_pct","Nuolaida įsipareigojus 9 mėn., %"]]],
     ["Paklausa ir aukcionas",[["occ_m1","Koeficientas, kai valanda užimta iki 50%"],["occ_m2","50–80%"],["occ_m3","80–95%"],["occ_m4","Virš 95% (aukciono minimumas)"],["bid_step_pct","Mažiausias pasiūlymo žingsnis, %"],["bid_close_day","Pasiūlymai baigiasi mėnesio dieną"]]],
-    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["cancel_hours","Vėlyvas atšaukimas, likus mažiau nei val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"],["very_late_hours","Labai vėlyvas, likus mažiau nei val."],["very_late_pct","Labai vėlyvo ar neatvykus mokestis, %"]]],
+    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["morning_start_h","Rytinio maršruto pradžia, val. (7.25 = 07:15)"],["morning_end_h","Rytinio maršruto pabaiga, val."],["morning_deliver_h","Visi nuvežti iki, val."],["morning_max_kids","Vaikų rytiniame maršrute"],["afternoon_start_h","Popietės pradžia, val."],["afternoon_end_h","Popietės pabaiga, val."],["afternoon_max_trips","Kelionių po pietų"],["cancel_hours","Vėlyvas atšaukimas, likus mažiau nei val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"],["very_late_hours","Labai vėlyvas, likus mažiau nei val."],["very_late_pct","Labai vėlyvo ar neatvykus mokestis, %"]]],
     ["Pastovios išlaidos per mėnesį ir tikslas",[["cost_insurance","Draudimas, €"],["cost_wash","Plovimas, €"],["cost_service","Priežiūra, €"],["vat_pct","PVM, %"],["tax_pct","Mokesčiai MB, % nuo pelno"],["target","Tikslas į rankas, €"]]]
   ];
   const fields=groups.flatMap(g=>g[1]);
@@ -510,19 +513,29 @@ function winOcc(wd,hour,ignore){return S.subs.filter(s=>s.id!==ignore&&SUB_ON.in
 function occMult(o){const p=S.pricing;return o>=0.95?p.occ_m4:o>=0.8?p.occ_m3:o>=0.5?p.occ_m2:p.occ_m1}
 function capacityMonth(){return 0}
 function subscribedMonth(){return 0}
+const hToMin=h=>Math.round(h*60), tToMin=t=>{const [a,b]=t.split(":");return +a*60+ +b};
+const hmT=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+function isMorning(time){const p=S.pricing,m=tToMin(time);return m>=hToMin(p.morning_start_h)&&m<hToMin(p.morning_end_h)}
+function inAfternoon(time){const p=S.pricing,m=tToMin(time);return m>=hToMin(p.afternoon_start_h)&&m<hToMin(p.afternoon_end_h)}
+function windowsText(){const p=S.pricing;return `rytais ${hmT(hToMin(p.morning_start_h))}–${hmT(hToMin(p.morning_end_h))} ir po pietų ${hmT(hToMin(p.afternoon_start_h))}–${hmT(hToMin(p.afternoon_end_h))}`}
+function morningKids(wd,ignore){return S.subs.filter(s=>s.id!==ignore&&SUB_ON.includes(s.status)&&s.weekdays.includes(wd)&&isMorning(s.time)).reduce((a,s)=>a+1+(s.extra||0),0)}
+function afternoonTrips(wd,ignore){return S.subs.filter(s=>s.id!==ignore&&SUB_ON.includes(s.status)&&s.weekdays.includes(wd)&&inAfternoon(s.time)).length}
 function subQuote({from,to,weekdays,time,extra=0,months=1}){
   const p=S.pricing, f=S.places.find(x=>x.id===from), t=S.places.find(x=>x.id===to);
   if(!f||!t||f.id===t.id||!weekdays.length) return null;
   const k=km(f,t), cm=carMin(k), hour=+time.slice(0,2), kids=Math.min(4,1+extra);
   const carTrip=p.minute_rate*cm+p.km_rate*(k+p.empty_km);
   const share=kids===1?1:p["share"+kids]/100, childTrip=carTrip*share;
-  const occ=Math.max(...weekdays.map(w=>winOcc(w,hour)));
-  const occAfter=Math.max(...weekdays.map(w=>winOcc(w,hour)+cm/60));
-  const full=occ>0.95||occAfter>1, mult=full?p.occ_m4:occMult(occ);
+  const morning=isMorning(time), outside=!morning&&!inAfternoon(time);
+  let occ,full;
+  if(morning){occ=Math.max(...weekdays.map(w=>morningKids(w)))/p.morning_max_kids;full=Math.max(...weekdays.map(w=>morningKids(w)+kids))>p.morning_max_kids}
+  else{occ=Math.max(...weekdays.map(w=>winOcc(w,hour)));const occAfter=Math.max(...weekdays.map(w=>winOcc(w,hour)+cm/60));
+    full=occ>0.95||occAfter>1||Math.max(...weekdays.map(w=>afternoonTrips(w)))>=p.afternoon_max_trips}
+  const mult=full?p.occ_m4:occMult(occ);
   const commit=months>=9?p.commit9_pct:months>=3?p.commit3_pct:0;
   const perWeek=weekdays.length, n=Math.round(perWeek*52/12);
   const perChild=Math.round(childTrip*mult*(1-commit/100)*perWeek*52/12);
-  return {k,cm,carTrip,childTrip,kids,share,occ,mult,commit,n,perWeek,perChild,monthly:perChild*kids,perTrip:r2(perChild/(perWeek*52/12)),full,f,t};
+  return {k,cm,carTrip,childTrip,kids,share,occ,mult,commit,n,perWeek,perChild,monthly:perChild*kids,perTrip:r2(perChild/(perWeek*52/12)),full,morning,outside,f,t};
 }
 
 // Patvirtinti ilgalaikiai užsakymai automatiškai sukuria keliones 14 dienų į priekį
@@ -550,7 +563,9 @@ function vSub(v){
     <div class="two"><div class="field"><label for="sFrom">Iš kur paimti</label><select id="sFrom">${opt}</select></div>
     <div class="field"><label for="sTo">Kur nuvežti</label><select id="sTo">${opt}</select></div></div>
     <div class="field"><span class="lbl">Savaitės dienos</span><div class="days">${DAYS.slice(0,5).map((d,i)=>`<label><input type="checkbox" name="swd" value="${i+1}" id="swd${i+1}" ${i===1||i===3?"checked":""}><span>${d}</span></label>`).join("")}</div></div>
-    <div class="two"><div class="field"><label for="sTime">Paėmimo laikas</label><input type="time" id="sTime" value="14:00"></div>
+    <div class="two"><div class="field"><label for="sPeriod">Kada</label><select id="sPeriod"><option value="pm">Po pietų (${hmT(hToMin(P.afternoon_start_h))}–${hmT(hToMin(P.afternoon_end_h))})</option><option value="am">Rytinis maršrutas (nuvežama iki ${hmT(hToMin(P.morning_deliver_h))})</option></select></div>
+    <div class="field" id="sTimeField"><label for="sTime">Paėmimo laikas</label><input type="time" id="sTime" value="14:00" min="${hmT(hToMin(P.afternoon_start_h))}" max="${hmT(hToMin(P.afternoon_end_h))}"></div></div>
+    <div class="two">
     <div class="field"><label for="sExtra">Brolis ar sesuo kartu</label><input type="number" id="sExtra" min="0" max="3" value="0"></div></div>
     <div class="field"><label for="sMonths">Įsipareigojimas</label><select id="sMonths"><option value="1">1 mėnuo</option><option value="3">3 mėnesiai</option><option value="9">9 mėnesiai</option></select></div>
     <div id="subQuote" aria-live="polite"></div>
@@ -559,23 +574,25 @@ function vSub(v){
     <div class="small muted">${esc(S.places.find(p=>p.id===s.from).label)} → ${esc(S.places.find(p=>p.id===s.to).label)}</div>
     <div class="small">${eur(s.monthly)} / mėn.${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · jūsų pasiūlymas":""}</div></div>`).join("")||'<div class="empty">Ilgalaikių užsakymų dar nėra.</div>'}
     <p class="small muted" style="margin:0">Galiojantys užsakymai pratęsiami ta pačia kaina.</p></div></div>`;
-  if(pl.length>3) $("#sFrom").selectedIndex=3; if(pl.length>4) $("#sTo").selectedIndex=4;
-  const read=()=>({child:$("#sChild").value,from:$("#sFrom").value,to:$("#sTo").value,time:$("#sTime").value||"15:30",extra:+$("#sExtra").value||0,months:+$("#sMonths").value,weekdays:[...document.querySelectorAll('input[name=swd]:checked')].map(x=>+x.value)});
-  const upd=()=>{const q=subQuote(read()),box=$("#subQuote");
+  if(pl.length>4){$("#sFrom").selectedIndex=3;$("#sTo").selectedIndex=4}else if(pl.length>1){$("#sFrom").selectedIndex=pl.length-2;$("#sTo").selectedIndex=pl.length-1}
+  const read=()=>({child:$("#sChild").value,from:$("#sFrom").value,to:$("#sTo").value,time:$("#sPeriod").value==="am"?hmT(hToMin(P.morning_start_h)):($("#sTime").value||"14:00"),extra:+$("#sExtra").value||0,months:+$("#sMonths").value,weekdays:[...document.querySelectorAll('input[name=swd]:checked')].map(x=>+x.value)});
+  const upd=()=>{$("#sTimeField").hidden=$("#sPeriod").value==="am";const q=subQuote(read()),box=$("#subQuote");
     if(!q){box.innerHTML=`<p class="muted">Pasirinkite skirtingas vietas ir bent vieną dieną.</p>`;return}
+    if(q.outside){box.innerHTML=`<div class="warnbox">Vairuotojas dirba ${windowsText()}. Pasirinkite laiką šiame intervale.</div>`;return}
     const minBid=q.monthly, occTxt=Math.round(q.occ*100);
     box.innerHTML=`<div class="quote">
       <div class="line"><span>${q.perWeek} k./sav., apie ${q.n} kelionės per mėnesį</span><span>${eur(q.perTrip)} / kel.</span></div>
       <div class="line total"><span>Per mėnesį${q.kids>1?` (${q.kids} vaikai)`:""}</span><span class="price">${eur(q.monthly)}</span></div></div>
       <a class="small" href="${mapsUrl(q.f,q.t)}" target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>
-      ${q.full?`<div class="warnbox">Šis laikas užimtas. Galite pateikti pasiūlymą kitam mėnesiui iki ${P.bid_close_day} d., ir vairuotojas su jumis susisieks.</div>
+      ${q.morning?`<p class="small muted" style="margin:0">Rytinis maršrutas bendras keliems vaikams. Tikslų paėmimo laiką nurodys vairuotojas.</p>`:""}
+      ${q.full?`<div class="warnbox">${q.morning?"Rytinis maršrutas šiomis dienomis pilnas.":"Šis laikas užimtas."} Galite pateikti pasiūlymą kitam mėnesiui iki ${P.bid_close_day} d., ir vairuotojas su jumis susisieks.</div>
         <div class="field"><label for="sBid">Jūsų mėnesio kaina, € (ne mažiau ${eur(minBid)})</label><input type="number" id="sBid" step="1" min="${minBid}" value="${minBid}"></div>
         <button class="btn primary" type="submit">Pateikti pasiūlymą</button>`
       :`<button class="btn primary" type="submit">Užsakyti už ${eur(q.monthly)} / mėn.</button>`}
       <span class="small muted">Kaina nesikeičia visą įsipareigojimo laikotarpį.</span>`;
   };
   $("#subForm").addEventListener("input",e=>{if(e.target.id!=="sBid")upd()});upd();
-  $("#subForm").addEventListener("submit",e=>{e.preventDefault();const r=read(),q=subQuote(r);if(!q)return;
+  $("#subForm").addEventListener("submit",e=>{e.preventDefault();const r=read(),q=subQuote(r);if(!q||q.outside)return;
     let bid=null,monthly=q.monthly;
     if(q.full){bid=+$("#sBid").value;if(!(bid>=q.monthly)){toast(`Pasiūlymas turi būti bent ${eur(q.monthly)}`);return}monthly=bid}
     S.subs.push({id:"a"+Date.now(),payer:role,...r,status:"pending",perTrip:r2(monthly/q.kids/(q.perWeek*52/12)),monthly,bid});
@@ -585,7 +602,7 @@ function vSub(v){
 function vSubsOwner(v){
   const p=S.pricing;
   const act=S.subs.filter(s=>s.status==="active"), pend=S.subs.filter(s=>s.status==="pending").sort((a,b)=>(b.bid?1:0)-(a.bid?1:0)||b.monthly-a.monthly);
-  const hours=[7,8,13,14,15,16,17,18];
+  const hours=[13,14,15,16,17,18];
   const subRow=s=>`<div class="child"><div class="spread"><b>${esc(users[s.payer].name)} · ${esc(child(s.child).name)} · ${s.weekdays.map(w=>DAYS[w-1]).join(", ")} ${s.time}</b><span class="price">${eur(s.monthly)}/mėn.</span></div>
     <div class="small muted">${esc(S.places.find(x=>x.id===s.from).label)} → ${esc(S.places.find(x=>x.id===s.to).label)}${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · <b>aukciono pasiūlymas</b>":""}</div>
     ${s.status==="pending"?`<div class="row"><button class="btn ok" data-sub="active" data-id="${s.id}">Patvirtinti</button><button class="btn bad" data-sub="rejected" data-id="${s.id}">Atmesti</button></div>`:""}</div>`;
@@ -596,7 +613,9 @@ function vSubsOwner(v){
     <div class="stat"><span class="small muted">Aukcionas baigiasi</span><b>${p.bid_close_day} d.</b></div></div>
   <div class="grid2"><div class="card"><h2>Laukia sprendimo</h2><p class="small muted" style="margin:0">Aukciono pasiūlymai viršuje, surikiuoti nuo didžiausio.</p>${pend.map(subRow).join("")||'<div class="empty">Naujų prašymų nėra.</div>'}</div>
   <div class="card"><h2>Užimtumas pagal valandas</h2><div class="scroll"><table><thead><tr><th>Val.</th>${DAYS.slice(0,5).map(d=>`<th class="num">${d}</th>`).join("")}</tr></thead>
-  <tbody>${hours.map(h=>`<tr><td>${String(h).padStart(2,"0")}:00</td>${[1,2,3,4,5].map(w=>{const o=winOcc(w,h);return `<td class="num"><span class="pill ${o>0.95?"s-rejected":o>=0.5?"s-requested":"s-delivered"}">${Math.round(o*100)}%</span></td>`}).join("")}</tr>`).join("")}</tbody></table></div>
+  <tbody><tr><td>Rytas, vaikai</td>${[1,2,3,4,5].map(w=>{const n=morningKids(w);return `<td class="num"><span class="pill ${n>=p.morning_max_kids?"s-rejected":n?"s-requested":"s-delivered"}">${n}/${p.morning_max_kids}</span></td>`}).join("")}</tr>
+  <tr><td>Popietė, kelionės</td>${[1,2,3,4,5].map(w=>{const n=afternoonTrips(w);return `<td class="num"><span class="pill ${n>=p.afternoon_max_trips?"s-rejected":n?"s-requested":"s-delivered"}">${n}/${p.afternoon_max_trips}</span></td>`}).join("")}</tr>
+  ${hours.map(h=>`<tr><td>${String(h).padStart(2,"0")}:00</td>${[1,2,3,4,5].map(w=>{const o=winOcc(w,h);return `<td class="num"><span class="pill ${o>0.95?"s-rejected":o>=0.5?"s-requested":"s-delivered"}">${Math.round(o*100)}%</span></td>`}).join("")}</tr>`).join("")}</tbody></table></div>
   <p class="small muted" style="margin:0">Užimta automobilio laiko dalis kiekvienoje valandoje. Virš 95% laikas parduodamas aukcionu.</p></div></div>
   <div class="card"><h2>Galiojantys</h2>${act.map(subRow).join("")||'<div class="empty">Dar nėra.</div>'}</div>`;
 }
