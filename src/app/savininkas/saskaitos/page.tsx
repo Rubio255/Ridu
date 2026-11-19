@@ -12,14 +12,14 @@ export default async function Page() {
   const db = supabaseAdmin();
   const [{ data: subs }, { data: trips }, { data: clients }] = await Promise.all([
     db.from("subscriptions").select("payer_id, monthly_eur, km, weekdays").eq("status", "active"),
-    db.from("trips").select("payer_id, price_eur, status, cancel_fee_pct").gte("pickup_at", start.toISOString()).lt("pickup_at", end.toISOString()),
+    db.from("trips").select("payer_id, price_eur, status, cancel_fee_pct, credit_eur").gte("pickup_at", start.toISOString()).lt("pickup_at", end.toISOString()),
     db.from("profiles").select("id, full_name, email, contract_no").eq("role", "client"),
   ]);
   const rows = (clients ?? []).map((c) => {
     const ms = (subs ?? []).filter((x) => x.payer_id === c.id), ts = (trips ?? []).filter((t) => t.payer_id === c.id);
-    return { c, subs: ms.length, monthly: ms.reduce((a, x) => a + Number(x.monthly_eur), 0), done: ts.filter((t) => t.status === "delivered").length, cancelled: ts.filter((t) => t.status === "cancelled" || t.status === "no_show").length };
+    return { c, subs: ms.length, monthly: ms.reduce((a, x) => a + Number(x.monthly_eur), 0), done: ts.filter((t) => t.status === "delivered").length, cancelled: ts.filter((t) => t.status === "cancelled" || t.status === "no_show").length, credit: ts.reduce((a, t) => a + Number(t.credit_eur ?? 0), 0) };
   }).filter((r) => r.subs || r.done || r.cancelled);
-  const gross = rows.reduce((a, r) => a + r.monthly, 0);
+  const gross = rows.reduce((a, r) => a + Math.max(0, r.monthly - r.credit), 0);
   const vat = gross - gross / (1 + s.vat_pct / 100), net = gross - vat;
   // Vairuotojai patys moka už kurą ir automobilį; MB išmoka jiems dalį kainos be PVM
   const payouts = (await monthByDriver(s, await loadDrivers())).reduce((a, r) => a + r.payout, 0), fixed = s.mb_costs;
@@ -39,8 +39,8 @@ export default async function Page() {
       </section>
       <section className="card">
         <h2 className="font-bold">Sąskaitos klientams</h2>
-        <div className="overflow-x-auto"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th>Užsakymai</th><th>Nuvežta</th><th>Atšaukta</th><th>Mokėti / mėn.</th><th></th></tr></thead>
-          <tbody>{rows.map((r) => <tr key={r.c.id}><td>{r.c.full_name || r.c.email}</td><td>{r.c.contract_no ?? "–"}</td><td>{r.subs}</td><td>{r.done}</td><td>{r.cancelled}</td><td><b>{eur(r.monthly)}</b></td><td><form action={notifyInvoice}><input type="hidden" name="id" value={r.c.id} /><input type="hidden" name="amount" value={eur(r.monthly)} /><button className="btn">Pranešti apie sąskaitą</button></form></td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th>Užsakymai</th><th>Nuvežta</th><th>Atšaukta</th><th>Įskaityta</th><th>Mokėti / mėn.</th><th></th></tr></thead>
+          <tbody>{rows.map((r) => <tr key={r.c.id}><td>{r.c.full_name || r.c.email}</td><td>{r.c.contract_no ?? "–"}</td><td>{r.subs}</td><td>{r.done}</td><td>{r.cancelled}</td><td>{r.credit ? `−${eur(r.credit)}` : "–"}</td><td><b>{eur(Math.max(0, r.monthly - r.credit))}</b></td><td><form action={notifyInvoice}><input type="hidden" name="id" value={r.c.id} /><input type="hidden" name="amount" value={eur(Math.max(0, r.monthly - r.credit))} /><button className="btn">Pranešti apie sąskaitą</button></form></td></tr>)}</tbody></table></div>
         <p className="text-sm muted">Ilgalaikių užsakymų mėnesio kaina fiksuota. Vėlyvų atšaukimų mokesčiai pagal sutartį.</p>
       </section>
     </>

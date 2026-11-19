@@ -67,5 +67,6 @@ export async function substitutesFor(s: Settings, drivers: DriverRow[], t: TripL
   return drivers.filter((d) => d.profile_id !== t.driver_id && assignable(d) && d.workdays.includes(wd) && !absenceOn(d, t.pickup_at))
     .filter((d) => !(data ?? []).some((o) => o.driver_id === d.profile_id && o.id !== t.id && new Date(o.pickup_at).getTime() < end + gap && start < new Date(o.pickup_at).getTime() + o.block_min * 6e4 + gap))
     .map((d) => ({ d, load: (data ?? []).filter((o) => o.driver_id === d.profile_id && vilniusDay(o.pickup_at) === vilniusDay(t.pickup_at)).reduce((a, o) => a + o.block_min, 0) }))
+    .filter((x) => x.load + t.block_min <= s.day_limit_h * 60) // neviršyti darbo dienos ribos
     .sort((a, b) => a.load - b.load).map((x) => x.d);
 }

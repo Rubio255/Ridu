@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { requireOwner, requireProfile, requireStaff, requireDriver, loadSettings, type Profile } from "@/lib/auth";
-import { bestDriverQuote } from "@/lib/drivers";
+import { bestDriverQuote, loadDrivers, affectedTrips, absenceOn, ABSENCE_LT } from "@/lib/drivers";
+import { offerNext } from "@/lib/offers";
 import { geocode, route } from "@/lib/maps";
 import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/pricing";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
@@ -344,3 +345,76 @@ export async function saveConsents(fd: FormData) {
   revalidatePath("/tevai", "layout");
   if (fd.get("next") === "tevai") redirect("/tevai");
 }
+
+/* ---------- Liga, remontas ir pakaitos ---------- */
+
+// Vairuotojas (ar MB jo vardu) praneša apie ligą ar automobilio remontą
+export async function reportAbsence(fd: FormData) {
+  const me = await requireStaff();
+  const driverId = me.role === "owner" ? String(fd.get("driver_id")) : me.id;
+  const reason = String(fd.get("reason")), starts_on = String(fd.get("starts_on")), ends_on = String(fd.get("ends_on"));
+  if (!["sick", "repair", "other"].includes(reason) || !/^\d{4}-\d{2}-\d{2}$/.test(starts_on) || !/^\d{4}-\d{2}-\d{2}$/.test(ends_on) || ends_on < starts_on) throw new Error("Patikrinkite priežastį ir datas.");
+  await supabaseAdmin().from("driver_absences").insert({ driver_id: driverId, reason, starts_on, ends_on, note: String(fd.get("note") ?? "") || null });
+  const drivers = await loadDrivers();
+  const n = (await affectedTrips(drivers)).filter((t) => t.driver_id === driverId).length;
+  const name = drivers.find((d) => d.profile_id === driverId)?.profile.full_name ?? "Vairuotojas";
+  await notifyOwner(`${ABSENCE_LT[reason as "sick"]}: ${name}`, `${starts_on} – ${ends_on}. Kelionių be vairuotojo: ${n}.`, "/savininkas/pakaitos");
+  revalidatePath("/savininkas", "layout"); revalidatePath("/vairuotojas", "layout");
+}
+
+export async function deleteAbsence(fd: FormData) {
+  const me = await requireStaff();
+  let q = supabaseAdmin().from("driver_absences").delete().eq("id", String(fd.get("id")));
+  if (me.role === "driver") q = q.eq("driver_id", me.id);
+  await q;
+  revalidatePath("/savininkas", "layout"); revalidatePath("/vairuotojas", "layout");
+}
+
+// MB siunčia pasiūlymą konkrečiam laisvam vairuotojui (arba pirmam laisvam)
+export async function offerTrip(fd: FormData) {
+  await requireOwner();
+  await offerNext(String(fd.get("trip_id")), String(fd.get("driver_id") ?? "") || undefined);
+  revalidatePath("/savininkas/pakaitos");
+}
+
+export async function offerAllAffected() {
+  await requireOwner();
+  for (const t of await affectedTrips(await loadDrivers())) await offerNext(t.id);
+  revalidatePath("/savininkas/pakaitos");
+}
+
+// Pakaitinis vairuotojas atsako į pasiūlymą
+export async function respondOffer(fd: FormData) {
+  const me = await requireDriver();
+  const id = String(fd.get("id")), accept = fd.get("answer") === "yes";
+  const db = supabaseAdmin();
+  const { data: o } = await db.from("trip_offers").select("id, trip_id, status, expires_at, trip:trips(pickup_at, to_label, child_id, child:children(first_name))").eq("id", id).eq("driver_id", me.id).single();
+  if (!o || o.status !== "pending" || new Date(o.expires_at) < new Date()) { revalidatePath("/vairuotojas"); return; }
+  const trip = o.trip as unknown as { pickup_at: string; to_label: string; child_id: string; child: { first_name: string } };
+  await db.from("trip_offers").update({ status: accept ? "accepted" : "declined", answered_at: new Date().toISOString() }).eq("id", id);
+  if (accept) {
+    await db.from("trips").update({ driver_id: me.id, status_note: `Kelionę atliks kitas vairuotojas: ${me.full_name}` }).eq("id", o.trip_id);
+    await notifyGuardians(trip.child_id, "Pasikeitė vairuotojas", `${trip.child.first_name} kelionę ${whenLt(trip.pickup_at)} atliks ${me.full_name}.`);
+    await notifyOwner("Pakaita priimta", `${me.full_name} perėmė kelionę ${whenLt(trip.pickup_at)}.`, "/savininkas/pakaitos");
+  } else {
+    await offerNext(o.trip_id);
+  }
+  revalidatePath("/vairuotojas"); revalidatePath("/savininkas", "layout");
+}
+
+// Pakaitos nėra: kelionė atšaukiama dėl teikėjo, be mokesčio, kaina įskaitoma į kliento sąskaitą
+export async function cancelForProvider(fd: FormData) {
+  await requireOwner();
+  const id = String(fd.get("id"));
+  const db = supabaseAdmin();
+  const { data: t } = await db.from("trips").select("id, child_id, pickup_at, price_eur, status, driver_id, child:children(first_name)").eq("id", id).single();
+  if (!t || t.status !== "scheduled") return;
+  const a = absenceOn((await loadDrivers()).find((d) => d.profile_id === t.driver_id), t.pickup_at);
+  const why = a ? ABSENCE_LT[a.reason].toLowerCase() : "vairuotojas negali vežti";
+  await db.from("trips").update({ status: "cancelled", cancel_fee_pct: 0, credit_eur: t.price_eur, status_note: `Atšaukta dėl vairuotojo (${why}). Mokestis netaikomas, kaina įskaitoma į sąskaitą.` }).eq("id", id);
+  await db.from("trip_offers").update({ status: "withdrawn" }).eq("trip_id", id).eq("status", "pending");
+  const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Vaiko";
+  await notifyGuardians(t.child_id, "Kelionė atšaukta", `${name} kelionė ${whenLt(t.pickup_at)} atšaukta, nes vairuotojas negali vežti (${why}). Mokestis netaikomas, ${eurLt(t.price_eur)} įskaitysime į sąskaitą.`);
+  revalidatePath("/savininkas", "layout"); revalidatePath("/tevai");
+}
+const eurLt = (v: number) => `${Number(v).toFixed(2).replace(".", ",")} €`;

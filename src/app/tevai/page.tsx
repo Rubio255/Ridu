@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { cancelTrip, requestSubscriptionChange } from "@/app/actions";
 import { Pill } from "@/components/shell";
 import { cancelFeePct } from "@/lib/pricing";
@@ -17,6 +17,11 @@ export default async function Page() {
     sb.from("subscriptions").select("*, child:children(first_name), from:places!subscriptions_from_place_id_fkey(label), to:places!subscriptions_to_place_id_fkey(label)").in("status", ["pending", "active"]).order("created_at"),
     sb.from("child_guardians").select("child_id").eq("profile_id", me.id),
   ]);
+  // Priskirtas vairuotojas ir automobilis (tik vardas, automobilis ir valst. nr.)
+  const dids = [...new Set((trips ?? []).map((t) => t.driver_id).filter(Boolean))];
+  const { data: drv } = dids.length ? await supabaseAdmin().from("drivers").select("profile_id, car, plate, profile:profiles(full_name)").in("profile_id", dids) : { data: [] };
+  const driverLine = (id: string | null) => { const d = (drv ?? []).find((x) => x.profile_id === id); if (!d) return null; const p = d.profile as unknown as { full_name: string };
+    return `Vairuotojas ${p.full_name}${d.car ? ` · ${d.car}` : ""}${d.plate ? ` · ${d.plate}` : ""}`; };
   const byDay = new Map<string, typeof trips>();
   (trips ?? []).forEach((t) => { const k = dayKey(t.pickup_at); byDay.set(k, [...(byDay.get(k) ?? []), t]); });
 
@@ -63,6 +68,8 @@ export default async function Page() {
                 <div className="grid min-w-0 gap-1">
                   <div className="flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><b>{t.child.first_name}</b><Pill s={t.status} /></span><span className="num font-bold">{eur(t.price_eur)}</span></div>
                   <div className="break-words font-semibold">{t.from_label} <span className="muted font-normal">→</span> {t.to_label}</div>
+                  {t.status_note && <div className="text-sm font-semibold">{t.status_note}</div>}
+                  {t.status !== "cancelled" && driverLine(t.driver_id) && <div className="text-sm muted">{driverLine(t.driver_id)}</div>}
                   {t.status === "scheduled" && hours > 0 && (
                     <form action={cancelTrip}><input type="hidden" name="id" value={t.id} /><button className="btn">Atšaukti šią kelionę{fee ? ` (mokestis ${fee}%)` : ""}</button></form>
                   )}
