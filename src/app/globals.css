@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f3f5f4; --surface: #ffffff; --surface-2: #e8eeec; --fg: #14211f; --muted: #5b6b68; --line: #d5dedb;
+  --brand: #0f4c45; --brand-fg: #ffffff; --accent: #f2b705; --accent-fg: #1e1a00;
+  --ok: #1f7a4d; --ok-bg: #dcf2e6; --warn: #9a6300; --warn-bg: #fdf0cf; --bad: #b3261e; --bad-bg: #fbe1de; --info: #1d5b9a; --info-bg: #dde9f7;
 }
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0e1514; --surface: #162120; --surface-2: #1f2d2b; --fg: #e6efed; --muted: #9db0ac; --line: #2c3d3a;
+    --brand: #5fc2b4; --brand-fg: #062420; --accent: #f5c53a; --accent-fg: #1e1a00;
+    --ok: #6fd49c; --ok-bg: #163526; --warn: #f0c062; --warn-bg: #3a2e10; --bad: #f2958c; --bad-bg: #3d1916; --info: #8dbcf0; --info-bg: #172a40;
+    color-scheme: dark;
   }
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body), system-ui, sans-serif; }
+h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; text-wrap: balance; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.input { font: inherit; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 100%; font-weight: 400; }
+.btn { font-weight: 600; font-size: .9rem; border-radius: 8px; padding: 8px 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; }
+.btn:disabled { opacity: .6; }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: var(--brand-fg); }
+.btn-ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.btn-bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+.pill { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.p-warn { background: var(--warn-bg); color: var(--warn); } .p-info { background: var(--info-bg); color: var(--info); }
+.p-ok { background: var(--ok-bg); color: var(--ok); } .p-bad { background: var(--bad-bg); color: var(--bad); }
+.p-accent { background: var(--accent); color: var(--accent-fg); }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .9rem; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

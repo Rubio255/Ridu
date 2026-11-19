@@ -1,67 +1,94 @@
-// Kelionės kainos skaičiavimas. Visi tarifai ateina iš pricing_settings lentelės.
+// Ilgalaikio užsakymo kainos ir grafiko taisyklės (gryna logika, be duomenų bazės).
+import type { Settings } from "./settings";
+import { toMin } from "./time";
 
-export type PricingSettings = {
-  base_fee: number;
-  per_km: number;
-  min_price: number;
-  included_wait_min: number;
-  per_wait_min: number;
-  extra_child_fee: number;
-  peak_surcharge_pct: number;
+export type SubLike = {
+  id?: string;
+  weekdays: number[];
+  period: "am" | "pm";
+  pickup_time: string; // "HH:MM"
+  extra_kids: number;
+  block_min: number; // automobilio minutės vienai kelionei
+  status: string;
 };
 
-export type TripQuoteInput = {
-  km: number;
-  waitMin?: number;
-  extraChildren?: number;
-  isPeak?: boolean;
-};
+export const blockMin = (s: Settings, driveMin: number) => driveMin + s.handover_min + s.deadhead_min + s.gap_min;
 
-export type TripQuote = {
-  total: number;
-  lines: { label: string; amount: number }[];
-};
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-export function quoteTrip(s: PricingSettings, input: TripQuoteInput): TripQuote {
-  const lines: TripQuote["lines"] = [];
-  lines.push({ label: "Paėmimo mokestis", amount: s.base_fee });
-  lines.push({ label: `Atstumas ${input.km.toFixed(1)} km`, amount: round2(input.km * s.per_km) });
-
-  const paidWait = Math.max(0, (input.waitMin ?? 0) - s.included_wait_min);
-  if (paidWait > 0) lines.push({ label: `Laukimas ${paidWait} min`, amount: round2(paidWait * s.per_wait_min) });
-
-  const extra = input.extraChildren ?? 0;
-  if (extra > 0) lines.push({ label: `Papildomi vaikai (${extra})`, amount: round2(extra * s.extra_child_fee) });
-
-  let subtotal = lines.reduce((a, l) => a + l.amount, 0);
-  if (input.isPeak && s.peak_surcharge_pct > 0) {
-    const p = round2((subtotal * s.peak_surcharge_pct) / 100);
-    lines.push({ label: `Piko priemoka ${s.peak_surcharge_pct}%`, amount: p });
-    subtotal += p;
-  }
-  if (subtotal < s.min_price) {
-    lines.push({ label: "Iki minimalios kainos", amount: round2(s.min_price - subtotal) });
-    subtotal = s.min_price;
-  }
-  return { total: round2(subtotal), lines };
+export function inAfternoon(s: Settings, time: string) {
+  const m = toMin(time);
+  return m >= toMin(s.afternoon_start) && m < toMin(s.afternoon_end);
 }
 
-// Atstumo įvertis be išorinių paslaugų: tiesi linija × miesto kelių koeficientas.
-// Vėliau galima pakeisti tikru maršrutu (OSRM / Google).
-export function estimateRoadKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  const straight = 2 * R * Math.asin(Math.sqrt(h));
-  return Math.max(1, Math.round(straight * 1.35 * 10) / 10);
+const live = (x: SubLike) => x.status === "active" || x.status === "pending";
+
+export function morningKids(subs: SubLike[], wd: number, ignore?: string) {
+  return subs.filter((x) => x.id !== ignore && live(x) && x.period === "am" && x.weekdays.includes(wd))
+    .reduce((a, x) => a + 1 + x.extra_kids, 0);
+}
+export function afternoonTrips(subs: SubLike[], wd: number, ignore?: string) {
+  return subs.filter((x) => x.id !== ignore && live(x) && x.period === "pm" && x.weekdays.includes(wd)).length;
+}
+// Užimtumas: parduotos automobilio minutės tos savaitės dienos valandoje / 60
+export function hourOccupancy(subs: SubLike[], wd: number, hour: number, ignore?: string) {
+  return subs.filter((x) => x.id !== ignore && live(x) && x.period === "pm" && x.weekdays.includes(wd)
+    && Math.floor(toMin(x.pickup_time) / 60) === hour).reduce((a, x) => a + x.block_min, 0) / 60;
 }
 
-// Vilniaus vidutinis greitis piko metu ~22 km/h
-export function estimateMinutes(km: number): number {
-  return Math.max(5, Math.round((km / 22) * 60));
+function occMult(s: Settings, o: number) {
+  return o >= 0.95 ? s.occ_m4 : o >= 0.8 ? s.occ_m3 : o >= 0.5 ? s.occ_m2 : s.occ_m1;
+}
+
+export type Quote = {
+  ok: boolean;
+  reason?: string;
+  full: boolean; // laisvų vietų nėra -> galima tik pasiūlymas
+  perTrip: number;
+  monthly: number;
+  tripsPerMonth: number;
+  kids: number;
+  // vidinė informacija savininkui
+  internal: { carTrip: number; occupancy: number; multiplier: number; commitPct: number; blockMin: number };
+};
+
+export function quoteSubscription(
+  s: Settings,
+  existing: SubLike[],
+  req: { weekdays: number[]; period: "am" | "pm"; pickup_time: string; extra_kids: number; months: number; km: number; driveMin: number },
+): Quote {
+  const kids = Math.min(4, 1 + Math.max(0, req.extra_kids));
+  const bm = blockMin(s, req.driveMin);
+  const empty: Quote = { ok: false, full: false, perTrip: 0, monthly: 0, tripsPerMonth: 0, kids,
+    internal: { carTrip: 0, occupancy: 0, multiplier: 1, commitPct: 0, blockMin: bm } };
+  const wds = req.weekdays.filter((w) => w >= 1 && w <= 5);
+  if (!wds.length) return { ...empty, reason: "Pasirinkite bent vieną darbo dieną." };
+  if (req.period === "pm" && !inAfternoon(s, req.pickup_time))
+    return { ...empty, reason: `Po pietų vežame ${s.afternoon_start}–${s.afternoon_end}.` };
+
+  let occ: number, full: boolean;
+  if (req.period === "am") {
+    occ = Math.max(...wds.map((w) => morningKids(existing, w))) / s.morning_max_kids;
+    full = Math.max(...wds.map((w) => morningKids(existing, w) + kids)) > s.morning_max_kids;
+  } else {
+    const hour = Math.floor(toMin(req.pickup_time) / 60);
+    occ = Math.max(...wds.map((w) => hourOccupancy(existing, w, hour)));
+    const after = Math.max(...wds.map((w) => hourOccupancy(existing, w, hour) + bm / 60));
+    full = occ > 0.95 || after > 1 || Math.max(...wds.map((w) => afternoonTrips(existing, w))) >= s.afternoon_max_trips;
+  }
+  const mult = full ? s.occ_m4 : occMult(s, occ);
+  const commitPct = req.months >= 9 ? s.commit9_pct : req.months >= 3 ? s.commit3_pct : 0;
+  const carTrip = s.minute_rate * bm + s.km_rate * (req.km + s.empty_km);
+  const share = kids === 1 ? 1 : (s[`share${kids}` as "share2"] as number) / 100;
+  const perWeekToMonth = (wds.length * 52) / 12;
+  const perChildMonthly = Math.round(carTrip * share * mult * (1 - commitPct / 100) * perWeekToMonth);
+  return {
+    ok: true, full, kids,
+    monthly: perChildMonthly * kids,
+    perTrip: Math.round((perChildMonthly / perWeekToMonth) * 100) / 100,
+    tripsPerMonth: Math.round(perWeekToMonth),
+    internal: { carTrip: Math.round(carTrip * 100) / 100, occupancy: occ, multiplier: mult, commitPct, blockMin: bm },
+  };
+}
+
+export function cancelFeePct(s: Settings, hoursBefore: number) {
+  return hoursBefore < s.very_late_hours ? s.very_late_pct : hoursBefore < s.cancel_hours ? s.late_cancel_pct : 0;
 }

@@ -1,16 +1,18 @@
--- Vaikų pavežėjimo užsakymų sistema: pradinė schema
+-- Vaikų pavežėjimas: schema (ilgalaikiai užsakymai, kelionės, nustatymai)
 
 create type user_role as enum ('owner', 'client');
 create type place_kind as enum ('home', 'kindergarten', 'school', 'activity', 'other');
-create type trip_status as enum ('requested', 'confirmed', 'rejected', 'cancelled', 'picked_up', 'delivered');
+create type sub_status as enum ('pending', 'active', 'rejected', 'ended');
+create type sub_period as enum ('am', 'pm');
+create type trip_status as enum ('scheduled', 'picked_up', 'delivered', 'cancelled', 'no_show');
 
--- Naudotojų profiliai (vienas savininkas, kiti klientai su sutartimi)
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
   full_name text not null default '',
   phone text,
+  email text,
   role user_role not null default 'client',
-  contract_no text,             -- sutarties numeris
+  contract_no text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -19,24 +21,22 @@ create table children (
   id uuid primary key default gen_random_uuid(),
   first_name text not null,
   birth_year int,
-  needs_booster boolean not null default true,  -- kėdutė / paaukštinimas
-  notes text,                                     -- alergijos, kas gali perduoti/pasiimti
+  seat text not null default 'Kėdutė',
+  notes text,
   created_at timestamptz not null default now()
 );
 
--- Vienas vaikas gali turėti kelis globėjus (pvz. abu išsiskyrę tėvai)
 create table child_guardians (
   child_id uuid not null references children on delete cascade,
   profile_id uuid not null references profiles on delete cascade,
-  relation text,                -- mama, tėtis, globėjas
-  can_book boolean not null default true,
+  relation text,
   primary key (child_id, profile_id)
 );
 
 create table places (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references profiles on delete cascade,
-  label text not null,          -- "Namai", "Lopšelis Saulutė", "Krepšinis"
+  label text not null,
   kind place_kind not null default 'other',
   address text not null,
   lat double precision,
@@ -44,111 +44,104 @@ create table places (
   created_at timestamptz not null default now()
 );
 
--- Kainodara: viena eilutė, keičiama savininko nustatymuose
-create table pricing_settings (
+-- Visi kainodaros ir grafiko parametrai (keičia savininkas). Struktūra: src/lib/settings.ts
+create table settings (
   id int primary key default 1 check (id = 1),
-  base_fee numeric(8,2) not null default 5.00,         -- paėmimo mokestis, €
-  per_km numeric(8,2) not null default 0.90,           -- €/km su vaiku
-  min_price numeric(8,2) not null default 10.00,       -- minimali kelionės kaina
-  included_wait_min int not null default 5,            -- nemokamas laukimas, min
-  per_wait_min numeric(8,2) not null default 0.30,     -- € už papildomą laukimo minutę
-  extra_child_fee numeric(8,2) not null default 3.00,  -- už kiekvieną papildomą vaiką
-  peak_surcharge_pct numeric(5,2) not null default 0,  -- piko valandų priemoka, %
-  cancel_free_hours int not null default 12,           -- nemokamas atšaukimas iki X val.
-  late_cancel_pct numeric(5,2) not null default 50,    -- vėlyvo atšaukimo mokestis, %
-  monthly_net_target numeric(10,2) not null default 3000,
+  data jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
-insert into pricing_settings (id) values (1);
+insert into settings (id) values (1);
 
--- Pasikartojančios kelionės (pvz. kas antradienį ir ketvirtadienį 15:30)
-create table trip_series (
+create table subscriptions (
   id uuid primary key default gen_random_uuid(),
   child_id uuid not null references children on delete cascade,
+  payer_id uuid not null references profiles,
   from_place_id uuid not null references places,
   to_place_id uuid not null references places,
-  weekdays int[] not null,      -- 1 = pirmadienis ... 7 = sekmadienis
-  pickup_time time not null,
-  start_date date not null,
-  end_date date,
-  ordered_by uuid not null references profiles,
-  payer_id uuid not null references profiles,
-  active boolean not null default true,
+  weekdays int[] not null,              -- 1 = pirmadienis ... 5 = penktadienis
+  period sub_period not null,
+  pickup_time time not null,            -- rytiniam maršrutui nustato savininkas
+  extra_kids int not null default 0,    -- broliai/seserys toje pačioje kelionėje
+  months int not null default 1,        -- įsipareigojimas: 1, 3 arba 9
+  km numeric(6,1) not null,
+  drive_min int not null,
+  per_trip_eur numeric(8,2) not null,
+  monthly_eur numeric(8,2) not null,
+  is_bid boolean not null default false,
+  status sub_status not null default 'pending',
+  starts_on date not null default current_date,
+  ends_on date,
+  owner_note text,
   created_at timestamptz not null default now()
 );
+create index subscriptions_status_idx on subscriptions (status);
 
 create table trips (
   id uuid primary key default gen_random_uuid(),
-  series_id uuid references trip_series on delete set null,
+  subscription_id uuid references subscriptions on delete cascade,
   child_id uuid not null references children on delete cascade,
-  extra_children int not null default 0,
-  from_place_id uuid references places on delete set null,
-  to_place_id uuid references places on delete set null,
-  from_address text not null,   -- adresų kopija, kad istorija nesikeistų
+  payer_id uuid not null references profiles,
+  from_label text not null,
+  to_label text not null,
+  from_address text not null,
   to_address text not null,
   pickup_at timestamptz not null,
-  est_km numeric(6,1) not null,
-  est_minutes int not null,
+  block_min int not null,               -- kiek laiko užima automobilį
   price_eur numeric(8,2) not null,
-  ordered_by uuid not null references profiles,
-  payer_id uuid not null references profiles,
-  status trip_status not null default 'requested',
-  client_note text,
-  owner_note text,
+  status trip_status not null default 'scheduled',
+  cancel_fee_pct int not null default 0,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  unique (subscription_id, pickup_at)
 );
 create index trips_pickup_idx on trips (pickup_at);
-create index trips_child_idx on trips (child_id);
-create index trips_payer_idx on trips (payer_id);
 
 -- Pagalbinės funkcijos RLS taisyklėms
 create function is_owner() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from profiles where id = auth.uid() and role = 'owner');
 $$;
-
 create function is_guardian(c uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from child_guardians where child_id = c and profile_id = auth.uid());
-$$;
-
-create function can_book(c uuid) returns boolean
-language sql stable security definer set search_path = public as $$
-  select exists (select 1 from child_guardians
-                 where child_id = c and profile_id = auth.uid() and can_book);
 $$;
 
 alter table profiles enable row level security;
 alter table children enable row level security;
 alter table child_guardians enable row level security;
 alter table places enable row level security;
-alter table pricing_settings enable row level security;
-alter table trip_series enable row level security;
+alter table settings enable row level security;
+alter table subscriptions enable row level security;
 alter table trips enable row level security;
 
--- Savininkas mato ir keičia viską
-create policy owner_all on profiles for all using (is_owner()) with check (is_owner());
-create policy owner_all on children for all using (is_owner()) with check (is_owner());
-create policy owner_all on child_guardians for all using (is_owner()) with check (is_owner());
-create policy owner_all on places for all using (is_owner()) with check (is_owner());
-create policy owner_all on pricing_settings for all using (is_owner()) with check (is_owner());
-create policy owner_all on trip_series for all using (is_owner()) with check (is_owner());
-create policy owner_all on trips for all using (is_owner()) with check (is_owner());
+-- Savininkas mato viską. Visi rašymai daromi serveryje (service role), todėl klientams tik skaitymas.
+create policy owner_read on profiles for select using (is_owner());
+create policy owner_read on children for select using (is_owner());
+create policy owner_read on child_guardians for select using (is_owner());
+create policy owner_read on places for select using (is_owner());
+create policy owner_read on settings for select using (is_owner());
+create policy owner_read on subscriptions for select using (is_owner());
+create policy owner_read on trips for select using (is_owner());
 
--- Klientai: tik savo duomenys ir savo vaikai
 create policy self_read on profiles for select using (id = auth.uid());
-create policy self_update on profiles for update using (id = auth.uid())
-  with check (id = auth.uid() and role = 'client');
 create policy guardian_read on children for select using (is_guardian(id));
 create policy guardian_read on child_guardians for select using (profile_id = auth.uid());
-create policy own_places on places for all using (profile_id = auth.uid()) with check (profile_id = auth.uid());
-create policy clients_read on pricing_settings for select using (auth.uid() is not null);
-
-create policy guardian_read on trip_series for select using (is_guardian(child_id));
-create policy guardian_insert on trip_series for insert
-  with check (can_book(child_id) and ordered_by = auth.uid());
+-- Tėvai mato savo ir kito vaiko globėjo adresus (bendri vaikai)
+create policy guardian_read on places for select using (
+  profile_id = auth.uid() or exists (
+    select 1 from child_guardians a join child_guardians b on a.child_id = b.child_id
+    where a.profile_id = auth.uid() and b.profile_id = places.profile_id));
+create policy guardian_read on subscriptions for select using (is_guardian(child_id));
 create policy guardian_read on trips for select using (is_guardian(child_id));
--- Klientas gali tik pateikti užsakymą (statusas requested); kainą perskaičiuoja serveris
-create policy guardian_insert on trips for insert
-  with check (can_book(child_id) and ordered_by = auth.uid() and status = 'requested');
+-- settings klientams neatiduodami: kainas skaičiuoja serveris
+
+-- Naujam prisijungusiam naudotojui sukuriamas profilis
+create function handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into profiles (id, email, full_name)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', ''))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function handle_new_user();
