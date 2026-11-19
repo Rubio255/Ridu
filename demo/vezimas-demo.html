@@ -187,13 +187,9 @@ function seed(){
   const plan = [
     // [dienų poslinkis, laikas, vaikas, iš, į, užsakė, moka, statusas, laukimas]
     [0,"07:45","c1","p1","p3","rasa","rasa","delivered",0],
-    [0,"15:30","c2","p4","p5","tomas","tomas","confirmed",0],
-    [0,"16:10","c3","p8","p9","egle","egle","confirmed",10],
     [0,"16:15","c1","p3","p2","tomas","tomas","requested",0],
     [1,"07:45","c1","p1","p3","rasa","rasa","confirmed",0],
     [1,"14:00","c2","p4","p6","rasa","rasa","requested",15],
-    [2,"15:30","c2","p4","p5","tomas","tomas","confirmed",0],
-    [2,"16:10","c3","p8","p9","egle","egle","requested",10],
     [3,"07:45","c1","p1","p3","rasa","rasa","confirmed",0],
     [-1,"15:30","c2","p4","p5","tomas","tomas","delivered",0],
     [-1,"16:10","c3","p8","p9","egle","egle","delivered",10],
@@ -262,9 +258,10 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
-if(!S||!S.trips||!S.v4) {S=seed();S.v4=true}
+if(!S||!S.trips||!S.v5) {S=seed();S.v5=true}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
+let tripFilter="all";
 let role="rasa", tab=null;
 try{role=localStorage.getItem(KEY+"-role")||"rasa"}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+"-role",role)}catch(e){}}
@@ -279,8 +276,8 @@ const fmtTime=d=>d.toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2400)}
 
 const TABS={
-  parent:[["trips","Mano kelionės"],["book","Užsakyti kelionę"],["sub","Abonementas"],["kids","Vaikai ir adresai"]],
-  owner:[["day","Kalendorius"],["subs","Abonementai"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"]]
+  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["book","Vienos dienos kelionė"],["kids","Vaikai ir adresai"]],
+  owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"]]
 };
 function isOwner(){return role==="owner"}
 
@@ -309,7 +306,7 @@ function tripRow(t,{owner=false,conflict=false}={}){
   return `<div class="trip">
     <div class="time">${fmtTime(d)}<small>${t.min} min</small></div>
     <div class="body">
-      <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span>${t.series?'<span class="tag">kartojasi</span>':""}</span><span class="price">${eur(t.price)}</span></div>
+      <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${t.long?'<span class="small muted">abonementas</span>':eur(t.price)}</span></div>
       <div class="route">${esc(t.fromLabel)} <span class="arrow">→</span> ${esc(t.toLabel)}</div>
       <div class="small muted">${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · užsakė ${esc(by)} · moka ${esc(payer)}${t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} vaik.`:""}</div>
       ${t.note?`<div class="small">Pastaba: ${esc(t.note)}</div>`:""}
@@ -319,7 +316,10 @@ function tripRow(t,{owner=false,conflict=false}={}){
     </div></div>`;
 }
 
-function groupByDay(list,opts){
+function filterBar(){const o=[["all","Visos"],["long","Ilgalaikiai"],["single","Vienos dienos"]];
+  return `<div class="row" role="group" aria-label="Rodyti">${o.map(([k,l])=>`<button type="button" class="btn ${tripFilter===k?"primary":""}" data-filter="${k}">${l}</button>`).join("")}</div>`}
+const byFilter=t=>tripFilter==="all"||(tripFilter==="long")===!!t.long;
+function groupByDay(list,opts){list=list.filter(byFilter);
   const g={};list.forEach(t=>{const k=startOfDay(new Date(t.at)).toISOString();(g[k]=g[k]||[]).push(t)});
   return Object.keys(g).sort().map(k=>{const dt=dayType(k);return `<div class="daygroup card"><h3>${fmtDay(new Date(k))}${dt!=="workday"?` <span class="tag">${dt==="holiday"?"šventinė diena":"savaitgalis"}</span>`:""}</h3>${opts.owner?loadBar(dayLoad(new Date(k))):""}<div>${g[k].sort((a,b)=>a.at<b.at?-1:1).map(t=>tripRow(t,{...opts,conflict:opts.owner&&hasConflict(t)})).join("")}</div></div>`}).join("");
 }
@@ -339,9 +339,10 @@ function vTrips(v){
   const now=startOfDay(new Date());
   const up=myTrips().filter(t=>new Date(t.at)>=now), past=myTrips().filter(t=>new Date(t.at)<now).sort((a,b)=>a.at<b.at?1:-1).slice(0,6);
   const shared=myChildren().some(c=>c.guardians.length>1);
-  v.innerHTML=`<div class="spread"><h2>Sveiki, ${esc(users[role].name)}</h2><button class="btn primary" data-go="book">+ Nauja kelionė</button></div>
+  v.innerHTML=`<div class="spread"><h2>Sveiki, ${esc(users[role].name)}</h2><div class="row"><button class="btn primary" data-go="sub">+ Ilgalaikis</button><button class="btn" data-go="book">+ Vienos dienos</button></div></div>
+  ${filterBar()}
   ${shared?`<p class="small muted" style="margin:0">Matote visas savo vaikų keliones, taip pat tas, kurias užsakė kitas tėvas. Kiekviena kelionė apmokama to, kas ją užsakė.</p>`:""}
-  ${up.length?groupByDay(up,{}):`<div class="card empty">Artimiausių kelionių nėra. Užsakykite pirmą.</div>`}
+  ${groupByDay(up,{})||`<div class="card empty">Artimiausių kelionių nėra.</div>`}
   <div class="card"><h3>Ankstesnės kelionės</h3><div>${past.map(t=>tripRow(t)).join("")||'<div class="empty">Dar nebuvo.</div>'}</div></div>`;
 }
 
@@ -351,7 +352,8 @@ function vBook(v){
   const opt=pl.map(p=>`<option value="${p.id}">${esc(p.label)} (${KIND[p.kind]})</option>`).join("");
   v.innerHTML=`<div class="grid2">
   <form class="card" id="bookForm">
-    <h2>Užsakyti kelionę</h2>
+    <h2>Vienos dienos kelionė</h2>
+    <p class="small muted" style="margin:0">Vienkartinė kelionė pasirinktą dieną. Jei vežti reikia reguliariai, rinkitės <a href="#" data-go="sub">ilgalaikį užsakymą</a>, jis pigesnis.</p>
     <div class="field"><label for="bChild">Vaikas</label><select id="bChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
     <div class="two">
       <div class="field"><label for="bFrom">Iš kur paimti</label><select id="bFrom">${opt}</select></div>
@@ -361,9 +363,6 @@ function vBook(v){
       <div class="field"><label for="bDate">Data</label><input type="date" id="bDate" value="${tomorrow.toISOString().slice(0,10)}"></div>
       <div class="field"><label for="bTime">Paėmimo laikas</label><input type="time" id="bTime" value="15:30"></div>
     </div>
-    <div class="field"><span class="lbl">Kartoti kas savaitę (nebūtina)</span>
-      <div class="days">${DAYS.map((d,i)=>`<label><input type="checkbox" name="wd" value="${i+1}" id="wd${i+1}"><span>${d}</span></label>`).join("")}</div>
-      <span class="small muted">Pažymėjus dienas, kelionės bus sukurtos 4 savaitėms į priekį.</span></div>
     <div class="two">
       <div class="field"><label for="bWait">Kiek reikės palaukti, min</label><input type="number" id="bWait" min="0" max="120" step="5" value="0"></div>
       <div class="field"><label for="bExtra">Papildomi vaikai (pvz. draugas)</label><input type="number" id="bExtra" min="0" max="3" value="0"></div>
@@ -443,7 +442,7 @@ function vDay(v){
     <div class="stat"><span class="small muted">Šiandien kelionių</span><b>${todays.length}</b></div>
     <div class="stat"><span class="small muted">Šiandien uždirbsite</span><b>${eur(todays.reduce((a,t)=>a+t.price,0))}</b></div>
     <div class="stat"><span class="small muted">Šiandien darbo</span><b>${hm(dayLoad(now))}</b></div></div>
-    ${groupByDay(list,{owner:true})||'<div class="card empty">Artimiausių kelionių nėra.</div>'}`;
+    ${filterBar()}${groupByDay(list,{owner:true})||'<div class="card empty">Artimiausių kelionių nėra.</div>'}`;
 }
 
 function monthTrips(){const n=new Date(),m=n.getMonth(),y=n.getFullYear();
@@ -452,20 +451,20 @@ function billable(t){return ["confirmed","picked_up","delivered"].includes(t.sta
 
 function vClients(v){
   const mt=monthTrips(), month=new Date().toLocaleDateString("lt-LT",{year:"numeric",month:"long"});
-  const rows=Object.values(users).map(u=>{const ts=mt.filter(t=>t.payer===u.id&&billable(t));
+  const rows=Object.values(users).map(u=>{const ts=mt.filter(t=>t.payer===u.id&&billable(t)&&!t.long);
     const done=ts.filter(t=>t.status==="delivered");
     const sum=ts.reduce((a,t)=>a+t.price,0), d=pkgPct(ts.length);
     const sub=S.subs.filter(x=>x.payer===u.id&&x.status==="active").reduce((a,x)=>a+x.monthly,0);
     return {u,n:ts.length,done:done.length,sum,d,disc:r2(sum*d/100),sub,total:r2(sum*(1-d/100)+sub)}});
   v.innerHTML=`<div class="card"><div class="spread"><h2>Sąskaitos už ${month}</h2><span class="small muted">Skaičiuojama pagal tai, kas moka už kelionę. Sumos su PVM.</span></div>
-    <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Kelionės</th><th class="num">Įvykdyta</th><th class="num">Suma, €</th><th class="num">Paketo nuolaida</th><th class="num">Abonementai, €</th><th class="num">Mokėti, €</th></tr></thead>
+    <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Vienos d. kel.</th><th class="num">Įvykdyta</th><th class="num">Vienos dienos, €</th><th class="num">Paketo nuolaida</th><th class="num">Ilgalaikiai, €</th><th class="num">Mokėti, €</th></tr></thead>
     <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}</td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num">${r.sub?eur(r.sub):"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
     <p class="small muted" style="margin:0">Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
     <div class="card"><h2>Vaikai ir globėjai</h2>${S.children.map(c=>`<div class="child"><div class="spread"><b>${esc(c.name)}, ${c.age} m.</b><span class="tag">${esc(c.booster)}</span></div><div class="small muted">Globėjai: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}</div>`;
 }
 
 function vIncome(v){
-  const p=S.pricing, mt=monthTrips().filter(billable);
+  const p=S.pricing, mt=monthTrips().filter(t=>billable(t)&&!t.long);
   const gross=Object.keys(users).reduce((a,u)=>{const ts=mt.filter(t=>t.payer===u),s=ts.reduce((x,t)=>x+t.price,0);return a+s*(1-pkgPct(ts.length)/100)},0);
   const actSubs=S.subs.filter(x=>x.status==="active"), subRev=actSubs.reduce((a,x)=>a+x.monthly,0);
   const subKm=actSubs.reduce((a,x)=>a+Math.round(x.weekdays.length*52/12)*(km(S.places.find(q=>q.id===x.from),S.places.find(q=>q.id===x.to))+p.empty_km),0);
@@ -525,6 +524,18 @@ function subQuote({from,to,weekdays,time,extra=0,months=1}){
   return {k,cm,carTrip,childTrip,kids,share,occ,mult,commit,n,perWeek,perChild,monthly:perChild*kids,perTrip:r2(perChild/(perWeek*52/12)),full,f,t};
 }
 
+// Patvirtinti ilgalaikiai užsakymai automatiškai sukuria keliones 14 dienų į priekį
+function syncSubTrips(){
+  const today=startOfDay(new Date());
+  S.subs.filter(x=>x.status==="active").forEach(sb=>{
+    for(let i=0;i<14;i++){const d=new Date(today);d.setDate(d.getDate()+i);const wd=d.getDay()||7;if(!sb.weekdays.includes(wd))continue;
+      const [h,m]=sb.time.split(":");d.setHours(+h,+m,0,0);
+      if(d<new Date())continue;
+      if(S.trips.some(t=>(t.series===sb.id&&startOfDay(new Date(t.at)).getTime()===startOfDay(d).getTime())||(t.child===sb.child&&new Date(t.at).getTime()===d.getTime()&&ACTIVE.includes(t.status))))continue;
+      addTrip(S,{child:sb.child,from:sb.from,to:sb.to,at:d.toISOString(),by:sb.payer,payer:sb.payer,status:"confirmed",wait:0,extra:sb.extra||0,note:"",series:sb.id,long:true});
+      S.trips[S.trips.length-1].price=sb.perTrip;}
+  });
+}
 function vSub(v){
   const kids=myChildren(), pl=S.places.filter(p=>p.owner===role||kids.some(k=>k.guardians.includes(p.owner)));
   const opt=pl.map(p=>`<option value="${p.id}">${esc(p.label)} (${KIND[p.kind]})</option>`).join("");
@@ -532,7 +543,7 @@ function vSub(v){
   const SS={active:"Galioja",pending:"Laukia patvirtinimo",rejected:"Atmesta"};
   v.innerHTML=`<div class="grid2">
   <form class="card" id="subForm">
-    <h2>Mėnesio abonementas</h2>
+    <h2>Ilgalaikis užsakymas</h2>
     <p class="small muted" style="margin:0">Pastovus grafikas už fiksuotą mėnesio kainą, pigiau nei pavienės kelionės. Kaina priklauso nuo maršruto trukmės ir to, kiek užimtas pasirinktas laikas. Kai laikas užpildytas, laisvos vietos kitam mėnesiui atitenka didžiausius pasiūlymus pateikusiems klientams.</p>
     <div class="field"><label for="sChild">Vaikas</label><select id="sChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
     <div class="two"><div class="field"><label for="sFrom">Iš kur paimti</label><select id="sFrom">${opt}</select></div>
@@ -594,9 +605,10 @@ function vSubsOwner(v){
 }
 
 document.addEventListener("click",e=>{
-  const sb=e.target.closest("[data-sub]");if(sb){const s=S.subs.find(x=>x.id===sb.dataset.id);if(s){s.status=sb.dataset.sub;save();render();toast(s.status==="active"?"Abonementas patvirtintas":"Abonementas atmestas")}return}
+  const sb=e.target.closest("[data-sub]");if(sb){const s=S.subs.find(x=>x.id===sb.dataset.id);if(s){s.status=sb.dataset.sub;if(s.status==="active")syncSubTrips();save();render();toast(s.status==="active"?"Abonementas patvirtintas":"Abonementas atmestas")}return}
   const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;render();return}
-  const go=e.target.closest("[data-go]");if(go){tab=go.dataset.go;render();return}
+  const fl=e.target.closest("[data-filter]");if(fl){tripFilter=fl.dataset.filter;render();return}
+  const go=e.target.closest("[data-go]");if(go){e.preventDefault();tab=go.dataset.go;render();return}
   const a=e.target.closest("[data-act]");
   if(a){const t=S.trips.find(x=>x.id===a.dataset.id);if(!t)return;
     if(a.dataset.act==="cancelled"&&a.dataset.sure!=="1"){a.dataset.sure="1";a.textContent="Tikrai atšaukti?";a.classList.add("bad");return}
@@ -607,6 +619,7 @@ $("#roleSel").addEventListener("change",e=>{role=e.target.value;tab=null;save();
 $("#resetBtn").addEventListener("click",e=>{const b=e.currentTarget;if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Tikrai atkurti?";return}
   b.dataset.sure="";b.textContent="Atkurti pavyzdžius";S=seed();save();render();toast("Pavyzdžiai atkurti")});
 S.subs.forEach(s=>{if(!s.monthly){const q=subQuote({...s,extra:0,months:1});s.monthly=q.monthly;s.perTrip=q.perTrip;s.months=1}});
+syncSubTrips();save();
 render();
 })();
 </script>
