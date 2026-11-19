@@ -125,7 +125,7 @@ td.num,th.num{text-align:right}
 
 <header>
   <div class="wrap">
-    <div class="logo"><div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="14" fill="#0f4c45"/><path d="M29.5 50 C14 39 8 31 8 23 C8 15 14 11 20 11 C25 11 28 14 29.5 17 Z" fill="#f2b705"/><path d="M34.5 50 C50 39 56 31 56 23 C56 15 50 11 44 11 C39 11 36 14 34.5 17 Z" fill="#ffffff"/><circle cx="32" cy="29" r="5" fill="#0f4c45"/><circle cx="32" cy="29" r="3" fill="#f2b705"/></svg></div><div><h1>Išsiskyrusiems</h1><small>Vaikų pavėžėjimas Vilniuje · pagal sutartį</small></div></div>
+    <div class="logo"><div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="14" fill="#0f4c45"/><path d="M29.5 50 C14 39 8 31 8 23 C8 15 14 11 20 11 C25 11 28 14 29.5 17 Z" fill="#f2b705"/><path d="M34.5 50 C50 39 56 31 56 23 C56 15 50 11 44 11 C39 11 36 14 34.5 17 Z" fill="#ffffff"/><circle cx="32" cy="29" r="5" fill="#0f4c45"/><circle cx="32" cy="29" r="3" fill="#f2b705"/></svg></div><div><h1>Išsiskyrusiems</h1><small hidden></small></div></div>
     <div class="role">
       <label for="roleSel">Žiūriu kaip</label>
       <select id="roleSel">
@@ -285,7 +285,7 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||!S.trips||!S.v9) {S=seed();S.v9=true}
-if(MODE==="admin"){document.querySelector('.role').hidden=true;document.querySelector('.logo small').textContent="Administravimas";}
+if(MODE==="admin"){document.querySelector('.role').hidden=true;{const sm=document.querySelector('.logo small');sm.textContent="Administravimas";sm.hidden=false;}}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 let tripFilter="all", moving=null, contractFilter="active";
