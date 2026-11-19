@@ -258,7 +258,7 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
-if(!S||!S.trips||!S.v5) {S=seed();S.v5=true}
+if(!S||!S.trips||!S.v6) {S=seed();S.v6=true}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 let tripFilter="all";
@@ -306,7 +306,7 @@ function tripRow(t,{owner=false,conflict=false}={}){
   return `<div class="trip">
     <div class="time">${fmtTime(d)}${owner?`<small>${t.min} min</small>`:""}</div>
     <div class="body">
-      <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${t.long?'<span class="small muted">abonementas</span>':eur(t.price)}</span></div>
+      <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${eur(t.price)}</span></div>
       <div class="route">${esc(t.fromLabel)} <span class="arrow">→</span> ${esc(t.toLabel)}</div>
       <div class="small muted">${owner?`${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · `:""}užsakė ${esc(by)} · moka ${esc(payer)}${owner&&t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} vaik.`:""}</div>
       ${t.note?`<div class="small">Pastaba: ${esc(t.note)}</div>`:""}
@@ -554,9 +554,9 @@ function vSub(v){
     <div class="field"><label for="sMonths">Įsipareigojimas</label><select id="sMonths"><option value="1">1 mėnuo</option><option value="3">3 mėnesiai</option><option value="9">9 mėnesiai</option></select></div>
     <div id="subQuote" aria-live="polite"></div>
   </form>
-  <div class="card"><h2>Mano abonementai</h2>${mine.map(s=>`<div class="child"><div class="spread"><b>${esc(child(s.child).name)} · ${s.weekdays.map(w=>DAYS[w-1]).join(", ")} ${s.time}</b><span class="pill s-${s.status==="active"?"confirmed":s.status==="pending"?"requested":"rejected"}">${SS[s.status]}</span></div>
+  <div class="card"><h2>Mano ilgalaikiai užsakymai</h2>${mine.map(s=>`<div class="child"><div class="spread"><b>${esc(child(s.child).name)} · ${s.weekdays.map(w=>DAYS[w-1]).join(", ")} ${s.time}</b><span class="pill s-${s.status==="active"?"confirmed":s.status==="pending"?"requested":"rejected"}">${SS[s.status]}</span></div>
     <div class="small muted">${esc(S.places.find(p=>p.id===s.from).label)} → ${esc(S.places.find(p=>p.id===s.to).label)}</div>
-    <div class="small">${eur(s.monthly)} / mėn.${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · jūsų pasiūlymas":""}</div></div>`).join("")||'<div class="empty">Abonementų dar nėra.</div>'}
+    <div class="small">${eur(s.monthly)} / mėn.${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · jūsų pasiūlymas":""}</div></div>`).join("")||'<div class="empty">Ilgalaikių užsakymų dar nėra.</div>'}
     <p class="small muted" style="margin:0">Galiojantys užsakymai pratęsiami ta pačia kaina.</p></div></div>`;
   if(pl.length>3) $("#sFrom").selectedIndex=3; if(pl.length>4) $("#sTo").selectedIndex=4;
   const read=()=>({child:$("#sChild").value,from:$("#sFrom").value,to:$("#sTo").value,time:$("#sTime").value||"15:30",extra:+$("#sExtra").value||0,months:+$("#sMonths").value,weekdays:[...document.querySelectorAll('input[name=swd]:checked')].map(x=>+x.value)});
@@ -614,7 +614,8 @@ document.addEventListener("click",e=>{
 $("#roleSel").addEventListener("change",e=>{role=e.target.value;tab=null;save();render()});
 $("#resetBtn").addEventListener("click",e=>{const b=e.currentTarget;if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Tikrai atkurti?";return}
   b.dataset.sure="";b.textContent="Atkurti pavyzdžius";S=seed();save();render();toast("Pavyzdžiai atkurti")});
-S.subs.forEach(s=>{if(!s.monthly){const q=subQuote({...s,extra:0,months:1});s.monthly=q.monthly;s.perTrip=q.perTrip;s.months=1}});
+{const todo=S.subs.filter(s=>!s.monthly),st=todo.map(s=>s.status);todo.forEach(s=>s.status="x");
+ todo.forEach((s,i)=>{const q=subQuote({...s,extra:0,months:1});s.monthly=q.monthly;s.perTrip=q.perTrip;s.months=1;s.status=st[i]});}
 syncSubTrips();save();
 render();
 })();
