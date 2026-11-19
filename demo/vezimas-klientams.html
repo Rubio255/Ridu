@@ -141,7 +141,7 @@ const PRICING_DEFAULTS = {
   // Abonementai (kainodara v2)
   minute_rate:0.65, km_rate:0.12, empty_km:6, share2:60, share3:45, share4:37,
   occ_m1:0.90, occ_m2:1.00, occ_m3:1.15, occ_m4:1.30, commit3_pct:5, commit9_pct:10,
-  bid_step_pct:5, bid_close_day:25,
+  bid_step_pct:5, bid_close_day:25, single_enabled:false,
   cancel_hours:12, late_cancel_pct:50, very_late_hours:2, very_late_pct:100,
   cost_insurance:35, cost_wash:45, cost_service:50, vat_pct:21, tax_pct:15, target:3000
 };
@@ -284,7 +284,7 @@ function isOwner(){return role==="owner"}
 function render(){
   if(MODE==="client"&&role==="owner")role="rasa";
   $("#roleSel").value=role;
-  const tabs=TABS[isOwner()?"owner":"parent"];
+  const tabs=TABS[isOwner()?"owner":"parent"].filter(t=>t[0]!=="book"||S.pricing.single_enabled);
   if(!tabs.find(t=>t[0]===tab)) tab=tabs[0][0];
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button role="tab" type="button" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
   const v=$("#view");
@@ -318,7 +318,7 @@ function tripRow(t,{owner=false,conflict=false}={}){
 
 function filterBar(){const o=[["all","Visos"],["long","Ilgalaikiai"],["single","Vienos dienos"]];
   return `<div class="row" role="group" aria-label="Rodyti">${o.map(([k,l])=>`<button type="button" class="btn ${tripFilter===k?"primary":""}" data-filter="${k}">${l}</button>`).join("")}</div>`}
-const byFilter=t=>tripFilter==="all"||(tripFilter==="long")===!!t.long;
+const byFilter=t=>!S.pricing.single_enabled&&!isOwner()||tripFilter==="all"||(tripFilter==="long")===!!t.long;
 function groupByDay(list,opts){list=list.filter(byFilter);
   const g={};list.forEach(t=>{const k=startOfDay(new Date(t.at)).toISOString();(g[k]=g[k]||[]).push(t)});
   return Object.keys(g).sort().map(k=>{const dt=dayType(k);return `<div class="daygroup card"><h3>${fmtDay(new Date(k))}${dt!=="workday"?` <span class="tag">${dt==="holiday"?"šventinė diena":"savaitgalis"}</span>`:""}</h3>${opts.owner?loadBar(dayLoad(new Date(k))):""}<div>${g[k].sort((a,b)=>a.at<b.at?-1:1).map(t=>tripRow(t,{...opts,conflict:opts.owner&&hasConflict(t)})).join("")}</div></div>`}).join("");
@@ -339,8 +339,8 @@ function vTrips(v){
   const now=startOfDay(new Date());
   const up=myTrips().filter(t=>new Date(t.at)>=now), past=myTrips().filter(t=>new Date(t.at)<now).sort((a,b)=>a.at<b.at?1:-1).slice(0,6);
   const shared=myChildren().some(c=>c.guardians.length>1);
-  v.innerHTML=`<div class="spread"><h2>Sveiki, ${esc(users[role].name)}</h2><div class="row"><button class="btn primary" data-go="sub">+ Ilgalaikis</button><button class="btn" data-go="book">+ Vienos dienos</button></div></div>
-  ${filterBar()}
+  v.innerHTML=`<div class="spread"><h2>Sveiki, ${esc(users[role].name)}</h2><div class="row"><button class="btn primary" data-go="sub">+ Ilgalaikis užsakymas</button>${S.pricing.single_enabled?'<button class="btn" data-go="book">+ Vienos dienos</button>':""}</div></div>
+  ${S.pricing.single_enabled?filterBar():""}
   ${shared?`<p class="small muted" style="margin:0">Matote visas savo vaikų keliones, taip pat tas, kurias užsakė kitas tėvas. Kiekviena kelionė apmokama to, kas ją užsakė.</p>`:""}
   ${groupByDay(up,{})||`<div class="card empty">Artimiausių kelionių nėra.</div>`}
   <div class="card"><h3>Ankstesnės kelionės</h3><div>${past.map(t=>tripRow(t)).join("")||'<div class="empty">Dar nebuvo.</div>'}</div></div>`;
@@ -493,10 +493,11 @@ function vIncome(v){
     <p class="small muted" style="margin:0">Kuras skaičiuojamas ${FUEL_L_100} l/100 km po ${FUEL_PRICE.toFixed(2)} €/l, pridedant tuščius km iki paėmimo vietos. Mokesčių procentas kol kas apytikslis, jį patikslinsime pagal kainodaros skaičiavimą.</p></div>
     <form class="card" id="priceForm"><h2>Kainos ir nustatymai</h2>
     ${groups.map(([t,fs])=>`<div class="field"><span class="lbl">${t}</span><div class="two">${fs.map(([k,l])=>`<div class="field"><label for="pr_${k}">${l}</label><input type="number" step="0.05" min="0" id="pr_${k}" value="${p[k]}"></div>`).join("")}</div></div>`).join("")}
+    <label class="row small" for="pr_single"><input type="checkbox" id="pr_single" ${p.single_enabled?"checked":""}> Leisti klientams užsakyti vienos dienos keliones (dabar tik ilgalaikiai užsakymai)</label>
     <label class="row small" for="pr_approved"><input type="checkbox" id="pr_approved" ${p.surcharge_approved?"checked":""}> Patvirtinu savaitgalio ir švenčių priemokas. Kol nepatvirtinta, klientai mato, kad kaina bus patikslinta.</label>
     <button class="btn primary" type="submit">Išsaugoti</button>
     <span class="small muted">Naujos kainos taikomos naujiems užsakymams. Jau pateiktų kaina nesikeičia.</span></form></div>`;
-  $("#priceForm").addEventListener("submit",e=>{e.preventDefault();fields.forEach(([k])=>{const x=parseFloat($("#pr_"+k).value);if(!isNaN(x))p[k]=x});p.surcharge_approved=$("#pr_approved").checked;save();render();toast("Nustatymai išsaugoti")});
+  $("#priceForm").addEventListener("submit",e=>{e.preventDefault();fields.forEach(([k])=>{const x=parseFloat($("#pr_"+k).value);if(!isNaN(x))p[k]=x});p.surcharge_approved=$("#pr_approved").checked;p.single_enabled=$("#pr_single").checked;save();render();toast("Nustatymai išsaugoti")});
 }
 
 /* ---------- Abonementai ---------- */
