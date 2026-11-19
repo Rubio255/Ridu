@@ -102,6 +102,24 @@ td.num,th.num{text-align:right}
 .child:first-of-type{border-top:0}
 .empty{color:var(--muted);font-size:.9rem;padding:8px 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Kainų puslapis (iš kainodaros), ribotas .pp */
+.pp{
+  --bg:#f5f7fa; --surface:#ffffff; --ink:#14233a; --muted:#56657a; --line:#d9e0ea;
+  --accent:#1f5fbf; --accent-ink:#ffffff; --signal:#f2b705; --signal-soft:#fff4cc; --good:#1d7a4f; --good-soft:#e3f4ea;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pp{
+  --bg:#0e1622; --surface:#16212f; --ink:#e8eef6; --muted:#9aa9bc; --line:#2a3a4f;
+  --accent:#6fa3ff; --accent-ink:#0e1622; --signal:#f5c63a; --signal-soft:#3a3218; --good:#5cc79a; --good-soft:#163527; color-scheme:dark}}:root[data-theme="dark"] .pp{
+  --bg:#0e1622; --surface:#16212f; --ink:#e8eef6; --muted:#9aa9bc; --line:#2a3a4f;
+  --accent:#6fa3ff; --accent-ink:#0e1622; --signal:#f5c63a; --signal-soft:#3a3218; --good:#5cc79a; --good-soft:#163527; color-scheme:dark}.pp *{box-sizing:border-box}.pp{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  }.pp .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:56px}.pp h1,.pp h2,.pp h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}.pp h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:800;letter-spacing:-.02em}.pp h2{font-size:1.6rem;font-weight:700}.pp h3{font-size:1.1rem;font-weight:600}.pp p{margin:0;max-width:65ch}.pp .eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}.pp .lead{font-size:1.15rem;color:var(--muted)}.pp header{display:flex;flex-direction:column;gap:16px;padding-top:8px}.pp .route{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.92rem}.pp .route span.dot{width:10px;height:10px;border-radius:50%;background:var(--signal);flex:none}.pp .route span.seg{width:28px;height:2px;background:var(--line)}.pp section{display:flex;flex-direction:column;gap:20px}.pp .sec-head{display:flex;flex-direction:column;gap:6px}.pp .table-wrap{overflow-x:auto}.pp table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.pp th,.pp td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}.pp th{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}.pp td.price{text-align:right;font-weight:600;white-space:nowrap}.pp th.price{text-align:right}.pp td small{display:block;color:var(--muted);font-size:.86rem}.pp .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.pp .chip{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}.pp .chip b{font-family:var(--display);font-size:1.3rem}.pp .chip span{color:var(--muted);font-size:.88rem}.pp .chip.hot{border-color:var(--signal);background:var(--signal-soft)}.pp .calc{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px}@media (max-width:680px){.pp .calc{grid-template-columns:1fr}}.pp .fields{display:flex;flex-direction:column;gap:14px;min-width:0}.pp label{display:flex;flex-direction:column;gap:6px;font-weight:500;font-size:.92rem}.pp input,.pp select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}.pp input:focus-visible,.pp select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.pp .check{flex-direction:row;align-items:center;gap:10px}.pp .check input{width:20px;height:20px}.pp .result{display:flex;flex-direction:column;gap:14px;justify-content:center;min-width:0}.pp .big{font-family:var(--display);font-size:clamp(2.4rem,7vw,3.4rem);font-weight:800;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}.pp .rows{display:flex;flex-direction:column;gap:6px;font-size:.92rem;font-variant-numeric:tabular-nums}.pp .rows div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:4px}.pp .rows div span:first-child{color:var(--muted)}.pp .note{font-size:.86rem;color:var(--muted)}.pp ol.steps{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:10px;max-width:65ch}.pp ul.plain{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px;max-width:65ch}.pp .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.8rem;font-weight:600;background:var(--signal-soft);color:var(--ink);border:1px solid var(--signal)}.pp footer{color:var(--muted);font-size:.86rem;border-top:1px solid var(--line);padding-top:16px}@media (prefers-reduced-motion:no-preference){.pp .big{transition:color .2s}}.pp .cmp-form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:18px}.pp .quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}@media (max-width:640px){.pp .quick{grid-template-columns:repeat(2,minmax(0,1fr))}}.pp .verdict{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:var(--good-soft);border:1px solid var(--good)}.pp .verdict.warn{background:var(--signal-soft);border-color:var(--signal)}.pp .verdict-badge{font-family:var(--display);font-weight:800;font-size:1.5rem;color:var(--good)}.pp .verdict.warn .verdict-badge{color:var(--ink)}.pp .verdict-text{flex:1 1 260px;min-width:0;font-size:1.02rem}.pp .duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:560px){.pp .duo{grid-template-columns:1fr}}.pp .side{border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}.pp .side.us{border-color:var(--accent)}.pp .amount{font-family:var(--display);font-size:clamp(2rem,6vw,2.8rem);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}.pp .side.us .amount{color:var(--accent)}.pp .bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}.pp .bar span{display:block;height:100%;width:0;border-radius:999px;background:var(--muted)}.pp .side.us .bar span{background:var(--accent)}.pp .sub-line{color:var(--muted);font-size:.9rem}.pp .sub-line b{color:var(--ink)}.pp details{border-top:1px solid var(--line);padding-top:12px}.pp summary{cursor:pointer;font-weight:600;color:var(--accent)}.pp summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.pp .more{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}.pp details .rows{margin-top:12px}.pp details .note{margin-top:10px}@media (prefers-reduced-motion:no-preference){.pp .bar span{transition:width .3s}}.pp .gain{display:flex;flex-direction:column;gap:8px}.pp .gain-t td{padding:9px 10px}.pp .gain-t tr.sum td{font-weight:700;border-top:2px solid var(--line)}.pp .gain-t tr.res td{font-weight:800;font-family:var(--display);font-size:1.1rem;border-bottom:none}.pp .gain-t tr.res.plus td{color:var(--good)}
+.pp{padding-block:8px 24px}
+.pp th,.pp td{white-space:normal}
+.pp header{position:static;background:none;color:inherit}
+.pp header .wrap,.pp .wrap{padding:0}
+.pp .table-wrap{max-width:100%}
 </style>
 
 <header>
@@ -278,8 +296,8 @@ const fmtTime=d=>d.toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2400)}
 
 const TABS={
-  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["book","Vienos dienos kelionė"],["kids","Vaikai ir adresai"]],
-  owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"]]
+  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["kids","Vaikai ir adresai"]],
+  owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]]
 };
 function isOwner(){return role==="owner"}
 
@@ -290,7 +308,7 @@ function render(){
   if(!tabs.find(t=>t[0]===tab)) tab=tabs[0][0];
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button role="tab" type="button" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
   const v=$("#view");
-  ({trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome})[tab](v);
+  ({prices:vPrices,trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome})[tab](v);
 }
 
 function tripRow(t,{owner=false,conflict=false}={}){
@@ -502,6 +520,71 @@ function vIncome(v){
     <span class="small muted">Naujos kainos taikomos naujiems užsakymams. Jau pateiktų kaina nesikeičia.</span></form></div>`;
   $("#priceForm").addEventListener("submit",e=>{e.preventDefault();fields.forEach(([k])=>{const x=parseFloat($("#pr_"+k).value);if(!isNaN(x))p[k]=x});p.surcharge_approved=$("#pr_approved").checked;p.single_enabled=$("#pr_single").checked;save();render();toast("Nustatymai išsaugoti")});
 }
+
+/* ---------- Kainų puslapis ---------- */
+const PRICE_HTML='<div class="wrap">\n<header>\n  <div class="eyebrow">Vaikų pavežėjimas Vilniuje<\/div>\n  <h1>Abonementai<\/h1>\n  <p class="lead">Pagal savaitės grafiką paimame vaiką iš darželio, mokyklos ar namų ir nuvežame į būrelį arba kitą sutartą vietą. Vaiką palydime iki durų ar trenerio. Visos kainos nurodytos su PVM.<\/p>\n  <div class="route" aria-hidden="true"><span class="dot"><\/span>Darželis / mokykla / namai<span class="seg"><\/span><span class="dot"><\/span>Būrelis<span class="seg"><\/span><span class="dot"><\/span>Namai<\/div>\n<\/header>\n\n<section aria-labelledby="cmp-h" class="cmp">\n  <div class="sec-head"><h2 id="cmp-h">Ar apsimoka? Palyginkite<\/h2><p>Įveskite savo maršrutą. Iškart matysite, kiek kainuoja abonementas ir kiek kainuoja vežioti vaiką patiems.<\/p><\/div>\n  <form class="cmp-form" id="cmp" >\n    <div class="quick">\n      <label for="km">Atstumas, km<input id="km" type="number" min="1" max="40" step="0.5" value="8"><\/label>\n      <label for="tpw">Kelionių per savaitę<input id="tpw" type="number" min="1" max="14" step="1" value="2"><\/label>\n      <label for="kids">Vaikų kelionėje<select id="kids"><option value="1">1<\/option><option value="2">2<\/option><option value="3">3<\/option><option value="4">4<\/option><\/select><\/label>\n      <label for="method">Vežiotumėte<select id="method"><option value="1" selected>darbo laiku<\/option><option value="0.45">laisvalaikiu<\/option><\/select><\/label>\n    <\/div>\n\n    <div class="verdict" id="verdict" aria-live="polite">\n      <div class="verdict-badge" id="v-badge">Apsimoka<\/div>\n      <div class="verdict-text" id="v-text"><\/div>\n    <\/div>\n\n    <div class="duo">\n      <div class="side us">\n        <div class="eyebrow">Mūsų abonementas<\/div>\n        <div class="amount" id="a-sub">0 €<\/div>\n        <div class="bar"><span id="b-sub"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b>0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n      <div class="side self">\n        <div class="eyebrow">Vežiojant patiems<\/div>\n        <div class="amount" id="a-self">0 €<\/div>\n        <div class="bar"><span id="b-self"><\/span><\/div>\n        <div class="sub-line">per mėnesį · <b id="a-hours">0 val.<\/b> Jūsų laiko<\/div>\n      <\/div>\n    <\/div>\n\n    <div class="gain">\n      <h3>Ką atgaunate su abonementu<\/h3>\n      <div class="table-wrap"><table class="gain-t">\n        <thead><tr><th><\/th><th class="price">Per mėnesį<\/th><th class="price">Per mokslo metus (9 mėn.)<\/th><\/tr><\/thead>\n        <tbody>\n          <tr><td>Laikas, kurio nereikia vairuoti, laukti ir parkuotis<\/td><td class="price" id="g-h1"><\/td><td class="price" id="g-h9"><\/td><\/tr>\n          <tr><td>Kilometrai, kurių nereikia nuvažiuoti<\/td><td class="price" id="g-k1"><\/td><td class="price" id="g-k9"><\/td><\/tr>\n          <tr><td>Sutaupytas kuras ir automobilio dėvėjimasis<\/td><td class="price" id="g-c1"><\/td><td class="price" id="g-c9"><\/td><\/tr>\n          <tr><td>Sutaupytas parkavimas<\/td><td class="price" id="g-p1"><\/td><td class="price" id="g-p9"><\/td><\/tr>\n          <tr><td>Jūsų laiko vertė<\/td><td class="price" id="g-t1"><\/td><td class="price" id="g-t9"><\/td><\/tr>\n          <tr class="sum"><td>Iš viso atgaunate<\/td><td class="price" id="g-s1"><\/td><td class="price" id="g-s9"><\/td><\/tr>\n          <tr><td>Abonemento kaina<\/td><td class="price" id="g-a1"><\/td><td class="price" id="g-a9"><\/td><\/tr>\n          <tr class="res"><td id="g-rl">Rezultatas<\/td><td class="price" id="g-r1"><\/td><td class="price" id="g-r9"><\/td><\/tr>\n        <\/tbody>\n      <\/table><\/div>\n    <\/div>\n\n    <details>\n      <summary>Tikslinti skaičiavimą<\/summary>\n      <div class="more">\n        <label for="slot">Laikas<select id="slot"><option value="0.9">Rytas po 9 val. arba ankstyva popietė<\/option><option value="1" selected>Kitas laikas<\/option><option value="1.15">Nuo 15 iki 17 val.<\/option><\/select><\/label>\n        <label for="term">Sutarties trukmė<select id="term"><option value="0">1 mėnuo<\/option><option value="0.05" selected>3 mėnesiai<\/option><option value="0.10">Mokslo metai<\/option><\/select><\/label>\n        <label for="extra">Jūsų kelias iki vaiko ir atgal, km<input id="extra" type="number" min="0" max="60" step="1" value="6"><\/label>\n        <label for="carkm">Automobilio kaina už km, €<input id="carkm" type="number" min="0" max="2" step="0.01" value="0.30"><\/label>\n        <label for="park">Parkavimas kelionei, €<input id="park" type="number" min="0" max="20" step="0.5" value="1"><\/label>\n        <label for="wait">Laukimas kelionei, min.<input id="wait" type="number" min="0" max="120" step="1" value="5"><\/label>\n        <label for="wage">Atlyginimas prieš mokesčius, €/mėn.<input id="wage" type="number" min="0" max="20000" step="50" value="2600"><\/label>\n        <label class="check" for="wk"><input id="wk" type="checkbox">Kelionės savaitgalį<\/label>\n      <\/div>\n    <\/details>\n    <details>\n      <summary>Kaip suskaičiuota<\/summary>\n      <div class="rows">\n        <div><span>Abonementas: vienos kelionės kaina vaikui<\/span><span id="out-trip">0 €<\/span><\/div>\n        <div><span>Patiems: kuras ir automobilio dėvėjimasis<\/span><span id="self-car">0 €<\/span><\/div>\n        <div><span>Patiems: parkavimas<\/span><span id="self-park">0 €<\/span><\/div>\n        <div><span>Patiems: Jūsų laikas<\/span><span id="self-time">0 €<\/span><\/div>\n      <\/div>\n      <p class="note">0,30 €/km apima kurą, padangas, remontą ir automobilio vertės mažėjimą. Laiko vertė = atlyginimas prieš mokesčius ÷ 168 val. (2 600 € ≈ Vilniaus regiono vidurkis, ≈ 15,5 €/val.). Darbo laikas vertinamas 100%, laisvalaikis 45% valandos vertės. Kiekvienai kelionei pridedama 15 min. parkuotis ir palydėti vaiką bei Jūsų nurodytas laukimas.<\/p>\n    <\/details>\n  <\/form>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Abonementai<\/h2><p>Nuolatinės kelionės pagal savaitės grafiką. Kaina užfiksuojama visam sutarties laikotarpiui. Tikslią kainą pagal Jūsų adresus ir laiką parodys aplikacija.<\/p><\/div>\n  <div class="table-wrap"><table>\n    <thead><tr><th>Abonemento pavyzdys (iki 8 km)<\/th><th class="price">Kaina vaikui<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Būrelis 2 kartus per savaitę<small>Mokykla → būrelis, mokslo metų sutartis<\/small><\/td><td class="price">nuo 275 €/mėn.<\/td><\/tr>\n      <tr><td>Būrelis 2 kartus per savaitę, keli vaikai iš tos pačios klasės<small>Vežame 3 vaikus kartu<\/small><\/td><td class="price">nuo 124 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien rytą į mokyklą ar darželį<small>Bendras rytinis maršrutas su keliais vaikais, pristatome iki pamokų pradžios<\/small><\/td><td class="price">nuo 375 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, du broliai ar seserys<\/td><td class="price">nuo 413 €/mėn.<\/td><\/tr>\n      <tr><td>Kasdien po pamokų į būrelį, vienas vaikas<\/td><td class="price">nuo 688 €/mėn.<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p class="note">Kuo ilgesnė sutartis ir kuo daugiau vaikų važiuoja kartu, tuo mažesnė kaina kiekvienam.<\/p>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Kai pasirinktas laikas užimtas<\/h2><p>Populiariausi laikai užsipildo pirmiausia. Aplikacijoje galite užsiregistruoti į norimą laiką ir pateikti savo pasiūlymą. Vietos kitam mėnesiui paskirstomos kiekvieno mėnesio 25 d. Esami klientai savo abonementą pratęsia ta pačia kaina.<\/p><\/div>\n<\/section>\n\n<section>\n  <div class="sec-head"><h2>Sauga ir sąlygos<\/h2><\/div>\n  <ul class="plain">\n    <li>Vaikiškos kėdutės ir busteriai pagal vaiko ūgį ir svorį, kaip reikalauja KET.<\/li>\n    <li>Vaiką palydime iki durų, į patalpas arba perduodame treneriui.<\/li>\n    <li>Tarp kelionių planuojama privaloma pertrauka, kad vairuotojas niekada neskubėtų.<\/li>\n    <li>Licencijuotas keleivių vežimas, apdraustas automobilis, neteistumo pažyma pateikiama paprašius.<\/li>\n    <li>Atšaukimas likus mažiau nei 12 val.: 50% kelionės kainos. Likus mažiau nei 2 val. arba vaikui neatvykus: 100%.<\/li>\n    <li>Išsiskyrusiems tėvams: sutartyje nurodoma, kas gali paimti vaiką ir kuris iš tėvų apmoka kiekvieną savaitę.<\/li>\n  <\/ul>\n<\/section>\n\n<footer>Kainos galioja nuo 2026 m. lapkričio. Visos kainos su 21% PVM. <span class="pill">Preliminari skaičiuoklė<\/span><\/footer>\n<\/div>\n';
+function initPrices(P){
+  var MIN_RATE=P.minute_rate, KM_RATE=P.km_rate, HANDOVER=P.handover_min, DEADHEAD=P.deadhead_min, BREAK_MIN=P.gap_min, EMPTY_KM=P.empty_km;
+  var WEEKEND=P.weekend_pct/100, BASE=P.base_fee, INCL_KM=8, EXTRA_KM=1.2, MIN_PER_KM=2.75;
+  var SHARE={1:1,2:P.share2/100,3:P.share3/100,4:P.share4/100};
+  function eur(v,dec){return v.toLocaleString('lt-LT',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' €';}
+  function num(id,def){var v=parseFloat(document.getElementById(id).value);return isFinite(v)&&v>0?v:def;}
+  function calc(){
+    var km=num('km',8), kids=parseInt(document.getElementById('kids').value,10)||1, tpw=num('tpw',1);
+    var mult=parseFloat(document.getElementById('slot').value), disc=parseFloat(document.getElementById('term').value);
+    var wk=document.getElementById('wk').checked;
+    var drive=Math.round(km*MIN_PER_KM);
+    var car=(MIN_RATE*(drive+HANDOVER+DEADHEAD+BREAK_MIN)+KM_RATE*(km+EMPTY_KM))*(wk?1+WEEKEND:1);
+    var child=car*SHARE[Math.min(kids,4)];
+    var trip=child*mult*(1-disc);
+    var n=tpw*52/12;
+    var single=(BASE+Math.max(0,km-INCL_KM)*EXTRA_KM)*(wk?1+WEEKEND:1);
+    var sub=Math.round(trip*n);
+    document.getElementById('out-trip').textContent=eur(trip,2);
+    var extra=parseFloat(document.getElementById('extra').value)||0;
+    var carkm=parseFloat(document.getElementById('carkm').value)||0;
+    var park=parseFloat(document.getElementById('park').value)||0;
+    var wage=parseFloat(document.getElementById('wage').value)||0;
+    var hour=wage/168*parseFloat(document.getElementById('method').value);
+    var waitMin=parseFloat(document.getElementById('wait').value)||0;
+    var hours=((km+extra)*MIN_PER_KM+15+waitMin)*n/60;
+    var cCar=(km+extra)*n*carkm, cPark=park*n, cTime=hours*hour, total=Math.round(cCar+cPark+cTime);
+    var hrs=hours.toLocaleString('lt-LT',{maximumFractionDigits:1});
+    document.getElementById('a-sub').textContent=eur(sub,0);
+    document.getElementById('a-self').textContent=eur(total,0);
+    document.getElementById('a-hours').textContent=hrs+' val.';
+    var mx=Math.max(sub,total,1);
+    document.getElementById('b-sub').style.width=(sub/mx*100)+'%';
+    document.getElementById('b-self').style.width=(total/mx*100)+'%';
+    document.getElementById('self-car').textContent=eur(Math.round(cCar),0);
+    document.getElementById('self-park').textContent=eur(Math.round(cPark),0);
+    document.getElementById('self-time').textContent=eur(Math.round(cTime),0)+' ('+hrs+' val.)';
+    function set(id,t){document.getElementById(id).textContent=t;}
+    function h(v){return v.toLocaleString('lt-LT',{maximumFractionDigits:1})+' val.';}
+    function k(v){return Math.round(v).toLocaleString('lt-LT')+' km';}
+    var kmM=(km+extra)*n, saved=cCar+cPark+cTime;
+    [[1,'1'],[9,'9']].forEach(function(m){var f=m[0],x=m[1];
+      set('g-h'+x,h(hours*f)); set('g-k'+x,k(kmM*f)); set('g-c'+x,eur(Math.round(cCar*f),0));
+      set('g-p'+x,eur(Math.round(cPark*f),0)); set('g-t'+x,eur(Math.round(cTime*f),0));
+      set('g-s'+x,eur(Math.round(saved*f),0)); set('g-a'+x,eur(sub*f,0));
+      var r=Math.round(saved*f-sub*f); set('g-r'+x,(r>=0?'+':'−')+eur(Math.abs(r),0));});
+    var res=document.querySelector('.gain-t tr.res');
+    if(saved>=sub){res.classList.add('plus');set('g-rl','Jūs sutaupote');}else{res.classList.remove('plus');set('g-rl','Jūs primokate');}
+    var diff=sub-total, v=document.getElementById('verdict');
+    if(diff<=0){
+      v.classList.remove('warn');
+      document.getElementById('v-badge').textContent='Apsimoka';
+      document.getElementById('v-text').textContent='Abonementas pigesnis '+eur(-diff,0)+' per mėnesį, ir dar atgaunate '+hrs+' val. laiko.';
+    } else {
+      v.classList.add('warn');
+      document.getElementById('v-badge').textContent='+'+eur(diff,0)+' /mėn.';
+      document.getElementById('v-text').textContent='Tiek daugiau kainuoja abonementas, bet atgaunate '+hrs+' val. per mėnesį: tai '+eur(diff/hours,2)+' už kiekvieną valandą be vairavimo.';
+    }
+  }
+  ['km','kids','tpw','slot','term','wk','extra','carkm','park','wage','method','wait'].forEach(function(id){var el=document.getElementById(id);el.addEventListener('input',calc);el.addEventListener('change',calc);});
+  calc();
+}
+function vPrices(v){v.innerHTML='<div class="pp">'+PRICE_HTML+'</div>';const f=v.querySelector('#cmp');if(f)f.addEventListener('submit',e=>e.preventDefault());initPrices(S.pricing);}
 
 /* ---------- Abonementai ---------- */
 const SUB_ON=["active","pending"];
