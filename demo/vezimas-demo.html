@@ -180,6 +180,9 @@ const users = {
   egle:{id:"egle",name:"Eglė",contract:"S-2026-03"}
 };
 
+function isoAdd(days){const d=new Date();d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
+function addMonthsIso(iso,m){const d=new Date(iso+"T12:00:00");d.setMonth(d.getMonth()+m);return d.toISOString().slice(0,10)}
+const fmtD=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("lt-LT",{year:"numeric",month:"long",day:"numeric"}):"–";
 function seed(){
   const places = [
     {id:"p1",owner:"rasa",label:"Rasos namai",kind:"home",address:"Žirmūnų g., Vilnius",lat:54.7085,lng:25.2985},
@@ -199,9 +202,11 @@ function seed(){
   ];
   const st = {places,children,pricing:{...PRICING_DEFAULTS},trips:[],subs:[],seq:1};
   st.subs.push(
-    {id:"a1",payer:"egle",child:"c3",from:"p8",to:"p9",weekdays:[1,3],time:"16:10",status:"active",perTrip:29.5,monthly:0,bid:null},
-    {id:"a2",payer:"tomas",child:"c2",from:"p4",to:"p5",weekdays:[2,4],time:"15:30",status:"active",perTrip:29.5,monthly:0,bid:null},
-    {id:"a3",payer:"rasa",child:"c1",from:"p1",to:"p3",weekdays:[1,2,3,4,5],time:"07:45",status:"pending",perTrip:29.5,monthly:0,bid:null}
+    {id:"a1",no:"S-2026-004",payer:"egle",child:"c3",from:"p8",to:"p9",weekdays:[1,3],time:"16:10",status:"active",perTrip:29.5,monthly:0,bid:null,start:isoAdd(-62),seedMonths:3},
+    {id:"a2",no:"S-2026-006",payer:"tomas",child:"c2",from:"p4",to:"p5",weekdays:[2,4],time:"15:30",status:"active",perTrip:29.5,monthly:0,bid:null,start:isoAdd(-20)},
+    {id:"a3",payer:"rasa",child:"c1",from:"p1",to:"p3",weekdays:[1,2,3,4,5],time:"07:45",status:"pending",perTrip:29.5,monthly:0,bid:null},
+    {id:"a4",no:"S-2026-001",payer:"rasa",child:"c2",from:"p4",to:"p6",weekdays:[1,3,5],time:"14:00",status:"ended",perTrip:27.4,monthly:356,bid:null,months:3,start:isoAdd(-190),end:isoAdd(-98),endReason:"Baigėsi terminas"},
+    {id:"a5",no:"S-2026-002",payer:"egle",child:"c3",from:"p8",to:"p9",weekdays:[2],time:"17:00",status:"ended",perTrip:31.2,monthly:135,bid:null,months:1,start:isoAdd(-150),end:isoAdd(-75),endReason:"Nutraukė klientas"}
   );
 
   const today = startOfDay(new Date());
@@ -279,11 +284,11 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
-if(!S||!S.trips||!S.v8) {S=seed();S.v8=true}
+if(!S||!S.trips||!S.v9) {S=seed();S.v9=true}
 if(MODE==="admin"){document.querySelector('.role').hidden=true;document.querySelector('.logo small').textContent="Administravimas";}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
-let tripFilter="all", moving=null;
+let tripFilter="all", moving=null, contractFilter="active";
 if(S.users) Object.assign(users,S.users);
 function toLocalInput(iso){const d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
 let role="rasa", tab=null;
@@ -300,8 +305,8 @@ const fmtTime=d=>d.toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2400)}
 
 const TABS={
-  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["kids","Vaikai ir adresai"]],
-  owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]]
+  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["contracts","Sutartys"],["kids","Vaikai ir adresai"]],
+  owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["contracts","Sutartys"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]]
 };
 function isOwner(){return role==="owner"}
 
@@ -313,7 +318,7 @@ function render(){
   if(!tabs.find(t=>t[0]===tab)) tab=tabs[0][0];
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button role="tab" type="button" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
   const v=$("#view");
-  ({prices:vPrices,trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome})[tab](v);
+  ({prices:vPrices,trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome,contracts:vContracts})[tab](v);
 }
 
 function tripRow(t,{owner=false,conflict=false}={}){
@@ -706,6 +711,27 @@ function vSub(v){
     save();render();toast(bid?"Pasiūlymas pateiktas":"Abonementas pateiktas. Laukia patvirtinimo.")});
 }
 
+function activateSub(s){s.start=s.start||isoAdd(0);s.months=s.months||1;if(s.months>1)s.end=addMonthsIso(s.start,s.months);s.no=s.no||("S-"+new Date().getFullYear()+"-"+String(S.subs.filter(x=>x.no).length+1).padStart(3,"0"))}
+function contractState(s){if(s.status==="ended")return "ended";if(s.status==="active"&&s.end&&s.end<isoAdd(0))return "renew";return s.status}
+function vContracts(v){
+  const own=isOwner(), mineKids=own?[]:myChildren().map(c=>c.id);
+  const list=S.subs.filter(s=>["active","ended"].includes(s.status)&&(own||s.payer===role||mineKids.includes(s.child)));
+  const shown=list.filter(s=>contractFilter==="all"||(contractFilter==="active")===(s.status==="active")).sort((a,b)=>(b.start||"").localeCompare(a.start||""));
+  const act=list.filter(s=>s.status==="active"), ended=list.filter(s=>s.status==="ended");
+  const term=s=>s.months>1?`${s.months} mėn.`:"Kas mėnesį pratęsiama";
+  const period=s=>s.end?`${fmtD(s.start)} – ${fmtD(s.end)}`:`nuo ${fmtD(s.start)}, neterminuota`;
+  const row=s=>`<div class="child"><div class="spread"><b>${s.no?esc(s.no)+" · ":""}${esc(child(s.child).name)} · ${s.weekdays.map(w=>DAYS[w-1]).join(", ")} ${s.time}</b><span class="pill ${s.status==="active"?"s-confirmed":"s-rejected"}">${s.status==="active"?"Galioja":"Pasibaigusi"}</span></div>
+    <div class="small muted">${own?esc(users[s.payer]?.name||s.payer)+" · ":s.payer!==role?"Moka "+esc(users[s.payer]?.name||s.payer)+" · ":""}${esc(S.places.find(x=>x.id===s.from).label)} → ${esc(S.places.find(x=>x.id===s.to).label)}</div>
+    <div class="small"><b>${eur(s.monthly)} / mėn.</b> · ${term(s)} · ${period(s)}${s.endReason?` · ${esc(s.endReason)}`:""}</div>
+    ${own&&s.status==="active"?`<div class="row"><button class="btn bad" data-end="${s.id}">Nutraukti sutartį</button></div>`:""}</div>`;
+  v.innerHTML=`<div class="stats">
+    <div class="stat"><span class="small muted">Galiojančios sutartys</span><b>${act.length}</b></div>
+    <div class="stat"><span class="small muted">${own?"Mėnesio pajamos":"Mokate per mėnesį"}</span><b>${eur(act.filter(s=>own||s.payer===role).reduce((a,s)=>a+s.monthly,0))}</b></div>
+    <div class="stat"><span class="small muted">Pasibaigusios</span><b>${ended.length}</b></div></div>
+  <div class="card"><div class="spread"><h2>Sutartys</h2><div class="row" role="group" aria-label="Rodyti sutartis">${[["active","Galiojančios"],["ended","Pasibaigusios"],["all","Visos"]].map(([k,l])=>`<button type="button" class="btn ${contractFilter===k?"primary":""}" data-cfilter="${k}">${l}</button>`).join("")}</div></div>
+  ${shown.map(row).join("")||`<div class="empty">${contractFilter==="ended"?"Pasibaigusių sutarčių nėra.":"Sutarčių nėra."}</div>`}
+  <p class="small muted" style="margin:0">${own?"Nutraukus sutartį, būsimos jos kelionės atšaukiamos ir tėvams išsiunčiamas pranešimas.":"Norėdami nutraukti sutartį, susisiekite su vairuotoju."}</p></div>`;
+}
 function vSubsOwner(v){
   const p=S.pricing;
   const act=S.subs.filter(s=>s.status==="active"), pend=S.subs.filter(s=>s.status==="pending").sort((a,b)=>(b.bid?1:0)-(a.bid?1:0)||b.monthly-a.monthly);
@@ -728,7 +754,10 @@ function vSubsOwner(v){
 }
 
 document.addEventListener("click",e=>{
-  const sb=e.target.closest("[data-sub]");if(sb){const s=S.subs.find(x=>x.id===sb.dataset.id);if(s){s.status=sb.dataset.sub;if(s.status==="active")syncSubTrips();save();render();toast(s.status==="active"?"Abonementas patvirtintas":"Abonementas atmestas")}return}
+  const sb=e.target.closest("[data-sub]");if(sb){const s=S.subs.find(x=>x.id===sb.dataset.id);if(s){s.status=sb.dataset.sub;if(s.status==="active"){activateSub(s);syncSubTrips()}save();render();toast(s.status==="active"?"Abonementas patvirtintas":"Abonementas atmestas")}return}
+  const cf=e.target.closest("[data-cfilter]");if(cf){contractFilter=cf.dataset.cfilter;render();return}
+  const en=e.target.closest("[data-end]");if(en){if(en.dataset.sure!=="1"){en.dataset.sure="1";en.textContent="Tikrai nutraukti?";return}
+    const s=S.subs.find(x=>x.id===en.dataset.end);if(s){s.status="ended";s.end=isoAdd(0);s.endReason="Nutraukta";const now=new Date();S.trips.forEach(t=>{if(t.series===s.id&&new Date(t.at)>now&&ACTIVE.includes(t.status))t.status="cancelled"});save();render();toast("Sutartis nutraukta. Tėvams išsiųstas pranešimas.")}return}
   const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;render();return}
   const fl=e.target.closest("[data-filter]");if(fl){tripFilter=fl.dataset.filter;render();return}
   const go=e.target.closest("[data-go]");if(go){e.preventDefault();tab=go.dataset.go;render();return}
@@ -746,7 +775,7 @@ $("#roleSel").addEventListener("change",e=>{role=e.target.value;tab=null;save();
 $("#resetBtn").addEventListener("click",e=>{const b=e.currentTarget;if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Tikrai atkurti?";return}
   b.dataset.sure="";b.textContent="Atkurti pavyzdžius";S=seed();save();render();toast("Pavyzdžiai atkurti")});
 {const todo=S.subs.filter(s=>!s.monthly),st=todo.map(s=>s.status);todo.forEach(s=>s.status="x");
- todo.forEach((s,i)=>{const q=subQuote({...s,extra:0,months:1});s.monthly=q.monthly;s.perTrip=q.perTrip;s.months=1;s.status=st[i]});}
+ todo.forEach((s,i)=>{const q=subQuote({...s,extra:0,months:1});s.monthly=q.monthly;s.perTrip=q.perTrip;s.months=s.seedMonths||1;if(s.start&&s.months>1)s.end=addMonthsIso(s.start,s.months);s.status=st[i]});}
 syncSubTrips();save();
 render();
 })();
