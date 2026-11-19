@@ -24,6 +24,7 @@ export default async function Page() {
         <span className="num font-bold">{eur(x.monthly_eur)}/mėn.</span>
       </div>
       <div className="text-sm muted">{x.from.label} → {x.to.label} · {Number(x.km).toFixed(1)} km, {x.drive_min} min kelio · {eur(x.per_trip_eur)} už kelionę vienam vaikui · {x.months} mėn.{x.is_bid ? " · aukciono pasiūlymas" : ""}</div>
+      {x.owner_note && <div className="rounded-lg bg-[var(--warn-bg)] p-2 text-sm font-semibold text-[var(--warn)]">{x.owner_note}</div>}
       {x.status === "pending" ? (
         <form action={decideSubscription} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="id" value={x.id} />

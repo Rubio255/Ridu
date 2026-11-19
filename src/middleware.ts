@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
   });
   const { data: { user } } = await sb.auth.getUser();
   const p = req.nextUrl.pathname;
-  const open = p.startsWith("/prisijungti") || p.startsWith("/auth") || p.startsWith("/api/cron") || p === "/privatumas";
+  const open = p === "/sw.js" || p.startsWith("/prisijungti") || p.startsWith("/auth") || p.startsWith("/api/cron") || p === "/privatumas";
   if (!user && !open) return NextResponse.redirect(new URL("/prisijungti", req.url));
   return res;
 }

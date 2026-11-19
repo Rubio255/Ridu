@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
-import { cancelTrip } from "@/app/actions";
+import { cancelTrip, requestSubscriptionChange } from "@/app/actions";
 import { Pill } from "@/components/shell";
 import { cancelFeePct } from "@/lib/pricing";
 import { DAYS, dayKey, eur, fmtDay, fmtTime } from "@/lib/time";
@@ -39,6 +39,14 @@ export default async function Page() {
             </div>
             <div className="text-sm muted">{x.from.label} → {x.to.label}</div>
             <div className="text-sm">{eur(x.monthly_eur)} / mėn.{x.months > 1 ? ` · ${x.months} mėn.` : ""}{x.is_bid ? " · jūsų pasiūlymas" : ""}{x.payer_id !== me.id ? " · užsakė kitas globėjas" : ""}</div>
+            {x.status === "active" && x.period === "pm" && (
+              <form action={requestSubscriptionChange} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="id" value={x.id} />
+                <label className="grid gap-1 text-xs font-semibold muted">Norimas naujas laikas<input type="time" name="pickup_time" className="input" min={s.afternoon_start} max={s.afternoon_end} defaultValue={String(x.pickup_time).slice(0, 5)} /></label>
+                <button className="btn">Prašyti pakeisti</button>
+              </form>
+            )}
+            {x.owner_note && <div className="text-sm muted">{x.owner_note}. Laukia vairuotojo atsakymo.</div>}
           </div>
         ))}
       </section>

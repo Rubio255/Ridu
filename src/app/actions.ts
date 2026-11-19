@@ -8,6 +8,8 @@ import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/p
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { addDays, vilniusToday, vilniusToDate, toMin } from "@/lib/time";
 import { generateTrips } from "@/lib/trips";
+import { notifyOwner } from "@/lib/push";
+import { DAYS } from "@/lib/time";
 
 export async function signOut() {
   const sb = await supabaseServer();
@@ -80,6 +82,8 @@ export async function createSubscription(input: SubInput, bidMonthly?: number) {
     per_trip_eur: perTrip, monthly_eur: monthly, is_bid: isBid, status: "pending",
   });
   if (e) return { ok: false as const, error: "Nepavyko išsaugoti. Bandykite dar kartą." };
+  const when = `${input.weekdays.map((w) => DAYS[w - 1]).join(", ")} ${input.period === "am" ? "rytas" : input.pickup_time}`;
+  await notifyOwner(isBid ? "Naujas kainos pasiūlymas" : "Naujas ilgalaikis užsakymas", `${me.full_name || me.email}: ${when}, ${monthly} €/mėn. Laukia patvirtinimo.`, "/savininkas/uzsakymai");
   revalidatePath("/tevai");
   return { ok: true as const, isBid };
 }
@@ -102,7 +106,12 @@ export async function cancelTrip(fd: FormData) {
   if (me.role !== "owner") await assertGuardian(t.child_id, me.id);
   const s = await loadSettings();
   const hours = (new Date(t.pickup_at).getTime() - Date.now()) / 36e5;
-  await db.from("trips").update({ status: "cancelled", cancel_fee_pct: cancelFeePct(s, hours) }).eq("id", id);
+  const fee = cancelFeePct(s, hours);
+  await db.from("trips").update({ status: "cancelled", cancel_fee_pct: fee }).eq("id", id);
+  if (me.role !== "owner") {
+    const when = new Date(t.pickup_at).toLocaleString("lt-LT", { timeZone: "Europe/Vilnius", weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    await notifyOwner("Kelionė atšaukta", `${me.full_name || me.email} atšaukė kelionę ${when}${fee ? ` (mokestis ${fee}%)` : ""}.`, "/savininkas");
+  }
   revalidatePath("/tevai"); revalidatePath("/savininkas");
 }
 
@@ -179,4 +188,23 @@ export async function saveSettings(fd: FormData) {
   if (toMin(String(next.morning_start)) >= toMin(String(next.morning_end))) throw new Error("Rytinio maršruto pradžia turi būti anksčiau nei pabaiga.");
   await supabaseAdmin().from("settings").update({ data: next, updated_at: new Date().toISOString() }).eq("id", 1);
   revalidatePath("/savininkas", "layout");
+}
+
+export async function savePushSubscription(sub: { endpoint: string; p256dh: string; auth: string }) {
+  const me = await requireOwner();
+  await supabaseAdmin().from("push_subscriptions").upsert({ profile_id: me.id, ...sub }, { onConflict: "endpoint" });
+}
+
+// Klientas keičia ilgalaikio užsakymo laiką: grąžinama savininkui patvirtinti
+export async function requestSubscriptionChange(fd: FormData) {
+  const me = await requireProfile();
+  const id = String(fd.get("id")), time = String(fd.get("pickup_time") ?? "");
+  const db = supabaseAdmin();
+  const { data: sub } = await db.from("subscriptions").select("id, child_id, period, pickup_time, status").eq("id", id).single();
+  if (!sub || sub.period !== "pm" || !/^\d{2}:\d{2}$/.test(time)) return;
+  await assertGuardian(sub.child_id, me.id);
+  const note = `Prašoma pakeisti laiką iš ${String(sub.pickup_time).slice(0, 5)} į ${time}`;
+  await db.from("subscriptions").update({ owner_note: note }).eq("id", id);
+  await notifyOwner("Prašoma pakeisti užsakymą", `${me.full_name || me.email}: ${note}.`, "/savininkas/uzsakymai");
+  revalidatePath("/tevai");
 }
