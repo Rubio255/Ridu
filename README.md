@@ -1,4 +1,4 @@
-# Išsiskyrusiems · vaikų pavėžėjimas
+# Ridu · vaikų pavėžėjimas
 
 Ilgalaikių vaikų pavėžėjimo užsakymų aplikacija Vilniuje (Next.js + Supabase + Vercel).
 
