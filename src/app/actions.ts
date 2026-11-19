@@ -8,6 +8,8 @@ import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/p
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { addDays, vilniusToday, vilniusToDate, toMin, fmtTime } from "@/lib/time";
 import { generateTrips } from "@/lib/trips";
+import { CONSENTS, TERMS_VERSION } from "@/lib/terms";
+import { loadConsents } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
 import { DAYS } from "@/lib/time";
 
@@ -253,4 +255,17 @@ export async function requestSubscriptionChange(fd: FormData) {
   await db.from("subscriptions").update({ owner_note: note }).eq("id", id);
   await notifyOwner("Prašoma pakeisti užsakymą", `${me.full_name || me.email}: ${note}.`, "/savininkas/uzsakymai");
   revalidatePath("/tevai");
+}
+
+// Klientas pažymi sutikimus. Įrašomi tik pasikeitę punktai, su laiku ir sąlygų versija.
+export async function saveConsents(fd: FormData) {
+  const me = await requireProfile();
+  const cur = await loadConsents(me.id);
+  const rows = CONSENTS.map((c) => ({ c, granted: fd.get(c.key) === "on" }));
+  if (rows.some(({ c, granted }) => c.required && !granted)) throw new Error("Pažymėkite visus privalomus punktus.");
+  const changed = rows.filter(({ c, granted }) => cur[c.key]?.granted !== granted || cur[c.key]?.version !== TERMS_VERSION)
+    .map(({ c, granted }) => ({ profile_id: me.id, key: c.key, granted, terms_version: TERMS_VERSION }));
+  if (changed.length) await supabaseAdmin().from("consents").insert(changed);
+  revalidatePath("/tevai", "layout");
+  if (fd.get("next") === "tevai") redirect("/tevai");
 }

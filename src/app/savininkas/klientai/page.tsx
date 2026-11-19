@@ -1,12 +1,22 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { inviteClient, addChild, setClientActive } from "@/app/actions";
+import { CONSENTS, TERMS_VERSION } from "@/lib/terms";
+
+const SHORT: Record<string, string> = { terms: "Taisyklės", privacy: "Privatumas", guardian: "Atstovas", health: "Sveikatos duomenys", alone: "Paleisti vieną", news: "Naujienos" };
 
 export default async function Page() {
   const db = supabaseAdmin();
-  const [{ data: clients }, { data: kids }] = await Promise.all([
+  const [{ data: clients }, { data: kids }, { data: cons }] = await Promise.all([
     db.from("profiles").select("*").eq("role", "client").order("full_name"),
     db.from("children").select("*, guardians:child_guardians(profile:profiles(full_name, email))").order("first_name"),
+    db.from("current_consents").select("profile_id, key, granted, terms_version, created_at"),
   ]);
+  const consentLine = (id: string) => {
+    const mine = (cons ?? []).filter((c) => c.profile_id === id && c.granted && c.terms_version === TERMS_VERSION);
+    if (!CONSENTS.filter((c) => c.required).every((c) => mine.some((m) => m.key === c.key))) return "Dar nesutiko su sąlygomis";
+    const at = mine.map((m) => m.created_at).sort().pop()!;
+    return `Sutiko ${new Date(at).toLocaleDateString("lt-LT", { timeZone: "Europe/Vilnius" })}: ${CONSENTS.filter((c) => mine.some((m) => m.key === c.key)).map((c) => SHORT[c.key]).join(", ")}`;
+  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <section className="card content-start">
@@ -24,7 +34,7 @@ export default async function Page() {
         <h2 className="pt-2 font-bold">Klientai</h2>
         {(clients ?? []).map((c) => (
           <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
-            <div><b>{c.full_name || c.email}</b><div className="text-sm muted">{c.email}{c.phone ? ` · ${c.phone}` : ""}{c.contract_no ? ` · ${c.contract_no}` : ""}</div></div>
+            <div><b>{c.full_name || c.email}</b><div className="text-sm muted">{c.email}{c.phone ? ` · ${c.phone}` : ""}{c.contract_no ? ` · ${c.contract_no}` : ""}</div><div className="text-xs muted">{consentLine(c.id)}</div></div>
             <form action={setClientActive}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="active" value={c.active ? "0" : "1"} /><button className="btn">{c.active ? "Išjungti" : "Įjungti"}</button></form>
           </div>
         ))}

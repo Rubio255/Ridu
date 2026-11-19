@@ -180,6 +180,12 @@ const users = {
   egle:{id:"egle",name:"Eglė",contract:"S-2026-03"}
 };
 
+const TERMS_VERSION="2026-11-19", FULL_TERMS="https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
+const TERMS=[["Paslauga", "Pavežame jūsų vaiką sutartu maršrutu Vilniuje ir perduodame tik jūsų patvirtintiems asmenims arba į įstaigą."], ["Laikas", "Galimas ±10 min. nukrypimas dėl eismo. Nemokamas laukimas – 5 min., po 10 min. kelionė laikoma įvykusia."], ["Atšaukimas", "Daugiau nei 12 val. iki kelionės – nemokamai; 12–2 val. – 50 %; mažiau nei 2 val. ar neatvykus – 100 %. Ligos atveju su gydytojo pažyma – nemokamai."], ["Mokėjimas", "Sąskaita kas mėnesį, apmokėti per 7 dienas."], ["Saugumas", "Vaikai iki 135 cm vežami tinkamoje kėdutėje ar paaukštinime. Pateikite tikslų ūgį, svorį, alergijas ir atnaujinkite pasikeitus."], ["Elgesys", "Vaikas sėdi prisisegęs, netrukdo vairuotojui, nesimuša ir negadina automobilio. Pavojingai besielgiantį vaiką galime sustoti saugioje vietoje ir perduoti jums."], ["Žala", "Už vaiko padarytą žalą automobiliui atsako tėvai (CK 6.275–6.276 str.): realios remonto išlaidos, valymas – 40 €."], ["Du tėvai", "Antrasis tėvas gali būti prijungtas jūsų leidimu. Mes nesprendžiame tėvų ginčų ir vykdome paskutinį patvirtintą tvarkaraštį bei teismo sprendimą, jei jį pateikėte."], ["Nutraukimas", "Abi pusės gali nutraukti sutartį bet kada, įspėjusios prieš 30 d.; sumokėta už neįvykusias keliones grąžinama. Mes galime nutraukti iš karto, jei vaikas elgiasi agresyviai ar pavojingai, padaroma tyčinė žala ir ji neatlyginama, nemokama ilgiau kaip 14 d., tėvų konfliktai trikdo paslaugą, niekas nepasitinka vaiko ar grasinama vairuotojui."], ["Duomenys", "Jūsų ir vaiko duomenis naudojame tik pavežimui ir atsiskaitymui, sveikatos duomenis – tik jūsų sutikimu. Galite juos peržiūrėti, ištaisyti ar ištrinti."], ["Skundai", "Rašykite mums; jei nesusitariame – Valstybinė vartotojų teisių apsaugos tarnyba (vvtat.lrv.lt)."]];
+const CONSENTS=[{"key": "terms", "label": "Susipažinau ir sutinku su Paslaugų teikimo taisyklėmis", "req": true}, {"key": "privacy", "label": "Susipažinau su Privatumo politika", "req": true}, {"key": "guardian", "label": "Patvirtinu, kad esu vaiko tėvas, motina ar teisėtas atstovas ir turiu teisę spręsti dėl jo pavežimo", "req": true}, {"key": "health", "label": "Sutinku, kad būtų tvarkomi vaiko sveikatos duomenys (alergijos, ligos), kad vairuotojas galėtų suteikti pagalbą", "req": false}, {"key": "alone", "label": "Leidžiu paleisti vaiką prie paskirties vietos vieną, be perdavimo asmens", "req": false}, {"key": "news", "label": "Sutinku gauti naujienas el. paštu", "req": false}];
+const SHORT={terms:"Taisyklės",privacy:"Privatumas",guardian:"Atstovas",health:"Sveikatos duomenys",alone:"Paleisti vieną",news:"Naujienos"};
+function seedConsents(){const at=isoAdd(-30)+"T10:00:00Z",mk=keys=>Object.fromEntries(CONSENTS.map(c=>[c.key,{granted:keys.includes(c.key),version:TERMS_VERSION,at}]));
+  return {rasa:mk(["terms","privacy","guardian","health"]),tomas:mk(["terms","privacy","guardian"])}}
 function isoAdd(days){const d=new Date();d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
 function addMonthsIso(iso,m){const d=new Date(iso+"T12:00:00");d.setMonth(d.getMonth()+m);return d.toISOString().slice(0,10)}
 const fmtD=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("lt-LT",{year:"numeric",month:"long",day:"numeric"}):"–";
@@ -285,6 +291,7 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||!S.trips||!S.v9) {S=seed();S.v9=true}
+if(!S.consents)S.consents=seedConsents();
 if(MODE==="admin"){document.querySelector('.role').hidden=true;{const sm=document.querySelector('.logo small');sm.textContent="Administravimas";sm.hidden=false;}}
 if(MODE==="client"){document.querySelector('#roleSel option[value=owner]').remove();document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
@@ -305,7 +312,7 @@ const fmtTime=d=>d.toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2400)}
 
 const TABS={
-  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["contracts","Sutartys"],["kids","Vaikai ir adresai"]],
+  parent:[["trips","Mano kelionės"],["sub","Ilgalaikis užsakymas"],["prices","Kainos ir skaičiuoklė"],["book","Vienos dienos kelionė"],["contracts","Sutartys"],["kids","Vaikai ir adresai"],["terms","Sąlygos"]],
   owner:[["day","Kalendorius"],["subs","Ilgalaikiai užsakymai"],["contracts","Sutartys"],["clients","Klientai ir sąskaitos"],["income","Pajamos ir kainos"],["prices","Kainų puslapis"]]
 };
 function isOwner(){return role==="owner"}
@@ -314,11 +321,12 @@ function render(){
   if(MODE==="client"&&role==="owner")role="rasa";
   if(MODE==="admin")role="owner";
   $("#roleSel").value=role;
+  if(!isOwner()&&!hasReq(role)){$("#tabs").innerHTML="";vGate($("#view"));return}
   const tabs=TABS[isOwner()?"owner":"parent"].filter(t=>t[0]!=="book"||S.pricing.single_enabled);
   if(!tabs.find(t=>t[0]===tab)) tab=tabs[0][0];
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button role="tab" type="button" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
   const v=$("#view");
-  ({prices:vPrices,trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome,contracts:vContracts})[tab](v);
+  ({prices:vPrices,trips:vTrips,book:vBook,sub:vSub,kids:vKids,day:vDay,subs:vSubsOwner,clients:vClients,income:vIncome,contracts:vContracts,terms:vTerms})[tab](v);
 }
 
 function tripRow(t,{owner=false,conflict=false}={}){
@@ -493,7 +501,7 @@ function vClients(v){
     return {u,n:ts.length,done:done.length,sum,d,disc:r2(sum*d/100),sub,total:r2(sum*(1-d/100)+sub)}});
   v.innerHTML=`<div class="card"><div class="spread"><h2>Sąskaitos už ${month}</h2><span class="small muted">Skaičiuojama pagal tai, kas moka už kelionę. Sumos su PVM.</span></div>
     <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Vienos d. kel.</th><th class="num">Įvykdyta</th><th class="num">Vienos dienos, €</th><th class="num">Paketo nuolaida</th><th class="num">Ilgalaikiai, €</th><th class="num">Mokėti, €</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}</td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num">${r.sub?eur(r.sub):"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
+    <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}<div class="small muted">${consentTxt(r.u.id)}</div></td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num">${r.sub?eur(r.sub):"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
     <p class="small muted" style="margin:0">Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
     <div class="grid2"><form class="card" id="newClient"><h2>Naujas klientas</h2>
       <div class="two"><div class="field"><label for="ncName">Vardas</label><input id="ncName" required></div><div class="field"><label for="ncContract">Sutarties nr.</label><input id="ncContract" placeholder="S-2026-04"></div></div>
@@ -713,6 +721,17 @@ function vSub(v){
 
 function activateSub(s){s.start=s.start||isoAdd(0);s.months=s.months||1;if(s.months>1)s.end=addMonthsIso(s.start,s.months);s.no=s.no||("S-"+new Date().getFullYear()+"-"+String(S.subs.filter(x=>x.no).length+1).padStart(3,"0"))}
 function contractState(s){if(s.status==="ended")return "ended";if(s.status==="active"&&s.end&&s.end<isoAdd(0))return "renew";return s.status}
+function hasReq(u){const c=S.consents[u]||{};return CONSENTS.filter(x=>x.req).every(x=>c[x.key]?.granted&&c[x.key].version===TERMS_VERSION)}
+function consentTxt(u){if(!hasReq(u))return "Dar nesutiko su sąlygomis";const c=S.consents[u],at=CONSENTS.map(x=>c[x.key]?.at).filter(Boolean).sort().pop();
+  return `Sutiko ${new Date(at).toLocaleDateString("lt-LT")}: ${CONSENTS.filter(x=>c[x.key]?.granted).map(x=>SHORT[x.key]).join(", ")}`}
+const termsHtml=()=>`<div class="card"><h2>Paslaugų teikimo sąlygos</h2><ol style="margin:0;padding-left:20px;display:grid;gap:8px">${TERMS.map(([t,b])=>`<li><b>${esc(t)}.</b> ${esc(b)}</li>`).join("")}</ol>
+  <p class="small muted" style="margin:0">Sąlygų versija ${TERMS_VERSION}. <a href="${FULL_TERMS}" target="_blank" rel="noopener">Pilnos taisyklės ir privatumo politika</a></p></div>`;
+const consentForm=(submit)=>{const c=S.consents[role]||{};return `<form class="card" id="consentForm"><h2>Sutikimai</h2>${CONSENTS.map(x=>`<label class="row" for="cs_${x.key}" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="cs_${x.key}" name="${x.key}" ${c[x.key]?.granted&&c[x.key].version===TERMS_VERSION?"checked":""} ${x.req?"required":""} style="width:20px;height:20px;flex:none;margin-top:2px"><span>${esc(x.label)} <span class="small ${x.req?"":"muted"}" style="${x.req?"color:var(--bad)":""}">${x.req?"privaloma":"savanoriška"}</span></span></label>`).join("")}
+  <p class="small muted" style="margin:0">Savanoriškus sutikimus galite bet kada pakeisti skiltyje „Sąlygos“.</p><button class="btn primary" type="submit">${submit}</button></form>`};
+function bindConsent(msg){$("#consentForm").addEventListener("submit",e=>{e.preventDefault();const cur=S.consents[role]||{},now=new Date().toISOString();
+  S.consents[role]=Object.fromEntries(CONSENTS.map(x=>{const g=$("#cs_"+x.key).checked,o=cur[x.key];return [x.key,o&&o.granted===g&&o.version===TERMS_VERSION?o:{granted:g,version:TERMS_VERSION,at:now}]}));save();render();toast(msg)})}
+function vGate(v){v.innerHTML=`<div class="card"><h2>Sveiki, ${esc(users[role]?.name||"")}!</h2><p style="margin:0">Prieš užsakydami keliones, perskaitykite sąlygas ir pažymėkite sutikimus.</p></div>${termsHtml()}${consentForm("Sutinku ir tęsiu")}`;bindConsent("Ačiū! Sutikimai išsaugoti.")}
+function vTerms(v){v.innerHTML=termsHtml()+consentForm("Išsaugoti sutikimus");bindConsent("Sutikimai išsaugoti")}
 function vContracts(v){
   const own=isOwner(), mineKids=own?[]:myChildren().map(c=>c.id);
   const list=S.subs.filter(s=>["active","ended"].includes(s.status)&&(own||s.payer===role||mineKids.includes(s.child)));
