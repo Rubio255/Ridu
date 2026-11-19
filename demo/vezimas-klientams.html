@@ -304,11 +304,11 @@ function tripRow(t,{owner=false,conflict=false}={}){
     actions=`<button class="btn" data-act="cancelled" data-id="${t.id}">Atšaukti${fee?` (mokestis ${fee}%)`:""}</button>`;
   }
   return `<div class="trip">
-    <div class="time">${fmtTime(d)}<small>${t.min} min</small></div>
+    <div class="time">${fmtTime(d)}${owner?`<small>${t.min} min</small>`:""}</div>
     <div class="body">
       <div class="spread"><span class="row"><b>${esc(c.name)}</b><span class="pill s-${t.status}">${STATUS[t.status]}</span><span class="tag">${t.long?"Ilgalaikis":"Vienos dienos"}</span></span><span class="price">${t.long?'<span class="small muted">abonementas</span>':eur(t.price)}</span></div>
       <div class="route">${esc(t.fromLabel)} <span class="arrow">→</span> ${esc(t.toLabel)}</div>
-      <div class="small muted">${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · užsakė ${esc(by)} · moka ${esc(payer)}${t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} vaik.`:""}</div>
+      <div class="small muted">${owner?`${t.km.toFixed(1)} km${t.handover?` · palyda ${t.handover} min`:""} · `:""}užsakė ${esc(by)} · moka ${esc(payer)}${owner&&t.wait?` · laukimas ${t.wait} min`:""}${t.extra?` · +${t.extra} vaik.`:""}</div>
       ${t.note?`<div class="small">Pastaba: ${esc(t.note)}</div>`:""}
       ${conflict?`<div class="warnbox">${esc(slotProblem(new Date(t.at),t.min,t.id))}</div>`:""}
       ${owner?`<a class="small" href="${mapsUrl(S.places.find(p=>p.id===t.from)||{},S.places.find(p=>p.id===t.to)||{})}" target="_blank" rel="noopener">Maršrutas Google Maps</a>`:""}
@@ -387,12 +387,12 @@ function vBook(v){
     const surNote=dt!=="workday"&&!S.pricing.surcharge_approved?`<div class="warnbox">${dt==="holiday"?"Šventinė diena":"Savaitgalis"}: kaina bus patikslinta, kai vairuotojas patvirtins priemoką.</div>`:"";
     box.innerHTML=`<h2>Kaina</h2>
       <div class="route">${esc(f.label)} <span class="arrow">→</span> ${esc(t.label)}</div>
-      <div class="small muted">Apie ${k.toFixed(1)} km, ${minutes(k)} min kelio ir ${ho} min palydai · <a href="${mapsUrl(f,t)}" target="_blank" rel="noopener">žiūrėti maršrutą</a></div>
+      <div class="small muted"><a href="${mapsUrl(f,t)}" target="_blank" rel="noopener">Žiūrėti maršrutą žemėlapyje</a></div>
       ${over?`<div class="warnbox" style="background:var(--bad-bg);color:var(--bad)">Šią dieną vairuotojo grafikas pilnas. Pasirinkite kitą dieną.</div>`:prob?`<div class="warnbox" style="background:var(--bad-bg);color:var(--bad)">${esc(prob)} Pasirinkite kitą laiką.</div>`:""}${surNote}
-      <div class="quote">${q.lines.map(l=>`<div class="line"><span>${l[0]}</span><span>${eur(l[1])}</span></div>`).join("")}
-      <div class="line total"><span>Viena kelionė</span><span class="price">${eur(q.total)}</span></div>
+      <div class="quote">
+      <div class="line total" style="border-top:0;padding-top:0"><span>Kelionės kaina</span><span class="price">${eur(q.total)}</span></div>
       ${wds?`<div class="line"><span>${wds} k./sav. × 4 sav.</span><span>${eur(q.total*wds*4)}</span></div>`:""}</div>
-      <p class="small muted" style="margin:0">Kainos su PVM.${S.pricing.pkg1_pct?` Užsakius ${S.pricing.pkg1_from}–${S.pricing.pkg2_from-1} kelionių per mėnesį taikoma ${S.pricing.pkg1_pct}% nuolaida, ${S.pricing.pkg2_from} ir daugiau – ${S.pricing.pkg2_pct}%.`:""} Pastoviam grafikui pigiau su abonementu. Nemokamai atšaukti galima iki ${S.pricing.cancel_hours} val. prieš kelionę. Vėliau taikomas ${S.pricing.late_cancel_pct}% mokestis, o likus mažiau nei ${S.pricing.very_late_hours} val. arba neatvykus – ${S.pricing.very_late_pct}%.</p>`;
+      <p class="small muted" style="margin:0">Kaina su PVM. Reguliarioms kelionėms pigiau su ilgalaikiu užsakymu. Nemokamai atšaukti galima iki ${S.pricing.cancel_hours} val. prieš kelionę. Vėliau taikomas ${S.pricing.late_cancel_pct}% mokestis, o likus mažiau nei ${S.pricing.very_late_hours} val. arba neatvykus – ${S.pricing.very_late_pct}%.</p>`;
   };
   v.querySelectorAll("select,input").forEach(el=>el.addEventListener("input",upd));upd();
   $("#bookForm").addEventListener("submit",e=>{
@@ -544,37 +544,33 @@ function vSub(v){
   v.innerHTML=`<div class="grid2">
   <form class="card" id="subForm">
     <h2>Ilgalaikis užsakymas</h2>
-    <p class="small muted" style="margin:0">Pastovus grafikas už fiksuotą mėnesio kainą, pigiau nei pavienės kelionės. Kaina priklauso nuo maršruto trukmės ir to, kiek užimtas pasirinktas laikas. Kai laikas užpildytas, laisvos vietos kitam mėnesiui atitenka didžiausius pasiūlymus pateikusiems klientams.</p>
+    <p class="small muted" style="margin:0">Pastovus savaitės grafikas už fiksuotą mėnesio kainą, pigiau nei pavienės kelionės.</p>
     <div class="field"><label for="sChild">Vaikas</label><select id="sChild">${kids.map(c=>`<option value="${c.id}">${esc(c.name)}, ${c.age} m.</option>`).join("")}</select></div>
     <div class="two"><div class="field"><label for="sFrom">Iš kur paimti</label><select id="sFrom">${opt}</select></div>
     <div class="field"><label for="sTo">Kur nuvežti</label><select id="sTo">${opt}</select></div></div>
     <div class="field"><span class="lbl">Savaitės dienos</span><div class="days">${DAYS.slice(0,5).map((d,i)=>`<label><input type="checkbox" name="swd" value="${i+1}" id="swd${i+1}" ${i===1||i===3?"checked":""}><span>${d}</span></label>`).join("")}</div></div>
     <div class="two"><div class="field"><label for="sTime">Paėmimo laikas</label><input type="time" id="sTime" value="14:00"></div>
     <div class="field"><label for="sExtra">Brolis ar sesuo kartu</label><input type="number" id="sExtra" min="0" max="3" value="0"></div></div>
-    <div class="field"><label for="sMonths">Įsipareigojimas</label><select id="sMonths"><option value="1">1 mėnuo</option><option value="3">3 mėnesiai (−${P.commit3_pct}%)</option><option value="9">9 mėnesiai (−${P.commit9_pct}%)</option></select></div>
+    <div class="field"><label for="sMonths">Įsipareigojimas</label><select id="sMonths"><option value="1">1 mėnuo</option><option value="3">3 mėnesiai</option><option value="9">9 mėnesiai</option></select></div>
     <div id="subQuote" aria-live="polite"></div>
   </form>
   <div class="card"><h2>Mano abonementai</h2>${mine.map(s=>`<div class="child"><div class="spread"><b>${esc(child(s.child).name)} · ${s.weekdays.map(w=>DAYS[w-1]).join(", ")} ${s.time}</b><span class="pill s-${s.status==="active"?"confirmed":s.status==="pending"?"requested":"rejected"}">${SS[s.status]}</span></div>
     <div class="small muted">${esc(S.places.find(p=>p.id===s.from).label)} → ${esc(S.places.find(p=>p.id===s.to).label)}</div>
-    <div class="small">${eur(s.monthly)} / mėn.${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · aukciono pasiūlymas":""}</div></div>`).join("")||'<div class="empty">Abonementų dar nėra.</div>'}
-    <p class="small muted" style="margin:0">Galiojantys abonementai pratęsiami ta pačia kaina, be aukciono.</p></div></div>`;
+    <div class="small">${eur(s.monthly)} / mėn.${s.months>1?` · ${s.months} mėn.`:""}${s.bid?" · jūsų pasiūlymas":""}</div></div>`).join("")||'<div class="empty">Abonementų dar nėra.</div>'}
+    <p class="small muted" style="margin:0">Galiojantys užsakymai pratęsiami ta pačia kaina.</p></div></div>`;
   if(pl.length>3) $("#sFrom").selectedIndex=3; if(pl.length>4) $("#sTo").selectedIndex=4;
   const read=()=>({child:$("#sChild").value,from:$("#sFrom").value,to:$("#sTo").value,time:$("#sTime").value||"15:30",extra:+$("#sExtra").value||0,months:+$("#sMonths").value,weekdays:[...document.querySelectorAll('input[name=swd]:checked')].map(x=>+x.value)});
   const upd=()=>{const q=subQuote(read()),box=$("#subQuote");
     if(!q){box.innerHTML=`<p class="muted">Pasirinkite skirtingas vietas ir bent vieną dieną.</p>`;return}
     const minBid=q.monthly, occTxt=Math.round(q.occ*100);
     box.innerHTML=`<div class="quote">
-      <div class="line"><span>Maršrutas ${q.k.toFixed(1)} km, automobilis užimtas ${q.cm} min</span><span>${eur(q.carTrip)}</span></div>
-      ${q.kids>1?`<div class="line"><span>Vienam vaikui, kai vežami ${q.kids}</span><span>${Math.round(q.share*100)}%</span></div>`:""}
-      <div class="line"><span>Šis laikas užimtas ${occTxt}%</span><span>×${q.mult.toFixed(2)}</span></div>
-      ${q.commit?`<div class="line"><span>Įsipareigojimo nuolaida</span><span>−${q.commit}%</span></div>`:""}
       <div class="line"><span>${q.perWeek} k./sav., apie ${q.n} kelionės per mėnesį</span><span>${eur(q.perTrip)} / kel.</span></div>
       <div class="line total"><span>Per mėnesį${q.kids>1?` (${q.kids} vaikai)`:""}</span><span class="price">${eur(q.monthly)}</span></div></div>
       <a class="small" href="${mapsUrl(q.f,q.t)}" target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>
-      ${q.full?`<div class="warnbox">Šis laikas pilnas. Galite pateikti pasiūlymą kitam mėnesiui. Pasiūlymai priimami iki ${P.bid_close_day} d., o laisvos vietos atitenka didžiausius pasiūlymus pateikusiems. Kitų klientų pasiūlymų nematote.</div>
+      ${q.full?`<div class="warnbox">Šis laikas užimtas. Galite pateikti pasiūlymą kitam mėnesiui iki ${P.bid_close_day} d., ir vairuotojas su jumis susisieks.</div>
         <div class="field"><label for="sBid">Jūsų mėnesio kaina, € (ne mažiau ${eur(minBid)})</label><input type="number" id="sBid" step="1" min="${minBid}" value="${minBid}"></div>
         <button class="btn primary" type="submit">Pateikti pasiūlymą</button>`
-      :`<button class="btn primary" type="submit">Užsakyti abonementą už ${eur(q.monthly)} / mėn.</button>`}
+      :`<button class="btn primary" type="submit">Užsakyti už ${eur(q.monthly)} / mėn.</button>`}
       <span class="small muted">Kaina nesikeičia visą įsipareigojimo laikotarpį.</span>`;
   };
   $("#subForm").addEventListener("input",e=>{if(e.target.id!=="sBid")upd()});upd();
