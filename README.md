@@ -1,4 +1,4 @@
-# Vaikų pavėžėjimas
+# Išsiskyrusiems · vaikų pavėžėjimas
 
 Ilgalaikių vaikų pavėžėjimo užsakymų aplikacija Vilniuje (Next.js + Supabase + Vercel).
 

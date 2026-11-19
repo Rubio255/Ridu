@@ -1,6 +1,6 @@
 // Pranešimų darbuotojas: rodo telefono pranešimą su garsu ir vibracija
 self.addEventListener("push", (event) => {
-  let d = { title: "Vaikų pavėžėjimas", body: "Naujas pranešimas", url: "/savininkas" };
+  let d = { title: "Išsiskyrusiems", body: "Naujas pranešimas", url: "/savininkas" };
   try { d = { ...d, ...event.data.json() }; } catch {}
   event.waitUntil(self.registration.showNotification(d.title, {
     body: d.body, tag: d.tag, renotify: true, requireInteraction: true, silent: false,
