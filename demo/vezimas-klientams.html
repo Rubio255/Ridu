@@ -492,7 +492,7 @@ function vIncome(v){
     <div class="spread small"><span>Tikslas ${eur(p.target)}</span><span>${Math.max(0,pct).toFixed(0)}%</span></div><div class="bar"><i style="width:${Math.max(0,pct)}%"></i></div>
     <p class="small muted" style="margin:0">Kuras skaičiuojamas ${FUEL_L_100} l/100 km po ${FUEL_PRICE.toFixed(2)} €/l, pridedant tuščius km iki paėmimo vietos. Mokesčių procentas kol kas apytikslis, jį patikslinsime pagal kainodaros skaičiavimą.</p></div>
     <form class="card" id="priceForm"><h2>Kainos ir nustatymai</h2>
-    ${groups.map(([t,fs])=>`<div class="field"><span class="lbl">${t}</span><div class="two">${fs.map(([k,l])=>`<div class="field"><label for="pr_${k}">${l}</label><input type="number" step="0.05" min="0" id="pr_${k}" value="${p[k]}"></div>`).join("")}</div></div>`).join("")}
+    ${groups.map(([t,fs])=>`<div class="field"><span class="lbl">${t}</span><div class="two">${fs.map(([k,l])=>`<div class="field"><label for="pr_${k}">${l}</label><input type="number" step="any" min="0" id="pr_${k}" value="${p[k]}"></div>`).join("")}</div></div>`).join("")}
     <label class="row small" for="pr_single"><input type="checkbox" id="pr_single" ${p.single_enabled?"checked":""}> Leisti klientams užsakyti vienos dienos keliones (dabar tik ilgalaikiai užsakymai)</label>
     <label class="row small" for="pr_approved"><input type="checkbox" id="pr_approved" ${p.surcharge_approved?"checked":""}> Patvirtinu savaitgalio ir švenčių priemokas. Kol nepatvirtinta, klientai mato, kad kaina bus patikslinta.</label>
     <button class="btn primary" type="submit">Išsaugoti</button>
