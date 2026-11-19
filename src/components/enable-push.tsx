@@ -4,8 +4,13 @@ import { savePushSubscription } from "@/app/actions";
 
 const b64 = (s: string) => { const p = "=".repeat((4 - (s.length % 4)) % 4); const r = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...r].map((c) => c.charCodeAt(0))); };
 
-// Mygtukas savininkui: įjungti telefono pranešimus apie užsakymus
-export function EnablePush() {
+const TEXT = {
+  owner: "Gaukite telefono pranešimą su garsu apie kiekvieną naują, pakeistą ar atšauktą užsakymą.",
+  client: "Gaukite telefono pranešimą, kai vaikas paimamas ir nuvežamas, kai užsakymas patvirtinamas, perkeliamas ar atšaukiamas, ir kai paruošta sąskaita.",
+};
+
+// Mygtukas įjungti telefono pranešimus (savininkui ir tėvams)
+export function EnablePush({ who = "owner" }: { who?: keyof typeof TEXT }) {
   const [state, setState] = useState<"unknown" | "on" | "off" | "unsupported" | "ios-home" | "denied">("unknown");
   useEffect(() => {
     const ios = /iPhone|iPad/.test(navigator.userAgent);
@@ -26,7 +31,7 @@ export function EnablePush() {
   if (state === "on" || state === "unknown" || state === "unsupported") return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--accent)] p-3 text-sm text-[var(--accent-fg)]">
-      {state === "off" && <><span>Gaukite telefono pranešimą su garsu apie kiekvieną naują, pakeistą ar atšauktą užsakymą.</span><button onClick={enable} className="btn">Įjungti pranešimus</button></>}
+      {state === "off" && <><span>{TEXT[who]}</span><button onClick={enable} className="btn">Įjungti pranešimus</button></>}
       {state === "ios-home" && <span>iPhone: paspauskite „Bendrinti“ ir „Įtraukti į pradžios ekraną“, tada atidarykite aplikaciją iš pradžios ekrano ir įjunkite pranešimus.</span>}
       {state === "denied" && <span>Pranešimai užblokuoti. Įjunkite juos telefono nustatymuose šiai svetainei.</span>}
     </div>

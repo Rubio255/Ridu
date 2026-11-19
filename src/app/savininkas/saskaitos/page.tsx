@@ -1,6 +1,7 @@
 import { loadSettings } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { eur, vilniusToday } from "@/lib/time";
+import { notifyInvoice } from "@/app/actions";
 
 export default async function Page() {
   const s = await loadSettings();
@@ -36,8 +37,8 @@ export default async function Page() {
       </section>
       <section className="card">
         <h2 className="font-bold">Sąskaitos klientams</h2>
-        <div className="overflow-x-auto"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th>Užsakymai</th><th>Nuvežta</th><th>Atšaukta</th><th>Mokėti / mėn.</th></tr></thead>
-          <tbody>{rows.map((r) => <tr key={r.c.id}><td>{r.c.full_name || r.c.email}</td><td>{r.c.contract_no ?? "–"}</td><td>{r.subs}</td><td>{r.done}</td><td>{r.cancelled}</td><td><b>{eur(r.monthly)}</b></td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th>Užsakymai</th><th>Nuvežta</th><th>Atšaukta</th><th>Mokėti / mėn.</th><th></th></tr></thead>
+          <tbody>{rows.map((r) => <tr key={r.c.id}><td>{r.c.full_name || r.c.email}</td><td>{r.c.contract_no ?? "–"}</td><td>{r.subs}</td><td>{r.done}</td><td>{r.cancelled}</td><td><b>{eur(r.monthly)}</b></td><td><form action={notifyInvoice}><input type="hidden" name="id" value={r.c.id} /><input type="hidden" name="amount" value={eur(r.monthly)} /><button className="btn">Pranešti apie sąskaitą</button></form></td></tr>)}</tbody></table></div>
         <p className="text-sm muted">Ilgalaikių užsakymų mėnesio kaina fiksuota. Vėlyvų atšaukimų mokesčiai pagal sutartį.</p>
       </section>
     </>

@@ -6,9 +6,9 @@ import { requireOwner, requireProfile, loadSettings } from "@/lib/auth";
 import { geocode, route } from "@/lib/maps";
 import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/pricing";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
-import { addDays, vilniusToday, vilniusToDate, toMin } from "@/lib/time";
+import { addDays, vilniusToday, vilniusToDate, toMin, fmtTime } from "@/lib/time";
 import { generateTrips } from "@/lib/trips";
-import { notifyOwner } from "@/lib/push";
+import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
 import { DAYS } from "@/lib/time";
 
 export async function signOut() {
@@ -106,11 +106,13 @@ export async function cancelTrip(fd: FormData) {
   if (me.role !== "owner") await assertGuardian(t.child_id, me.id);
   const s = await loadSettings();
   const hours = (new Date(t.pickup_at).getTime() - Date.now()) / 36e5;
-  const fee = cancelFeePct(s, hours);
+  const fee = me.role === "owner" ? 0 : cancelFeePct(s, hours);
   await db.from("trips").update({ status: "cancelled", cancel_fee_pct: fee }).eq("id", id);
+  const when = whenLt(t.pickup_at);
   if (me.role !== "owner") {
-    const when = new Date(t.pickup_at).toLocaleString("lt-LT", { timeZone: "Europe/Vilnius", weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
     await notifyOwner("Kelionė atšaukta", `${me.full_name || me.email} atšaukė kelionę ${when}${fee ? ` (mokestis ${fee}%)` : ""}.`, "/savininkas");
+  } else {
+    await notifyGuardians(t.child_id, "Kelionė atšaukta", `Vežėjas atšaukė kelionę ${when}. Mokestis už ją netaikomas.`);
   }
   revalidatePath("/tevai"); revalidatePath("/savininkas");
 }
@@ -121,25 +123,69 @@ export async function decideSubscription(fd: FormData) {
   await requireOwner();
   const id = String(fd.get("id")), decision = String(fd.get("decision"));
   const db = supabaseAdmin();
+  const { data: sub } = await db.from("subscriptions").select("child_id, pickup_time, monthly_eur, is_bid, child:children(first_name)").eq("id", id).single();
+  if (!sub) return;
+  const name = (sub.child as unknown as { first_name: string } | null)?.first_name ?? "vaiko";
   if (decision === "active") {
     const time = String(fd.get("pickup_time") ?? "");
-    const patch: Record<string, unknown> = { status: "active", starts_on: vilniusToday() };
+    const patch: Record<string, unknown> = { status: "active", starts_on: vilniusToday(), owner_note: null };
     if (time) patch.pickup_time = time;
     await db.from("subscriptions").update(patch).eq("id", id);
     await generateTrips(id);
+    const moved = time && time !== String(sub.pickup_time).slice(0, 5) ? ` Laikas pakeistas į ${time}.` : "";
+    await notifyGuardians(sub.child_id, sub.is_bid ? "Jūsų pasiūlymas laimėjo" : "Užsakymas patvirtintas",
+      `${name} ilgalaikis užsakymas patvirtintas, ${sub.monthly_eur} €/mėn.${moved}`);
   } else if (decision === "ended") {
     await db.from("subscriptions").update({ status: "ended", ends_on: vilniusToday() }).eq("id", id);
     await db.from("trips").update({ status: "cancelled" }).eq("subscription_id", id).eq("status", "scheduled").gt("pickup_at", new Date().toISOString());
+    await notifyGuardians(sub.child_id, "Užsakymas baigtas", `${name} ilgalaikis užsakymas baigtas. Būsimos kelionės atšauktos.`);
   } else {
     await db.from("subscriptions").update({ status: "rejected" }).eq("id", id);
+    await notifyGuardians(sub.child_id, sub.is_bid ? "Pasiūlymas nelaimėjo" : "Užsakymas atmestas",
+      sub.is_bid ? `${name} pasiūlymas šį kartą nelaimėjo. Galite pasiūlyti kitą laiką.` : `${name} užsakymo šiuo laiku priimti negalime. Pasirinkite kitą laiką.`);
   }
   revalidatePath("/savininkas", "layout");
 }
 
+const STATUS_MSG: Record<string, [string, string]> = {
+  picked_up: ["Vaikas paimtas", "paimtas ir vežamas"],
+  delivered: ["Vaikas nuvežtas", "saugiai nuvežtas"],
+  no_show: ["Vaikas neatvyko", "nebuvo paėmimo vietoje"],
+};
+
 export async function setTripStatus(fd: FormData) {
   await requireOwner();
-  await supabaseAdmin().from("trips").update({ status: String(fd.get("status")) }).eq("id", String(fd.get("id")));
+  const id = String(fd.get("id")), status = String(fd.get("status"));
+  if (!STATUS_MSG[status]) return;
+  const db = supabaseAdmin();
+  const { data: t } = await db.from("trips").update({ status }).eq("id", id).select("child_id, pickup_at, to_label, child:children(first_name)").single();
+  if (t) {
+    const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Vaikas";
+    const [title, verb] = STATUS_MSG[status];
+    await notifyGuardians(t.child_id, title, `${name} ${verb}${status === "delivered" ? ` (${t.to_label})` : ""}, ${fmtTime(new Date().toISOString())}.`);
+  }
   revalidatePath("/savininkas");
+}
+
+// Savininkas perkelia vieną kelionę į kitą laiką
+export async function moveTrip(fd: FormData) {
+  await requireOwner();
+  const id = String(fd.get("id")), at = String(fd.get("pickup_at") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(at)) return;
+  const db = supabaseAdmin();
+  const { data: old } = await db.from("trips").select("child_id, pickup_at, status").eq("id", id).single();
+  if (!old || old.status !== "scheduled") return;
+  const next = vilniusToDate(at.slice(0, 10), at.slice(11, 16));
+  await db.from("trips").update({ pickup_at: next.toISOString() }).eq("id", id);
+  await notifyGuardians(old.child_id, "Kelionė perkelta", `Kelionė ${whenLt(old.pickup_at)} perkelta į ${whenLt(next.toISOString())}.`);
+  revalidatePath("/savininkas"); revalidatePath("/tevai");
+}
+
+// Savininkas praneša klientui, kad mėnesio sąskaita paruošta
+export async function notifyInvoice(fd: FormData) {
+  await requireOwner();
+  const id = String(fd.get("id")), amount = String(fd.get("amount") ?? "");
+  await notifyProfiles([id], "Sąskaita paruošta", `Šio mėnesio sąskaita paruošta: ${amount}. Ją rasite el. pašte.`);
 }
 
 export async function inviteClient(fd: FormData) {
@@ -191,7 +237,7 @@ export async function saveSettings(fd: FormData) {
 }
 
 export async function savePushSubscription(sub: { endpoint: string; p256dh: string; auth: string }) {
-  const me = await requireOwner();
+  const me = await requireProfile();
   await supabaseAdmin().from("push_subscriptions").upsert({ profile_id: me.id, ...sub }, { onConflict: "endpoint" });
 }
 

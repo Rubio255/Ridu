@@ -1,6 +1,6 @@
 import { loadSettings } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { setTripStatus, cancelTrip } from "@/app/actions";
+import { setTripStatus, cancelTrip, moveTrip } from "@/app/actions";
 import { Pill } from "@/components/shell";
 import { mapsLink } from "@/lib/maps";
 import { dayKey, eur, fmtDay, fmtTime } from "@/lib/time";
@@ -45,6 +45,7 @@ export default async function Page() {
                     {t.status === "picked_up" && <form action={setTripStatus}><input type="hidden" name="id" value={t.id} /><input type="hidden" name="status" value="delivered" /><button className="btn btn-ok">Nuvežtas</button></form>}
                     {t.status === "scheduled" && <form action={setTripStatus}><input type="hidden" name="id" value={t.id} /><input type="hidden" name="status" value="no_show" /><button className="btn">Neatvyko</button></form>}
                     {t.status === "scheduled" && <form action={cancelTrip}><input type="hidden" name="id" value={t.id} /><button className="btn btn-bad">Atšaukti</button></form>}
+                    {t.status === "scheduled" && <form action={moveTrip} className="flex gap-2"><input type="hidden" name="id" value={t.id} /><input type="datetime-local" name="pickup_at" required aria-label="Naujas laikas" defaultValue={new Date(t.pickup_at).toLocaleString("sv-SE", { timeZone: "Europe/Vilnius" }).slice(0, 16).replace(" ", "T")} /><button className="btn">Perkelti</button></form>}
                   </div>
                 </div>
               </div>

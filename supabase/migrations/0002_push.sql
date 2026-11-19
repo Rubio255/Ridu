@@ -1,4 +1,4 @@
--- Telefono pranešimai (Web Push) savininkui
+-- Telefono pranešimai (Web Push) savininkui ir klientams
 create table push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references profiles on delete cascade,

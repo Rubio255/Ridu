@@ -1,5 +1,5 @@
 import "server-only";
-import webpush from "web-push";
+import * as webpush from "web-push";
 import { supabaseAdmin } from "./supabase/server";
 
 let ready = false;
@@ -12,13 +12,9 @@ function init() {
   return true;
 }
 
-// Siunčia pranešimą visiems savininko įrenginiams. Klaidos netrukdo pagrindiniam veiksmui.
-export async function notifyOwner(title: string, body: string, url = "/savininkas") {
-  if (!init()) return;
+async function sendTo(ids: string[], title: string, body: string, url: string) {
+  if (!ids.length || !init()) return;
   const db = supabaseAdmin();
-  const { data: owners } = await db.from("profiles").select("id").eq("role", "owner");
-  const ids = (owners ?? []).map((o) => o.id);
-  if (!ids.length) return;
   const { data: subs } = await db.from("push_subscriptions").select("*").in("profile_id", ids);
   const payload = JSON.stringify({ title, body, url, tag: `${Date.now()}` });
   await Promise.all((subs ?? []).map(async (s) => {
@@ -30,3 +26,22 @@ export async function notifyOwner(title: string, body: string, url = "/savininka
     }
   }));
 }
+
+// Visiems savininko įrenginiams. Klaidos netrukdo pagrindiniam veiksmui.
+export async function notifyOwner(title: string, body: string, url = "/savininkas") {
+  const { data } = await supabaseAdmin().from("profiles").select("id").eq("role", "owner");
+  await sendTo((data ?? []).map((o) => o.id), title, body, url);
+}
+
+// Vienam ar keliems klientams (pvz. mokėtojui)
+export async function notifyProfiles(ids: (string | null | undefined)[], title: string, body: string, url = "/tevai") {
+  await sendTo([...new Set(ids.filter(Boolean) as string[])], title, body, url);
+}
+
+// Visiems vaiko globėjams (abiem tėvams, jei vaikas susietas su abiem)
+export async function notifyGuardians(childId: string, title: string, body: string, url = "/tevai") {
+  const { data } = await supabaseAdmin().from("child_guardians").select("profile_id").eq("child_id", childId);
+  await notifyProfiles((data ?? []).map((g) => g.profile_id), title, body, url);
+}
+
+export const whenLt = (iso: string) => new Date(iso).toLocaleString("lt-LT", { timeZone: "Europe/Vilnius", weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
