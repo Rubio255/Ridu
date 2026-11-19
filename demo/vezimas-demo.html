@@ -132,11 +132,13 @@ const STATUS = {requested:"Laukia patvirtinimo",confirmed:"Patvirtinta",picked_u
 const KIND = {home:"Namai",kindergarten:"Darželis",school:"Mokykla",activity:"Būrelis",other:"Kita"};
 
 const PRICING_DEFAULTS = {
-  base_fee:5, per_km:0.9, min_price:10, included_wait_min:5, per_wait_min:0.3, extra_child_fee:3, peak_pct:10,
+  // Kainos su PVM, pagal kainodaros skaičiavimą
+  base_fee:29.5, included_km:8, per_km:1.2, included_wait_min:10, per_wait_min:0.5, extra_child_fee:17.7, peak_pct:0, min_price:0,
   handover_kindergarten:10, handover_school:7, handover_activity:5, handover_home:2, handover_other:3,
-  weekend_pct:25, holiday_pct:50, surcharge_approved:false,
-  day_limit_h:7.5, cancel_hours:12, late_cancel_pct:50,
-  cost_insurance:35, cost_wash:45, cost_service:50, tax_pct:15, target:3000
+  weekend_pct:25, holiday_pct:25, surcharge_approved:false,
+  pkg1_from:8, pkg1_pct:8, pkg2_from:16, pkg2_pct:15,
+  day_limit_h:7.5, cancel_hours:12, late_cancel_pct:50, very_late_hours:2, very_late_pct:100,
+  cost_insurance:35, cost_wash:45, cost_service:50, vat_pct:21, tax_pct:15, target:3000
 };
 // Lietuvos valstybinės šventės (fiksuotos) + Velykos ir antroji Velykų diena
 const FIXED_HOLIDAYS=["01-01","02-16","03-11","05-01","06-24","07-06","08-15","11-01","11-02","12-24","12-25","12-26"];
@@ -205,10 +207,10 @@ function isPeak(iso){const d=new Date(iso),h=d.getHours()+d.getMinutes()/60,wd=d
 
 function handoverMin(p,kind){return +p["handover_"+kind]||0}
 function quote(p,{k,wait=0,extra=0,peak=false,handover=0,day="workday"}){
-  const lines=[["Paėmimo mokestis",p.base_fee],[`Atstumas ${k.toFixed(1)} km × ${eur(p.per_km)}`,r2(k*p.per_km)]];
-  if(handover>0) lines.push([`Parkavimas ir palyda iki durų ${handover} min`,r2(handover*p.per_wait_min)]);
-  const pw=Math.max(0,wait-p.included_wait_min); if(pw>0) lines.push([`Laukimas ${pw} min`,r2(pw*p.per_wait_min)]);
-  if(extra>0) lines.push([`Papildomi vaikai (${extra})`,r2(extra*p.extra_child_fee)]);
+  const lines=[[`Kelionė iki ${p.included_km} km, palyda iki durų, ${p.included_wait_min} min laukimo`,p.base_fee]];
+  const overKm=Math.max(0,r2(k-p.included_km)); if(overKm>0) lines.push([`Papildomi ${overKm.toFixed(1)} km × ${eur(p.per_km)}`,r2(overKm*p.per_km)]);
+  const pw=Math.max(0,wait-p.included_wait_min); if(pw>0) lines.push([`Laukimas virš ${p.included_wait_min} min: ${pw} min`,r2(pw*p.per_wait_min)]);
+  if(extra>0) lines.push([`Brolis ar sesuo toje pačioje kelionėje (${extra})`,r2(extra*p.extra_child_fee)]);
   let s=lines.reduce((a,l)=>a+l[1],0);
   const sp=day==="holiday"?p.holiday_pct:day==="weekend"?p.weekend_pct:0;
   if(sp>0&&p.surcharge_approved){const x=r2(s*sp/100);lines.push([`${day==="holiday"?"Šventinė diena":"Savaitgalis"} +${sp}%`,x]);s+=x}
@@ -234,7 +236,7 @@ function loadBar(used){const lim=S.pricing.day_limit_h*60,pct=Math.min(100,used/
 
 const KEY="vezimas-demo-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
-if(!S||!S.trips||!S.v2) {S=seed();S.v2=true}
+if(!S||!S.trips||!S.v3) {S=seed();S.v3=true}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 let role="rasa", tab=null;
 try{role=localStorage.getItem(KEY+"-role")||"rasa"}catch(e){}
@@ -273,8 +275,8 @@ function tripRow(t,{owner=false,conflict=false}={}){
     else if(t.status==="confirmed") actions=`<button class="btn primary" data-act="picked_up" data-id="${t.id}">Vaikas paimtas</button>`;
     else if(t.status==="picked_up") actions=`<button class="btn ok" data-act="delivered" data-id="${t.id}">Nuvežtas</button>`;
   } else if((t.status==="requested"||t.status==="confirmed")&&d>new Date()){
-    const late=(d-new Date())/36e5<S.pricing.cancel_hours;
-    actions=`<button class="btn" data-act="cancelled" data-id="${t.id}">Atšaukti${late?` (mokestis ${S.pricing.late_cancel_pct}%)`:""}</button>`;
+    const fee=cancelFeePct(t);
+    actions=`<button class="btn" data-act="cancelled" data-id="${t.id}">Atšaukti${fee?` (mokestis ${fee}%)`:""}</button>`;
   }
   return `<div class="trip">
     <div class="time">${fmtTime(d)}<small>${t.min} min</small></div>
@@ -292,6 +294,10 @@ function groupByDay(list,opts){
   const g={};list.forEach(t=>{const k=startOfDay(new Date(t.at)).toISOString();(g[k]=g[k]||[]).push(t)});
   return Object.keys(g).sort().map(k=>{const dt=dayType(k);return `<div class="daygroup card"><h3>${fmtDay(new Date(k))}${dt!=="workday"?` <span class="tag">${dt==="holiday"?"šventinė diena":"savaitgalis"}</span>`:""}</h3>${opts.owner?loadBar(dayLoad(new Date(k))):""}<div>${g[k].sort((a,b)=>a.at<b.at?-1:1).map(t=>tripRow(t,{...opts,conflict:opts.owner&&hasConflict(t)})).join("")}</div></div>`}).join("");
 }
+function cancelFeePct(t){const h=(new Date(t.at)-new Date())/36e5,p=S.pricing;
+  return h<p.very_late_hours?p.very_late_pct:h<p.cancel_hours?p.late_cancel_pct:0}
+// Mėnesio paketo nuolaida pagal kliento (mokėtojo) kelionių skaičių
+function pkgPct(n){const p=S.pricing;return n>=p.pkg2_from?p.pkg2_pct:n>=p.pkg1_from?p.pkg1_pct:0}
 function hasConflict(t){
   if(!["requested","confirmed"].includes(t.status))return false;
   const s=new Date(t.at).getTime(), e=s+(t.min+10)*6e4;
@@ -357,7 +363,7 @@ function vBook(v){
       <div class="quote">${q.lines.map(l=>`<div class="line"><span>${l[0]}</span><span>${eur(l[1])}</span></div>`).join("")}
       <div class="line total"><span>Viena kelionė</span><span class="price">${eur(q.total)}</span></div>
       ${wds?`<div class="line"><span>${wds} k./sav. × 4 sav.</span><span>${eur(q.total*wds*4)}</span></div>`:""}</div>
-      <p class="small muted" style="margin:0">Kaina fiksuojama pateikus užsakymą. Nemokamai atšaukti galima iki ${S.pricing.cancel_hours} val. prieš kelionę, vėliau taikomas ${S.pricing.late_cancel_pct}% mokestis.</p>`;
+      <p class="small muted" style="margin:0">Kainos su PVM. Užsakius ${S.pricing.pkg1_from}–${S.pricing.pkg2_from-1} kelionių per mėnesį taikoma ${S.pricing.pkg1_pct}% nuolaida, ${S.pricing.pkg2_from} ir daugiau – ${S.pricing.pkg2_pct}%. Nemokamai atšaukti galima iki ${S.pricing.cancel_hours} val. prieš kelionę. Vėliau taikomas ${S.pricing.late_cancel_pct}% mokestis, o likus mažiau nei ${S.pricing.very_late_hours} val. arba neatvykus – ${S.pricing.very_late_pct}%.</p>`;
   };
   v.querySelectorAll("select,input").forEach(el=>el.addEventListener("input",upd));upd();
   $("#bookForm").addEventListener("submit",e=>{
@@ -418,29 +424,33 @@ function vClients(v){
   const mt=monthTrips(), month=new Date().toLocaleDateString("lt-LT",{year:"numeric",month:"long"});
   const rows=Object.values(users).map(u=>{const ts=mt.filter(t=>t.payer===u.id&&billable(t));
     const done=ts.filter(t=>t.status==="delivered");
-    return {u,n:ts.length,done:done.length,sum:ts.reduce((a,t)=>a+t.price,0),doneSum:done.reduce((a,t)=>a+t.price,0)}});
-  v.innerHTML=`<div class="card"><div class="spread"><h2>Sąskaitos už ${month}</h2><span class="small muted">Skaičiuojama pagal tai, kas moka už kelionę</span></div>
-    <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Kelionės</th><th class="num">Įvykdyta</th><th class="num">Įvykdyta, €</th><th class="num">Iš viso mėn., €</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}</td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.doneSum)}</td><td class="num"><b>${eur(r.sum)}</b></td></tr>`).join("")}</tbody></table></div>
+    const sum=ts.reduce((a,t)=>a+t.price,0), d=pkgPct(ts.length);
+    return {u,n:ts.length,done:done.length,sum,d,disc:r2(sum*d/100),total:r2(sum*(1-d/100))}});
+  v.innerHTML=`<div class="card"><div class="spread"><h2>Sąskaitos už ${month}</h2><span class="small muted">Skaičiuojama pagal tai, kas moka už kelionę. Sumos su PVM.</span></div>
+    <div class="scroll"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th class="num">Kelionės</th><th class="num">Įvykdyta</th><th class="num">Suma, €</th><th class="num">Paketo nuolaida</th><th class="num">Mokėti, €</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${esc(r.u.name)}</td><td>${r.u.contract}</td><td class="num">${r.n}</td><td class="num">${r.done}</td><td class="num">${eur(r.sum)}</td><td class="num">${r.d?`−${r.d}% (${eur(r.disc)})`:"–"}</td><td class="num"><b>${eur(r.total)}</b></td></tr>`).join("")}</tbody></table></div>
     <p class="small muted" style="margin:0">Tikroje versijoje iš čia bus galima atsisiųsti sąskaitą faktūrą kiekvienam klientui.</p></div>
     <div class="card"><h2>Vaikai ir globėjai</h2>${S.children.map(c=>`<div class="child"><div class="spread"><b>${esc(c.name)}, ${c.age} m.</b><span class="tag">${esc(c.booster)}</span></div><div class="small muted">Globėjai: ${c.guardians.map(g=>esc(users[g].name)).join(", ")}</div>${c.notes?`<div class="small">${esc(c.notes)}</div>`:""}</div>`).join("")}</div>`;
 }
 
 function vIncome(v){
   const p=S.pricing, mt=monthTrips().filter(billable);
-  const rev=mt.reduce((a,t)=>a+t.price,0), kms=mt.reduce((a,t)=>a+t.km,0)*(1+DEADHEAD);
+  const gross=Object.keys(users).reduce((a,u)=>{const ts=mt.filter(t=>t.payer===u),s=ts.reduce((x,t)=>x+t.price,0);return a+s*(1-pkgPct(ts.length)/100)},0);
+  const vat=gross-gross/(1+p.vat_pct/100), rev=gross-vat, kms=mt.reduce((a,t)=>a+t.km,0)*(1+DEADHEAD);
   const fuel=kms*FUEL_L_100/100*FUEL_PRICE, fixed=p.cost_insurance+p.cost_wash+p.cost_service;
   const profit=rev-fuel-fixed, tax=Math.max(0,profit*p.tax_pct/100), left=profit-tax, pct=Math.min(100,left/p.target*100);
   const groups=[
-    ["Kelionės kaina",[["base_fee","Paėmimo mokestis, €"],["per_km","Kaina už km, €"],["min_price","Minimali kelionės kaina, €"],["per_wait_min","Laukimo ir palydos minutė, €"],["included_wait_min","Nemokamas laukimas, min"],["extra_child_fee","Papildomas vaikas, €"],["peak_pct","Piko priemoka (7–9 ir 15–18 val.), %"]]],
-    ["Parkavimas ir palyda iki durų, min",[["handover_kindergarten","Darželis"],["handover_school","Mokykla"],["handover_activity","Būrelis"],["handover_home","Namai"],["handover_other","Kita vieta"]]],
+    ["Kelionės kaina su PVM",[["base_fee","Bazinė kaina vienam vaikui, €"],["included_km","Įskaičiuota km"],["per_km","Kiekvienas papildomas km, €"],["included_wait_min","Įskaičiuotas laukimas, min"],["per_wait_min","Papildoma laukimo minutė, €"],["extra_child_fee","Brolis ar sesuo toje pačioje kelionėje, €"]]],
+    ["Mėnesio paketai",[["pkg1_from","1 paketas nuo, kelionių"],["pkg1_pct","1 paketo nuolaida, %"],["pkg2_from","2 paketas nuo, kelionių"],["pkg2_pct","2 paketo nuolaida, %"]]],
+    ["Parkavimo ir palydos laikas grafikui, min",[["handover_kindergarten","Darželis"],["handover_school","Mokykla"],["handover_activity","Būrelis"],["handover_home","Namai"],["handover_other","Kita vieta"]]],
     ["Savaitgaliai ir šventės",[["weekend_pct","Savaitgalio priemoka, %"],["holiday_pct","Švenčių dienų priemoka, %"]]],
-    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["cancel_hours","Nemokamas atšaukimas iki, val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"]]],
-    ["Pastovios išlaidos per mėnesį ir tikslas",[["cost_insurance","Draudimas, €"],["cost_wash","Plovimas, €"],["cost_service","Priežiūra, €"],["tax_pct","Mokesčiai MB, % nuo pelno"],["target","Tikslas į rankas, €"]]]
+    ["Grafikas ir atšaukimas",[["day_limit_h","Darbo laikas per dieną, val."],["cancel_hours","Vėlyvas atšaukimas, likus mažiau nei val."],["late_cancel_pct","Vėlyvo atšaukimo mokestis, %"],["very_late_hours","Labai vėlyvas, likus mažiau nei val."],["very_late_pct","Labai vėlyvo ar neatvykus mokestis, %"]]],
+    ["Pastovios išlaidos per mėnesį ir tikslas",[["cost_insurance","Draudimas, €"],["cost_wash","Plovimas, €"],["cost_service","Priežiūra, €"],["vat_pct","PVM, %"],["tax_pct","Mokesčiai MB, % nuo pelno"],["target","Tikslas į rankas, €"]]]
   ];
   const fields=groups.flatMap(g=>g[1]);
   v.innerHTML=`<div class="grid2"><div class="card"><h2>Šis mėnuo</h2>
-    <div class="stats"><div class="stat"><span class="small muted">Pajamos</span><b>${eur(rev)}</b></div>
+    <div class="stats"><div class="stat"><span class="small muted">Pajamos su PVM, po nuolaidų</span><b>${eur(gross)}</b></div>
+    <div class="stat"><span class="small muted">PVM</span><b>${eur(vat)}</b></div>
     <div class="stat"><span class="small muted">Kuras (apytiksliai)</span><b>${eur(fuel)}</b></div>
     <div class="stat"><span class="small muted">Pastovios išlaidos</span><b>${eur(fixed)}</b></div>
     <div class="stat"><span class="small muted">Mokesčiai (apytiksliai)</span><b>${eur(tax)}</b></div>
