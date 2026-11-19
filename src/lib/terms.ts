@@ -11,7 +11,7 @@ export const TERMS: [string, string][] = [
   ],
   [
     "Laikas",
-    "Galimas ±10 min. nukrypimas dėl eismo. Nemokamas laukimas – 10 min.; jei vaikas nepasirodo per 10 min., kelionė laikoma įvykusia."
+    "Galimas ±10 min. nukrypimas dėl eismo. Nemokamas laukimas – 10 min., vėliau – laukimo mokestis, po 20 min. kelionė laikoma įvykusia."
   ],
   [
     "Atšaukimas",
