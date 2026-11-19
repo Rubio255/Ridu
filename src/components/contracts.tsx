@@ -22,14 +22,14 @@ function plannedEnd(x: ContractRow) {
 }
 
 // Galiojančių ir pasibaigusių sutarčių sąrašas. Klientams rodoma tik galutinė kaina.
-export function Contracts({ rows, filter, base, owner, me }: { rows: ContractRow[]; filter: Filter; base: string; owner: boolean; me?: string }) {
+export function Contracts({ rows, filter, base, owner, me, canEnd = owner, label }: { rows: ContractRow[]; filter: Filter; base: string; owner: boolean; me?: string; canEnd?: boolean; label?: string }) {
   const active = rows.filter((x) => x.status === "active"), ended = rows.filter((x) => x.status === "ended");
   const shown = filter === "visos" ? rows : filter === "aktyvios" ? active : ended;
   const monthly = active.filter((x) => owner || x.payer_id === me).reduce((a, x) => a + Number(x.monthly_eur), 0);
   return (
     <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {[["Galiojančios sutartys", String(active.length)], [owner ? "Mėnesio pajamos" : "Mokate per mėnesį", eur(monthly)], ["Pasibaigusios", String(ended.length)]].map(([l, v]) => (
+        {[["Galiojančios sutartys", String(active.length)], [label ?? (owner ? "Mėnesio pajamos" : "Mokate per mėnesį"), eur(monthly)], ["Pasibaigusios", String(ended.length)]].map(([l, v]) => (
           <div key={l} className="rounded-xl bg-[var(--surface-2)] p-3"><div className="text-sm muted">{l}</div><div className="num text-lg font-bold">{v}</div></div>
         ))}
       </div>
@@ -51,13 +51,13 @@ export function Contracts({ rows, filter, base, owner, me }: { rows: ContractRow
               </div>
               <div className="text-sm muted">{owner ? `${payer} · ` : x.payer_id !== me ? `Moka ${payer || "kitas globėjas"} · ` : ""}{x.from.label} → {x.to.label}</div>
               <div className="text-sm"><b className="num">{eur(x.monthly_eur)} / mėn.</b> · {x.months > 1 ? `${x.months} mėn.` : "Kas mėnesį pratęsiama"} · {end ? `${fmt(x.starts_on)} – ${fmt(end)}` : `nuo ${fmt(x.starts_on)}, neterminuota`}</div>
-              {owner && x.status === "active" && (
+              {canEnd && x.status === "active" && (
                 <form action={decideSubscription}><input type="hidden" name="id" value={x.id} /><input type="hidden" name="decision" value="ended" /><button className="btn btn-bad">Nutraukti sutartį</button></form>
               )}
             </div>
           );
         })}
-        <p className="text-sm muted">{owner ? "Nutraukus sutartį, būsimos jos kelionės atšaukiamos ir tėvams išsiunčiamas pranešimas." : "Norėdami nutraukti sutartį, susisiekite su vairuotoju."}</p>
+        <p className="text-sm muted">{canEnd ? "Nutraukus sutartį, būsimos jos kelionės atšaukiamos ir tėvams išsiunčiamas pranešimas." : owner ? "Sutartis sudaro ir nutraukia MB." : "Norėdami nutraukti sutartį, susisiekite su vairuotoju."}</p>
       </section>
     </>
   );

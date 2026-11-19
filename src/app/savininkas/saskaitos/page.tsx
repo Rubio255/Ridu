@@ -2,6 +2,8 @@ import { loadSettings } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { eur, vilniusToday } from "@/lib/time";
 import { notifyInvoice } from "@/app/actions";
+import { loadDrivers } from "@/lib/drivers";
+import { monthByDriver } from "@/lib/payouts";
 
 export default async function Page() {
   const s = await loadSettings();
@@ -19,16 +21,16 @@ export default async function Page() {
   }).filter((r) => r.subs || r.done || r.cancelled);
   const gross = rows.reduce((a, r) => a + r.monthly, 0);
   const vat = gross - gross / (1 + s.vat_pct / 100), net = gross - vat;
-  const km = (subs ?? []).reduce((a, x) => a + (Number(x.km) + s.empty_km) * Math.round((x.weekdays.length * 52) / 12), 0);
-  const fuel = (km * s.fuel_l_100km / 100) * s.fuel_price, fixed = s.cost_insurance + s.cost_wash + s.cost_service;
-  const profit = net - fuel - fixed, tax = Math.max(0, profit * s.tax_pct / 100), left = profit - tax;
+  // Vairuotojai patys moka už kurą ir automobilį; MB išmoka jiems dalį kainos be PVM
+  const payouts = (await monthByDriver(s, await loadDrivers())).reduce((a, r) => a + r.payout, 0), fixed = s.mb_costs;
+  const profit = net - payouts - fixed, tax = Math.max(0, profit * s.tax_pct / 100), left = profit - tax;
   const pct = Math.max(0, Math.min(100, (left / s.target_net) * 100));
   return (
     <>
       <section className="card">
         <h2 className="font-bold">Šis mėnuo</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {[["Pajamos su PVM", gross], ["PVM", vat], ["Kuras (apytiksliai)", fuel], ["Pastovios išlaidos", fixed], ["Mokesčiai (apytiksliai)", tax], ["Liks jums", left]].map(([l, v]) => (
+          {[["Pajamos su PVM", gross], ["PVM", vat], ["Išmokos vairuotojams", payouts], ["MB pastovios išlaidos", fixed], ["Mokesčiai (apytiksliai)", tax], ["Liks MB", left]].map(([l, v]) => (
             <div key={l as string} className="rounded-xl bg-[var(--surface-2)] p-3"><div className="text-sm muted">{l}</div><div className="num text-lg font-bold">{eur(v as number)}</div></div>
           ))}
         </div>

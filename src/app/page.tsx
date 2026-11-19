@@ -3,5 +3,5 @@ import { requireProfile } from "@/lib/auth";
 
 export default async function Home() {
   const p = await requireProfile();
-  redirect(p.role === "owner" ? "/savininkas" : "/tevai");
+  redirect(p.role === "owner" ? "/savininkas" : p.role === "driver" ? "/vairuotojas" : "/tevai");
 }

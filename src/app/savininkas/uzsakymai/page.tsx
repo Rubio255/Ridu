@@ -4,9 +4,12 @@ import { decideSubscription } from "@/app/actions";
 import { Pill } from "@/components/shell";
 import { blockMin, morningKids, afternoonTrips, hourOccupancy, type SubLike } from "@/lib/pricing";
 import { DAYS, eur } from "@/lib/time";
+import { assignable, loadDrivers } from "@/lib/drivers";
 
 export default async function Page() {
-  const s = await loadSettings();
+  const [s, drivers] = await Promise.all([loadSettings(), loadDrivers()]);
+  const okDrivers = drivers.filter(assignable);
+  const dname = (id: string | null) => drivers.find((d) => d.profile_id === id)?.profile.full_name ?? "nepriskirta";
   const { data } = await supabaseAdmin().from("subscriptions")
     .select("*, child:children(first_name), payer:profiles(full_name, email, phone), from:places!subscriptions_from_place_id_fkey(label, address), to:places!subscriptions_to_place_id_fkey(label, address)")
     .in("status", ["pending", "active"]).order("created_at");
@@ -23,12 +26,13 @@ export default async function Page() {
         <b>{x.payer.full_name || x.payer.email} · {x.child.first_name}{x.extra_kids ? ` +${x.extra_kids}` : ""} · {x.weekdays.map((w: number) => DAYS[w - 1]).join(", ")} · {x.period === "am" ? "rytas" : String(x.pickup_time).slice(0, 5)}</b>
         <span className="num font-bold">{eur(x.monthly_eur)}/mėn.</span>
       </div>
-      <div className="text-sm muted">{x.from.label} → {x.to.label} · {Number(x.km).toFixed(1)} km, {x.drive_min} min kelio · {eur(x.per_trip_eur)} už kelionę vienam vaikui · {x.months} mėn.{x.is_bid ? " · aukciono pasiūlymas" : ""}</div>
+      <div className="text-sm muted">{x.from.label} → {x.to.label} · {Number(x.km).toFixed(1)} km, {x.drive_min} min kelio · {eur(x.per_trip_eur)} už kelionę vienam vaikui · {x.months} mėn.{x.is_bid ? " · aukciono pasiūlymas" : ""} · vairuotojas {dname(x.driver_id)}</div>
       {x.owner_note && <div className="rounded-lg bg-[var(--warn-bg)] p-2 text-sm font-semibold text-[var(--warn)]">{x.owner_note}</div>}
       {x.status === "pending" ? (
         <form action={decideSubscription} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="id" value={x.id} />
           {x.period === "am" && <label className="grid gap-1 text-xs font-semibold muted">Paėmimo laikas<input type="time" name="pickup_time" className="input" defaultValue={String(x.pickup_time).slice(0, 5)} min={s.morning_start} max={s.morning_end} /></label>}
+          <label className="grid gap-1 text-xs font-semibold muted">Vairuotojas<select name="driver_id" required className="input" defaultValue={okDrivers.some((d) => d.profile_id === x.driver_id) ? x.driver_id : ""}><option value="" disabled>Pasirinkite</option>{okDrivers.map((d) => <option key={d.profile_id} value={d.profile_id}>{d.profile.full_name}</option>)}</select></label>
           <button name="decision" value="active" className="btn btn-ok">Patvirtinti</button>
           <button name="decision" value="rejected" className="btn btn-bad">Atmesti</button>
         </form>

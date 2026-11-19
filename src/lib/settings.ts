@@ -48,9 +48,12 @@ export type Settings = {
   // Vienos dienos kelionės (kol kas išjungtos)
   single_enabled: boolean;
   single_base: number;
+  driver_pct: number;
+  mb_costs: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
+  driver_pct: 75, mb_costs: 60,
   minute_rate: 0.56,
   km_rate: 0.12,
   empty_km: 6,
@@ -119,9 +122,12 @@ export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][
     ["very_late_hours", "Labai vėlyvas, likus mažiau nei val."], ["very_late_pct", "Labai vėlyvo ar neatvykus mokestis, %"],
     ["weekend_pct", "Savaitgalio ir švenčių priemoka, %"],
   ]},
-  { title: "Išlaidos ir tikslas", fields: [
+  { title: "Vairuotojai ir MB", fields: [
+    ["driver_pct", "Vairuotojui nuo kainos be PVM, %"], ["mb_costs", "MB pastovios išlaidos, €/mėn."],
+    ["vat_pct", "PVM, %"], ["tax_pct", "Mokesčiai MB, % nuo pelno"], ["target_net", "MB tikslas į rankas, €/mėn."], ["single_base", "Vienos dienos kelionės kaina, €"],
+  ]},
+  { title: "Vairuotojo automobilio išlaidos (uždarbio skaičiavimui)", fields: [
     ["cost_insurance", "Draudimas, €/mėn."], ["cost_wash", "Plovimas, €/mėn."], ["cost_service", "Priežiūra, €/mėn."],
-    ["fuel_l_100km", "Kuras, l/100 km"], ["fuel_price", "Kuro kaina, €/l"], ["vat_pct", "PVM, %"], ["tax_pct", "Mokesčiai MB, % nuo pelno"],
-    ["target_net", "Tikslas į rankas, €/mėn."], ["single_base", "Vienos dienos kelionės kaina, €"],
+    ["fuel_l_100km", "Kuras, l/100 km"], ["fuel_price", "Kuro kaina, €/l"],
   ]},
 ];

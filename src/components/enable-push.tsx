@@ -6,6 +6,7 @@ const b64 = (s: string) => { const p = "=".repeat((4 - (s.length % 4)) % 4); con
 
 const TEXT = {
   owner: "Gaukite telefono pranešimą su garsu apie kiekvieną naują, pakeistą ar atšauktą užsakymą.",
+  driver: "Gaukite telefono pranešimą, kai jums priskiriamas naujas užsakymas, kelionė perkeliama ar atšaukiama.",
   client: "Gaukite telefono pranešimą, kai vaikas paimamas ir nuvežamas, kai užsakymas patvirtinamas, perkeliamas ar atšaukiamas, ir kai paruošta sąskaita.",
 };
 

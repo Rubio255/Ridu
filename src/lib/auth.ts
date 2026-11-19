@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "./supabase/server";
 import { withDefaults, type Settings } from "./settings";
 
-export type Profile = { id: string; full_name: string; email: string | null; phone: string | null; role: "owner" | "client"; contract_no: string | null; active: boolean };
+export type Profile = { id: string; full_name: string; email: string | null; phone: string | null; role: "owner" | "client" | "driver"; contract_no: string | null; active: boolean };
 
 export async function currentProfile(): Promise<Profile | null> {
   const sb = await supabaseServer();
@@ -22,6 +22,19 @@ export async function requireProfile(): Promise<Profile> {
 export async function requireOwner(): Promise<Profile> {
   const p = await requireProfile();
   if (p.role !== "owner") redirect("/tevai");
+  return p;
+}
+
+export async function requireDriver(): Promise<Profile> {
+  const p = await requireProfile();
+  if (p.role !== "driver") redirect(p.role === "owner" ? "/savininkas" : "/tevai");
+  return p;
+}
+
+// MB administratorius arba vairuotojas (vairuotojui tikrinama, ar kelionė jo)
+export async function requireStaff(): Promise<Profile> {
+  const p = await requireProfile();
+  if (p.role !== "owner" && p.role !== "driver") redirect("/tevai");
   return p;
 }
 
