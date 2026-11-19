@@ -1,13 +1,13 @@
 // Paslaugų sąlygos (trumpa versija). Šaltinis: /mnt/project-files/salygos/salygos-aplikacijai.md
 // PROJEKTAS: prieš naudojimą turi peržiūrėti teisininkas. Pakeitus tekstą, padidinkite TERMS_VERSION:
 // tada visi klientai bus paprašyti sutikti iš naujo.
-export const TERMS_VERSION = "2026-11-19";
+export const TERMS_VERSION = "2026-11-19.2";
 export const FULL_TERMS_URL = "https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
 
 export const TERMS: [string, string][] = [
   [
     "Paslauga",
-    "Pavežame jūsų vaiką sutartu maršrutu Vilniuje ir perduodame tik jūsų patvirtintiems asmenims arba į įstaigą."
+    "Pavežame jūsų vaiką sutartu maršrutu Vilniuje ir perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."
   ],
   [
     "Laikas",
@@ -15,7 +15,7 @@ export const TERMS: [string, string][] = [
   ],
   [
     "Atšaukimas",
-    "Daugiau nei 12 val. iki kelionės – nemokamai; 12–2 val. – 50 %; mažiau nei 2 val. ar neatvykus – 100 %. Ligos atveju su gydytojo pažyma – nemokamai."
+    "Daugiau nei 12 val. iki kelionės – nemokamai; 12–2 val. – 50 %; mažiau nei 2 val. ar neatvykus – 100 %. Ligos atveju su gydytojo pažyma – nemokamai. Jei suserga vairuotojas ar sugenda automobilis, skirsime kitą patikrintą vairuotoją ir pranešime; jei nepavyks – kelionę atšauksime be mokesčio, o jos kainą grąžinsime ar įskaitysime į kitą mėnesį. Jei paslauga neteikiama ilgiau nei 5 darbo dienas, galite nutraukti sutartį iš karto."
   ],
   [
     "Mokėjimas",
