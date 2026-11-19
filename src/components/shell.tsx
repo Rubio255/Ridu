@@ -1,3 +1,4 @@
+import { Logo } from "./logo";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
 
@@ -7,7 +8,7 @@ export function Shell({ title, name, tabs, children }: { title: string; name: st
       <header className="sticky top-0 z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--accent)] font-bold text-[var(--accent-fg)]">V</div>
+            <Logo />
             <div><div className="font-bold leading-tight">{title}</div><div className="text-xs opacity-80">{name}</div></div>
           </div>
           <form action={signOut}><button className="rounded-md border border-current px-2 py-1 text-xs">Atsijungti</button></form>

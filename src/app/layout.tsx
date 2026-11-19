@@ -5,7 +5,7 @@ import "./globals.css";
 const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin", "latin-ext"], weight: ["600", "700"] });
 const body = Manrope({ variable: "--font-body", subsets: ["latin", "latin-ext"] });
 
-export const metadata: Metadata = { title: "Išsiskyrusiems", description: "Vaikų pavėžėjimo užsakymai Vilniuje pagal sutartį", manifest: "/manifest.webmanifest", appleWebApp: { capable: true, title: "Išsiskyrusiems", statusBarStyle: "default" }, icons: { icon: "/icon-192.png", apple: "/icon-192.png" } };
+export const metadata: Metadata = { title: "Išsiskyrusiems", description: "Vaikų pavėžėjimo užsakymai Vilniuje pagal sutartį", manifest: "/manifest.webmanifest", appleWebApp: { capable: true, title: "Išsiskyrusiems", statusBarStyle: "default" }, icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-192.png" }], apple: "/icon-192.png" } };
 export const viewport: Viewport = { themeColor: "#0f4c45", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
