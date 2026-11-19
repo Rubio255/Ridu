@@ -1,4 +1,7 @@
-import { requireProfile } from "@/lib/auth";
+import { requireProfile, loadSettings } from "@/lib/auth";
+import { loadFamilyFees } from "@/lib/fees-server";
+import { feeForPayer } from "@/lib/fees";
+import { vilniusToday } from "@/lib/time";
 import { supabaseServer } from "@/lib/supabase/server";
 import { Contracts, CONTRACT_SELECT, toFilter, type ContractRow } from "@/components/contracts";
 
@@ -8,5 +11,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   const { rodyti } = await searchParams;
   const sb = await supabaseServer();
   const { data } = await sb.from("subscriptions").select(CONTRACT_SELECT).in("status", ["active", "ended"]).order("starts_on", { ascending: false });
-  return <><h1 className="text-xl font-bold">Mano sutartys</h1><Contracts rows={(data ?? []) as unknown as ContractRow[]} filter={toFilter(rodyti)} base="/tevai/sutartys" owner={false} me={me.id} /></>;
+  const fee = feeForPayer(await loadFamilyFees(vilniusToday().slice(0, 7), (await loadSettings()).platform_fee), me.id);
+  return <><h1 className="text-xl font-bold">Mano sutartys</h1><Contracts rows={(data ?? []) as unknown as ContractRow[]} filter={toFilter(rodyti)} base="/tevai/sutartys" owner={false} me={me.id} fee={fee} /></>;
 }

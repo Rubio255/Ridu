@@ -1,7 +1,7 @@
 // Paslaugų sąlygos (trumpa versija). Šaltinis: /mnt/project-files/salygos/salygos-aplikacijai.md
 // PROJEKTAS: prieš naudojimą turi peržiūrėti teisininkas. Pakeitus tekstą, padidinkite TERMS_VERSION:
 // tada visi klientai bus paprašyti sutikti iš naujo.
-export const TERMS_VERSION = "2026-11-19.2";
+export const TERMS_VERSION = "2026-11-19.3";
 export const FULL_TERMS_URL = "https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs";
 
 export const TERMS: [string, string][] = [
@@ -19,7 +19,7 @@ export const TERMS: [string, string][] = [
   ],
   [
     "Mokėjimas",
-    "Sąskaita kas mėnesį, apmokėti per 7 dienas."
+    "Sąskaita kas mėnesį, apmokėti per 7 dienas. Platformos mokestis – 9,90 €/mėn. šeimai (aplikacija, planavimas, pranešimai, vairuotojų patikra, aptarnavimas); registracijos mokesčio nėra. Pirmą ir paskutinį mėnesį skaičiuojamas proporcingai, nutraukus sutartį – nebeskaičiuojamas."
   ],
   [
     "Saugumas",

@@ -81,8 +81,11 @@ export function SubForm({ kids, places, hours }: {
           <>
             <div className="grid gap-2 rounded-lg bg-[var(--surface-2)] p-3 num">
               <div className="flex justify-between text-sm"><span>{f.weekdays.length} k./sav., apie {q.tripsPerMonth} kelionės per mėn.</span><span>{eur(q.perTrip)} / kel.</span></div>
-              <div className="flex justify-between border-t border-[var(--line)] pt-2 font-bold"><span>Per mėnesį{q.kids > 1 ? ` (${q.kids} vaikai)` : ""}</span><span className="text-xl">{eur(q.monthly)}</span></div>
+              <div className="flex justify-between text-sm"><span>Kelionės per mėnesį{q.kids > 1 ? ` (${q.kids} vaikai)` : ""}</span><span>{eur(q.monthly)}</span></div>
+              <div className="flex justify-between text-sm"><span>Platformos mokestis šeimai{q.platformFee ? "" : " (jau mokate)"}</span><span>{q.platformFee ? eur(q.platformFee) : "–"}</span></div>
+              <div className="flex justify-between border-t border-[var(--line)] pt-2 font-bold"><span>Iš viso per mėnesį</span><span className="text-xl">{eur(q.monthly + q.platformFee)}</span></div>
             </div>
+            <p className="text-sm muted">Platformos mokestis apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Pirmą ir paskutinį mėnesį jis skaičiuojamas pagal dienas.</p>
             {f.period === "am" && <p className="text-sm muted">Rytinis maršrutas bendras keliems vaikams. Tikslų paėmimo laiką nurodys vairuotojas.</p>}
             {from && to && <a className="text-sm underline" href={mapsLink(from.address, to.address)} target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>}
             {q.full ? (
@@ -92,7 +95,7 @@ export function SubForm({ kids, places, hours }: {
                   <input type="number" className="input" min={q.monthly} step={1} value={bid} onChange={(e) => setBid(Number(e.target.value))} /></label>
                 <button className="btn btn-primary" disabled={pending}>Pateikti pasiūlymą</button>
               </>
-            ) : <button className="btn btn-primary" disabled={pending}>Užsakyti už {eur(q.monthly)} / mėn.</button>}
+            ) : <button className="btn btn-primary" disabled={pending}>Užsakyti už {eur(q.monthly + q.platformFee)} / mėn.</button>}
             <p className="text-sm muted">Kaina nesikeičia visą įsipareigojimo laikotarpį. Užsakymas įsigalioja, kai jį patvirtina vairuotojas.</p>
           </>
         )}

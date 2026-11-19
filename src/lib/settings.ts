@@ -50,10 +50,11 @@ export type Settings = {
   single_base: number;
   driver_pct: number;
   mb_costs: number;
+  platform_fee: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  driver_pct: 75, mb_costs: 60,
+  driver_pct: 70, mb_costs: 60, platform_fee: 9.9,
   minute_rate: 0.56,
   km_rate: 0.12,
   empty_km: 6,
@@ -123,7 +124,7 @@ export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][
     ["weekend_pct", "Savaitgalio ir švenčių priemoka, %"],
   ]},
   { title: "Vairuotojai ir MB", fields: [
-    ["driver_pct", "Vairuotojui nuo kainos be PVM, %"], ["mb_costs", "MB pastovios išlaidos, €/mėn."],
+    ["driver_pct", "Vairuotojui nuo kainos be PVM, %"], ["platform_fee", "Platformos mokestis šeimai, €/mėn. su PVM"], ["mb_costs", "MB pastovios išlaidos, €/mėn."],
     ["vat_pct", "PVM, %"], ["tax_pct", "Mokesčiai MB, % nuo pelno"], ["target_net", "MB tikslas į rankas, €/mėn."], ["single_base", "Vienos dienos kelionės kaina, €"],
   ]},
   { title: "Vairuotojo automobilio išlaidos (uždarbio skaičiavimui)", fields: [

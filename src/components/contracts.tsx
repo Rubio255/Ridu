@@ -22,15 +22,15 @@ function plannedEnd(x: ContractRow) {
 }
 
 // Galiojančių ir pasibaigusių sutarčių sąrašas. Klientams rodoma tik galutinė kaina.
-export function Contracts({ rows, filter, base, owner, me, canEnd = owner, label }: { rows: ContractRow[]; filter: Filter; base: string; owner: boolean; me?: string; canEnd?: boolean; label?: string }) {
+export function Contracts({ rows, filter, base, owner, me, canEnd = owner, label, fee = 0 }: { rows: ContractRow[]; filter: Filter; base: string; owner: boolean; me?: string; canEnd?: boolean; label?: string; fee?: number }) {
   const active = rows.filter((x) => x.status === "active"), ended = rows.filter((x) => x.status === "ended");
   const shown = filter === "visos" ? rows : filter === "aktyvios" ? active : ended;
-  const monthly = active.filter((x) => owner || x.payer_id === me).reduce((a, x) => a + Number(x.monthly_eur), 0);
+  const monthly = active.filter((x) => owner || x.payer_id === me).reduce((a, x) => a + Number(x.monthly_eur), 0) + fee;
   return (
     <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {[["Galiojančios sutartys", String(active.length)], [label ?? (owner ? "Mėnesio pajamos" : "Mokate per mėnesį"), eur(monthly)], ["Pasibaigusios", String(ended.length)]].map(([l, v]) => (
-          <div key={l} className="rounded-xl bg-[var(--surface-2)] p-3"><div className="text-sm muted">{l}</div><div className="num text-lg font-bold">{v}</div></div>
+          <div key={l} className="rounded-xl bg-[var(--surface-2)] p-3"><div className="text-sm muted">{l}</div><div className="num text-lg font-bold">{v}</div>{fee > 0 && l === "Mokate per mėnesį" && <div className="text-sm muted">su platformos mokesčiu {eur(fee)}</div>}</div>
         ))}
       </div>
       <section className="card">

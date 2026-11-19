@@ -5,6 +5,7 @@ import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { requireOwner, requireProfile, requireStaff, requireDriver, loadSettings, type Profile } from "@/lib/auth";
 import { bestDriverQuote, loadDrivers, affectedTrips, absenceOn, ABSENCE_LT } from "@/lib/drivers";
 import { offerNext } from "@/lib/offers";
+import { familyAlreadyPays } from "@/lib/fees-server";
 import { geocode, route } from "@/lib/maps";
 import { quoteSubscription, blockMin, cancelFeePct, type SubLike } from "@/lib/pricing";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
@@ -66,7 +67,8 @@ export async function quoteAction(input: SubInput) {
   const { q, error } = await computeQuote(me.id, input);
   if (!q || error) return { ok: false as const, error };
   // Klientui grąžinama tik galutinė kaina, be kainodaros detalių
-  return { ok: true as const, full: q.full, perTrip: q.perTrip, monthly: q.monthly, tripsPerMonth: q.tripsPerMonth, kids: q.kids };
+  const s = await loadSettings(), platformFee = (await familyAlreadyPays(input.child_id)) ? 0 : s.platform_fee;
+  return { ok: true as const, full: q.full, perTrip: q.perTrip, monthly: q.monthly, tripsPerMonth: q.tripsPerMonth, kids: q.kids, platformFee };
 }
 
 export async function createSubscription(input: SubInput, bidMonthly?: number) {
