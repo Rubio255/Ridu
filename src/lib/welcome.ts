@@ -23,8 +23,9 @@ export function driverChecks(d: { child_qr_verified: boolean; child_seats: boole
   const ok = (n: string) => d.docs.some((x) => x.name.startsWith(n) && (!x.valid_until || x.valid_until >= vilniusToday()));
   return ([
     [ok("Individualios veiklos"), "Dirba legaliai pagal individualios veiklos pažymą"],
-    [ok("Pažyma apie teistumą"), "Pateikta pažyma apie neteistumą"],
+    [d.child_qr_verified, "Patikrinta: neteistas (QR kodas)"],
+    [!d.child_qr_verified && ok("Pažyma apie teistumą"), "Pateikta pažyma apie neteistumą"],
     [ok("Automobilio draudimas") && ok("Techninė"), "Apdraustas, techniškai tvarkingas automobilis"],
-    [d.child_qr_verified && d.child_seats, "Leidimas dirbti su vaikais ir vaikiškos kėdutės"],
+    [d.child_seats, "Turi vaikiškas kėdutes"],
   ] as [boolean, string][]).filter((x) => x[0]).map((x) => x[1]);
 }

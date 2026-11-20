@@ -366,7 +366,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const child=id=>S.children.find(c=>c.id===id);
 const isKid=id=>(child(id)?.type||"child")==="child";
-// Vaikus veža tik vairuotojai su patikrintu QR kodu darbui su vaikais ir vaikiškomis kėdutėmis
+// Vaikus veža tik vairuotojai su patikrintu neteistumo QR kodu ir vaikiškomis kėdutėmis
 const childOk=d=>!!(d&&d.childQr&&d.childSeats);
 const canCarry=(d,cid)=>!isKid(cid)||childOk(d);
 const paxLabel=c=>c.type&&c.type!=="child"?`${esc(c.name)}${c.age?`, ${c.age} m.`:""}`:`${esc(c.name)}, ${c.age} m.`;
@@ -461,7 +461,7 @@ function tripRow(t,{owner=false,conflict=false}={}){
       ${t.subNote?`<div class="small"><b>${esc(t.subNote)}</b></div>`:""}
       ${!owner&&drv(t.driver)?`<div class="small muted">Vairuotojas ${esc(drv(t.driver).name)} · ${esc(drv(t.driver).car)}${drv(t.driver).plate?` · ${esc(drv(t.driver).plate)}`:""}</div>`:""}
       ${owner&&absenceOn(drv(t.driver),dayIso(t.at))&&["requested","confirmed"].includes(t.status)?`<div class="warnbox">Vairuotojas tą dieną negali dirbti: ${ABS[absenceOn(drv(t.driver),dayIso(t.at)).reason].toLowerCase()}. ${isMB()?"Perduokite kelionę kitam vairuotojui.":"MB perduos kelionę kitam vairuotojui."}</div>`:""}
-      ${owner&&isMB()?`<div class="row small"><label for="tdrv_${t.id}">Vairuotojas</label><select id="tdrv_${t.id}" data-assign-trip="${t.id}">${S.drivers.filter(d=>d.id===t.driver||canCarry(d,t.child)).map(d=>`<option value="${d.id}" ${d.id===t.driver?"selected":""}>${esc(d.name)}${canCarry(d,t.child)?"":" (neturi leidimo vežti vaikų)"}</option>`).join("")}</select></div>`:""}
+      ${owner&&isMB()?`<div class="row small"><label for="tdrv_${t.id}">Vairuotojas</label><select id="tdrv_${t.id}" data-assign-trip="${t.id}">${S.drivers.filter(d=>d.id===t.driver||canCarry(d,t.child)).map(d=>`<option value="${d.id}" ${d.id===t.driver?"selected":""}>${esc(d.name)}${canCarry(d,t.child)?"":" (neturi patikrinto QR kodo)"}</option>`).join("")}</select></div>`:""}
       ${conflict?`<div class="warnbox">${esc(slotProblem(new Date(t.at),t.min,t.id,t.driver))}</div>`:""}
       ${owner?`<a class="small" href="${mapsUrl(S.places.find(p=>p.id===t.from)||{},S.places.find(p=>p.id===t.to)||{})}" target="_blank" rel="noopener">Maršrutas Google Maps</a>`:""}
       ${actions?`<div class="row">${actions}</div>`:""}
@@ -573,7 +573,7 @@ const VISIT_ST={new:["Laukia patvirtinimo","s-requested"],confirmed:["Patvirtint
 const initials=n=>n.split(/\s+/).map(x=>x[0]||"").join("").slice(0,2).toUpperCase();
 // Ką klientas gali matyti apie vairuotoją: tik galiojančius patikrinimus, be dokumentų numerių
 function driverChecks(d){const ok=n=>d.docs.some(x=>x.name.startsWith(n)&&docState(x)!=="bad");
-  return [[ok("Individualios veiklos"),"Dirba legaliai pagal individualios veiklos pažymą"],[ok("Pažyma apie teistumą"),"Pateikta pažyma apie neteistumą"],[ok("Automobilio draudimas")&&ok("Techninė"),"Apdraustas, techniškai tvarkingas automobilis"],[childOk(d),"Leidimas dirbti su vaikais ir vaikiškos kėdutės"]].filter(x=>x[0]).map(x=>x[1])}
+  return [[ok("Individualios veiklos"),"Dirba legaliai pagal individualios veiklos pažymą"],[d.childQr,"Patikrinta: neteistas (QR kodas)"],[!d.childQr&&ok("Pažyma apie teistumą"),"Pateikta pažyma apie neteistumą"],[ok("Automobilio draudimas")&&ok("Techninė"),"Apdraustas, techniškai tvarkingas automobilis"],[d.childSeats,"Turi vaikiškas kėdutes"]].filter(x=>x[0]).map(x=>x[1])}
 function quickCalc(P,{km,tpw,type,leisure}){const n=tpw*52/12,drive=Math.round(km*2.75),extra=6;
   const trip=(P.minute_rate*(drive+handoverFor(P,type)+P.deadhead_min+P.gap_min)+P.km_rate*(km+P.empty_km))*(1-P.commit3_pct/100);
   const sub=Math.round(trip*n+P.platform_fee), hours=((km+extra)*2.75+15+5)*n/60, hour=2600/168*(leisure?0.45:1);
@@ -1042,7 +1042,7 @@ function vDrivers(v){
   const p=S.pricing;
   v.innerHTML=`<div class="grid2">${S.drivers.map(d=>{const m=driverMonth(d);return `<div class="card"><div class="spread"><h2>${esc(d.name)}</h2><span class="pill ${d.active?"s-confirmed":"s-rejected"}">${d.active?"Aktyvus":"Neaktyvus"}</span></div>
     <div class="small muted">${esc(d.phone)} · ${esc(d.cert)}</div><div class="small">${esc(d.car)}${d.plate?` · ${esc(d.plate)}`:""} · ${esc(d.seats)}</div>
-    <div class="row small"><label for="cq_${d.id}"><input type="checkbox" id="cq_${d.id}" data-childqr="${d.id}" ${d.childQr?"checked":""}> QR kodas darbui su vaikais patikrintas</label><label for="cs_${d.id}x"><input type="checkbox" id="cs_${d.id}x" data-childseats="${d.id}" ${d.childSeats?"checked":""}> Turi vaikiškas kėdutes</label></div>
+    <div class="row small"><label for="cq_${d.id}"><input type="checkbox" id="cq_${d.id}" data-childqr="${d.id}" ${d.childQr?"checked":""}> Neteistumo QR kodas patikrintas</label><label for="cs_${d.id}x"><input type="checkbox" id="cs_${d.id}x" data-childseats="${d.id}" ${d.childSeats?"checked":""}> Turi vaikiškas kėdutes</label></div>
     <div class="small">${childOk(d)?'<span class="pill s-delivered">Veža vaikus ir suaugusius</span>':'<span class="pill s-requested">Veža tik suaugusius</span>'}</div>
     <div class="small">Dirba: ${d.days.map(w=>DAYS[w-1]).join(", ")||"–"} · šį mėnesį ${m.subs} sutartys, ${eur(m.payout)} išmokai</div>
     <div class="field"><span class="lbl">Dokumentai</span>${d.docs.map(x=>`<div class="spread small"><span>${esc(x.name)}${x.no?" · "+esc(x.no):""}</span><span class="pill ${docState(x)==="bad"?"s-rejected":docState(x)==="warn"?"s-requested":"s-delivered"}">${x.until?(docState(x)==="bad"?"Pasibaigė ":"Iki ")+fmtD(x.until):"Galioja"}</span></div>`).join("")}</div>

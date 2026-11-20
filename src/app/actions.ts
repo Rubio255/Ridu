@@ -216,7 +216,7 @@ export async function assignTrip(fd: FormData) {
     db0.from("drivers").select("child_qr_verified, child_seats").eq("profile_id", driverId).single(),
   ]);
   const pt = (tr?.child as unknown as { passenger_type?: PassengerType } | null)?.passenger_type ?? "child";
-  if (pt === "child" && !(dr && childOk(dr))) throw new Error("Šis vairuotojas neturi patikrinto QR kodo darbui su vaikais ar vaikiškų kėdučių.");
+  if (pt === "child" && !(dr && childOk(dr))) throw new Error("Šis vairuotojas neturi patikrinto neteistumo QR kodo ar vaikiškų kėdučių.");
   const { data: t } = await supabaseAdmin().from("trips").update({ driver_id: driverId }).eq("id", id).select("pickup_at, to_label").single();
   if (t) await notifyProfiles([driverId], "Jums priskirta kelionė", `${whenLt(t.pickup_at)} į ${t.to_label}.`, "/vairuotojas");
   revalidatePath("/savininkas"); revalidatePath("/vairuotojas");

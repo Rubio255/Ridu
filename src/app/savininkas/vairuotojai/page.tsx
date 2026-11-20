@@ -27,7 +27,7 @@ export default async function Page() {
             <form action={updateDriver} className="flex items-end gap-2"><input type="hidden" name="id" value={d.profile_id} />
               <label className="grid gap-1 text-xs font-semibold muted">Vairuotojui, %<input name="payout_pct" type="number" step="any" min="0" max="100" defaultValue={payoutPct(s, d)} className="input w-24" /></label><button className="btn">Išsaugoti</button></form>
             <form action={updateDriver} className="flex flex-wrap items-center gap-3 text-sm"><input type="hidden" name="id" value={d.profile_id} /><input type="hidden" name="child_flags" value="1" />
-              <label className="flex items-center gap-2"><input type="checkbox" name="child_qr_verified" defaultChecked={d.child_qr_verified} />QR kodas darbui su vaikais patikrintas</label>
+              <label className="flex items-center gap-2"><input type="checkbox" name="child_qr_verified" defaultChecked={d.child_qr_verified} />Neteistumo QR kodas patikrintas</label>
               <label className="flex items-center gap-2"><input type="checkbox" name="child_seats" defaultChecked={d.child_seats} />Turi vaikiškas kėdutes</label>
               <button className="btn">Išsaugoti</button>
               <span className={`pill ${childOk(d) ? "p-ok" : "p-warn"}`}>{childOk(d) ? "Veža vaikus ir suaugusius" : "Veža tik suaugusius"}</span></form>

@@ -17,7 +17,7 @@ export async function loadDrivers(): Promise<DriverRow[]> {
 export const docState = (until: string | null) => !until ? "ok" : until < vilniusToday() ? "bad" : (new Date(until).getTime() - Date.now()) / 864e5 < 30 ? "warn" : "ok";
 export const payoutPct = (s: Settings, d: { payout_pct: number | null }) => d.payout_pct ?? s.driver_pct;
 // Užsakymai skiriami tik aktyviems vairuotojams su galiojančiais dokumentais
-// Vaikus veža tik vairuotojai su patikrintu QR kodu darbui su vaikais ir kėdutėmis
+// Vaikus veža tik vairuotojai su patikrintu neteistumo QR kodu ir vaikiškomis kėdutėmis
 export const childOk = (d: Pick<DriverRow, "child_qr_verified" | "child_seats">) => d.child_qr_verified && d.child_seats;
 export const canCarry = (d: DriverRow, passenger: PassengerType = "child") => passenger !== "child" || childOk(d);
 export const assignable = (d: DriverRow) => d.active && !d.docs.some((x) => docState(x.valid_until) === "bad");

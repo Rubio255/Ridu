@@ -15,5 +15,6 @@ test("laisvalaikis vertinamas pigiau, todėl vežioti patiems kainuoja mažiau",
 
 test("klientui rodomi tik galiojantys patikrinimai", () => {
   const c = driverChecks({ child_qr_verified: true, child_seats: false, docs: [{ name: "Pažyma apie teistumą", valid_until: "2000-01-01" }, { name: "Individualios veiklos pažyma", valid_until: null }] });
-  assert.deepEqual(c, ["Dirba legaliai pagal individualios veiklos pažymą"]);
+  assert.deepEqual(c, ["Dirba legaliai pagal individualios veiklos pažymą", "Patikrinta: neteistas (QR kodas)"]);
+  assert.ok(!c.some((x) => /leidim/i.test(x)));
 });
