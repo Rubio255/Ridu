@@ -1,6 +1,6 @@
 import { SavingsCalc } from "./savings-calc";
 import { VisitForm } from "./visit-form";
-import { isVerified } from "@/lib/welcome";
+import { isVerified, SAFETY } from "@/lib/welcome";
 import { childOk, type DriverRow } from "@/lib/drivers";
 import { addDays, vilniusToday } from "@/lib/time";
 
@@ -31,10 +31,19 @@ export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers:
                 <h3 className="text-lg font-bold">{d.profile.full_name}</h3>
                 <div className="text-sm muted">{d.since_year ? `Vairuoja ${new Date().getFullYear() - d.since_year} m. · ` : ""}{d.car ?? ""}</div>
                 {d.bio && <p className="italic">„{d.bio}“</p>}
-                {isVerified(d) && <span className="pill p-ok justify-self-start normal-case">✓ Patikimas ir patikrintas vairuotojas</span>}
+                {isVerified(d) && <a href="#saugumas" className="pill p-ok justify-self-start normal-case no-underline">✓ Patikimas ir patikrintas vairuotojas</a>}
                 <div className="text-sm muted">{childOk(d) ? "Veža vaikus, suaugusius ir senjorus" : "Veža suaugusius ir senjorus"}</div>
               </div>
             </article>
+          ))}
+        </div>
+      </section>
+      <section id="saugumas" className="card scroll-mt-20">
+        <h2 className="text-xl font-bold">Jūsų saugumas</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {SAFETY.map(([t, xs]) => (
+            <div key={t} className="grid content-start gap-2"><h3 className="font-bold">{t}</h3>
+              <ul className="grid gap-1 text-sm">{xs.map((x) => <li key={x}><span className="font-bold text-[var(--ok)]">✓</span> {x}</li>)}</ul></div>
           ))}
         </div>
       </section>

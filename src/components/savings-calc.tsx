@@ -14,7 +14,7 @@ export function SavingsCalc({ moreHref }: { moreHref?: string }) {
   useEffect(() => { const t = setTimeout(() => start(async () => setR(await calcAction(f))), 200); return () => clearTimeout(t); }, [f]);
   const diff = r ? r.sub - r.self : 0, mx = r ? Math.max(r.sub, r.self, 1) : 1, h = r?.hours.toLocaleString("lt-LT") ?? "";
   return (
-    <section id="skaiciuokle" className="card scroll-mt-4 border-2 border-[var(--brand)]">
+    <section id="skaiciuokle" className="card scroll-mt-20 border-2 border-[var(--brand)]">
       <h2 className="text-xl font-bold">Ar man apsimoka?</h2>
       <p className="text-sm muted">Palyginkite abonementą su tuo, kiek kainuoja vežioti patiems: kuras, automobilio dėvėjimasis, parkavimas ir jūsų laikas.</p>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

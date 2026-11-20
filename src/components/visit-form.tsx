@@ -8,7 +8,7 @@ export function VisitForm({ guest, drivers, minDate }: { guest: boolean; drivers
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   return (
-    <form id="pokalbis" className="card scroll-mt-4" action={(fd) => start(async () => { const r = await requestVisit(fd); setMsg(r.ok ? { ok: true, text: "Ačiū! Užklausa išsiųsta. Patvirtinsime laiką per vieną darbo dieną." } : { ok: false, text: r.error ?? "Nepavyko." }); })}>
+    <form id="pokalbis" className="card scroll-mt-20" action={(fd) => start(async () => { const r = await requestVisit(fd); setMsg(r.ok ? { ok: true, text: "Ačiū! Užklausa išsiųsta. Patvirtinsime laiką per vieną darbo dieną." } : { ok: false, text: r.error ?? "Nepavyko." }); })}>
       <h2 className="text-xl font-bold">Užsakykite pažintinį pokalbį</h2>
       <p className="text-sm muted">Nemokamai ir be įsipareigojimų. Susipažinsite su vairuotoju ir kartu aptarsite maršrutą.</p>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />

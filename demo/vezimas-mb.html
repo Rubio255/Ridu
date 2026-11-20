@@ -55,12 +55,14 @@ main .wrap{padding-block:20px 48px;display:grid;gap:16px}
 .ava{flex:none;width:64px;height:64px;border-radius:50%;background:var(--brand);color:var(--brand-fg);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.4rem}
 .drv-b{display:grid;gap:6px;min-width:0}.drv-b h3{margin:0;font-family:var(--display)}
 .bio{margin:0;font-style:italic}
-.badge-ok{justify-self:start;padding:4px 10px;border-radius:999px;background:var(--ok-bg);color:var(--ok);font-weight:700;font-size:.88rem}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:.92rem}.checks li{padding-left:1.3em;text-indent:-1.3em}.checks li::before{content:"✓ ";color:var(--ok);font-weight:800}
+.safe{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.safe h3{margin:0 0 6px;font-family:var(--display);font-size:1.05rem}#saugumas{scroll-margin-top:150px}
+.badge-ok{text-decoration:none;justify-self:start;padding:4px 10px;border-radius:999px;background:var(--ok-bg);color:var(--ok);font-weight:700;font-size:.88rem}
 .calc{border:2px solid var(--brand)}
 .qc{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .verdict{padding:12px 14px;border-radius:10px;background:var(--warn-bg)}.verdict.ok{background:var(--ok-bg)}
 .vs{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.vs>div{display:grid;gap:4px}.vs b{font-family:var(--display);font-size:2rem}
-html{scroll-behavior:smooth}#visit,#calc{scroll-margin-top:16px}
+html{scroll-behavior:smooth}#visit,#calc{scroll-margin-top:150px}
 @media (min-width:820px){.grid2{grid-template-columns:1.2fr 1fr}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0}
 .muted{color:var(--muted)}
@@ -567,6 +569,7 @@ function vBook(v){
 }
 
 /* ---------- Pradžia: susipažinkite su vairuotoju, pokalbis ir „Ar apsimoka?“ ---------- */
+const SAFETY=[["Kaip atrenkame vairuotojus", ["Su kiekvienu vairuotoju susitinkame asmeniškai ir domimės jo patirtimi.", "Tikriname dokumentus ir patikimumą. Aplikacija seka dokumentų galiojimą: jam pasibaigus, vairuotojas naujų kelionių negauna.", "Vaikus veža tik vairuotojai, praėję papildomą patikrą ir turintys vaikiškas kėdutes."]], ["Automobilio būklė", ["Galiojanti techninė apžiūra ir draudimas, jų terminus stebime.", "Reguliari priežiūra ir švarus salonas.", "Kėdutės ir paaukštinimai pagal vaiko ūgį ir svorį."]], ["Kelionėje", ["Visi keleiviai prisisegę, vairuotojas neskuba: tarp kelionių planuojama pertrauka, o darbo diena ne ilgesnė nei 7,5 val.", "Matote, kas ir kokiu automobiliu atvyks, ir gaunate pranešimą, kai keleivis paimtas ir nuvežtas."]]];
 const VISIT_HOW={home:"Vairuotojas atvyksta pas jus",institution:"Susitinkame įstaigoje",phone:"Pokalbis telefonu"};
 const VISIT_WHO={child:"Vaikui",self:"Sau",relative:"Artimajam (pvz., tėvams)"};
 const VISIT_ST={new:["Laukia patvirtinimo","s-requested"],confirmed:["Patvirtinta","s-confirmed"],done:["Įvyko","s-delivered"],declined:["Atšaukta","s-rejected"]};
@@ -585,16 +588,17 @@ function vWelcome(v){
   const card=d=>`<div class="drv"><div class="ava" aria-hidden="true">${initials(d.name)}</div><div class="drv-b"><h3>${esc(d.name)}</h3>
     <div class="small muted">${d.since?`Vairuoja ${new Date().getFullYear()-d.since} m. · `:""}${esc(d.car)}${!guest&&mine.length&&d.plate?` · ${esc(d.plate)}`:""}</div>
     ${d.bio?`<p class="bio">„${esc(d.bio)}“</p>`:""}
-    ${verified(d)?`<div class="badge-ok">✓ Patikimas ir patikrintas vairuotojas</div>`:""}
+    ${verified(d)?`<a class="badge-ok" href="#saugumas">✓ Patikimas ir patikrintas vairuotojas</a>`:""}
     <div class="small muted">${childOk(d)?"Veža vaikus, suaugusius ir senjorus":"Veža suaugusius ir senjorus"}</div>
     <button class="btn" type="button" data-meet="${d.id}">Susitikti su ${esc(d.name)}</button></div></div>`;
   v.innerHTML=`<section class="hero card"><h1>${guest?"Pavežimas, kuriuo galite pasitikėti":`Sveiki, ${esc(users[role]?.name||"")}!`}</h1>
     <p class="lead">${guest?"Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Prieš sutardami, susipažinkite su vairuotoju asmeniškai.":"Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį."}</p>
     <div class="row"><a class="btn primary big" href="#visit">Užsakyti pažintinį pokalbį</a><a class="btn big" href="#calc">Ar man apsimoka?</a></div>
-    <ul class="trust"><li><b>Patikrinti vairuotojai</b><span>Dokumentus tikriname ir stebime jų galiojimą</span></li><li><b>Fiksuota mėnesio kaina</b><span>Be registracijos mokesčio</span></li><li><b>Be ilgų įsipareigojimų</b><span>Sutartį galite nutraukti įspėję prieš 30 d.</span></li></ul></section>
+    <ul class="trust"><li><b>Patikrinti vairuotojai</b><span>Dokumentus tikriname ir stebime jų galiojimą. <a href="#saugumas">Kaip atrenkame?</a></span></li><li><b>Fiksuota mėnesio kaina</b><span>Be registracijos mokesčio</span></li><li><b>Be ilgų įsipareigojimų</b><span>Sutartį galite nutraukti įspėję prieš 30 d.</span></li></ul></section>
   <section class="card"><h2>${mine.length?"Jūsų vairuotojas":"Susipažinkite su vairuotoju, kuris jus veš"}</h2>
     <p class="small muted" style="margin:0">${mine.length?"Šis vairuotojas veža pagal jūsų sutartį.":"Pažintinio pokalbio metu susipažinsite su vairuotoju, kuris vykdys jūsų užsakymą, ir kartu aptarsite maršrutą."}</p>
     <div class="drvs">${ds.map(card).join("")}</div></section>
+  <section class="card" id="saugumas"><h2>Jūsų saugumas</h2><div class="safe">${SAFETY.map(([t,xs])=>`<div><h3>${t}</h3><ul class="checks">${xs.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("")}</div></section>
   <section class="card calc" id="calc"><h2>Ar man apsimoka?</h2><p class="small muted" style="margin:0">Palyginkite abonementą su tuo, kiek kainuoja vežioti patiems: kuras, automobilio dėvėjimasis, parkavimas ir jūsų laikas.</p>
     <div class="qc"><div class="field"><label for="qKm">Atstumas, km</label><input id="qKm" type="number" min="1" max="40" step="0.5" value="8"></div>
     <div class="field"><label for="qTpw">Kartų per savaitę</label><input id="qTpw" type="number" min="1" max="14" value="2"></div>

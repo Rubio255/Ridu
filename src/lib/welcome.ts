@@ -21,3 +21,30 @@ export function quickCalc(s: Settings, i: { km: number; perWeek: number; passeng
 // Klientui rodomas tik švelnus ženklas „Patikimas ir patikrintas vairuotojas“: visi dokumentai pateikti ir galioja.
 // Konkrečių pažymų (pvz., apie teistumą) klientams nevardijame.
 export const isVerified = (d: { docs: { valid_until: string | null }[] }) => d.docs.length > 0 && d.docs.every((x) => !x.valid_until || x.valid_until >= vilniusToday());
+
+// „Jūsų saugumas“: kaip atrenkame vairuotojus ir rūpinamės automobiliais (švelni formuluotė, be konkrečių pažymų)
+export const SAFETY: [string, string[]][] = [
+  [
+    "Kaip atrenkame vairuotojus",
+    [
+      "Su kiekvienu vairuotoju susitinkame asmeniškai ir domimės jo patirtimi.",
+      "Tikriname dokumentus ir patikimumą. Aplikacija seka dokumentų galiojimą: jam pasibaigus, vairuotojas naujų kelionių negauna.",
+      "Vaikus veža tik vairuotojai, praėję papildomą patikrą ir turintys vaikiškas kėdutes."
+    ]
+  ],
+  [
+    "Automobilio būklė",
+    [
+      "Galiojanti techninė apžiūra ir draudimas, jų terminus stebime.",
+      "Reguliari priežiūra ir švarus salonas.",
+      "Kėdutės ir paaukštinimai pagal vaiko ūgį ir svorį."
+    ]
+  ],
+  [
+    "Kelionėje",
+    [
+      "Visi keleiviai prisisegę, vairuotojas neskuba: tarp kelionių planuojama pertrauka, o darbo diena ne ilgesnė nei 7,5 val.",
+      "Matote, kas ir kokiu automobiliu atvyks, ir gaunate pranešimą, kai keleivis paimtas ir nuvežtas."
+    ]
+  ]
+];
