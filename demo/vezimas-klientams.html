@@ -194,7 +194,7 @@ const PRICING_DEFAULTS = {
   occ_m1:0.90, occ_m2:1.00, occ_m3:1.15, occ_m4:1.30, commit3_pct:5, commit9_pct:10,
   bid_step_pct:5, bid_close_day:25, single_enabled:false,
   cancel_hours:12, late_cancel_pct:50, very_late_hours:2, very_late_pct:100,
-  cost_insurance:35, cost_wash:45, cost_service:50, vat_pct:21, tax_pct:15, target:2000
+  cost_insurance:60, cost_wash:40, cost_service:50, vat_pct:21, tax_pct:15, target:2000
 };
 // Lietuvos valstybinės šventės (fiksuotos) + Velykos ir antroji Velykų diena
 const FIXED_HOLIDAYS=["01-01","02-16","03-11","05-01","06-24","07-06","08-15","11-01","11-02","12-24","12-25","12-26"];
@@ -350,6 +350,7 @@ if(MODE==="mb"){document.querySelector('.role').hidden=true;{const sm=document.q
 if(MODE==="client"){roleOpts.filter(o=>!users[o.value]&&o.value!=="naujas").forEach(o=>o.remove());document.querySelector('.role label').textContent="Prisijungęs kaip"}
 S.pricing={...PRICING_DEFAULTS,...S.pricing};
 if(!S.v10){S.pricing.driver_pct=70;S.pricing.platform_fee=9.9;S.v10=true}
+if(!S.v13){S.pricing.cost_insurance=60;S.pricing.cost_wash=40;S.v13=true}
 if(!S.v12){const B={d1:[2009,"Pats auginu du vaikus, todėl žinau, kaip svarbu, kad vaikas būtų pasitiktas ir palydėtas iki durų. Vairuoju ramiai ir visada laiku."],d2:[2014,"Anksčiau dirbau darželio auklėtoja. Su vaikais randu bendrą kalbą, o tėvams visada pranešu, kai vaikas jau vietoje."],d3:[2001,"Vežu suaugusius ir senjorus į darbą, pas gydytoją ar į parduotuvę. Padedu įlipti ir panešu pirkinius."]};
   S.drivers.forEach(d=>{if(B[d.id]&&!d.bio){d.since=B[d.id][0];d.bio=B[d.id][1]}});S.visits=S.visits||[{id:"v1",name:"Jurgita",phone:"+370 611 22334",who:"child",how:"institution",org:"Darželis Antakalnyje",date:isoAdd(2),time:"16:30",driver:"d1",note:"Dukrai 5 m., reikėtų 3 kartus per savaitę į baseiną.",status:"new",by:null,at:new Date().toISOString()}];S.v12=true}
 if(!S.v11){S.children.forEach(c=>{c.type=c.type||"child"});S.drivers.forEach(d=>{if(d.childQr==null){d.childQr=d.id!=="d3";d.childSeats=d.id!=="d3"}});
@@ -569,7 +570,7 @@ function vBook(v){
 }
 
 /* ---------- Pradžia: susipažinkite su vairuotoju, pokalbis ir „Ar apsimoka?“ ---------- */
-const SAFETY=[["Kaip atrenkame vairuotojus", ["Su kiekvienu vairuotoju susitinkame asmeniškai ir domimės jo patirtimi.", "Tikriname dokumentus ir patikimumą. Aplikacija seka dokumentų galiojimą: jam pasibaigus, vairuotojas naujų kelionių negauna.", "Vaikus veža tik vairuotojai, praėję papildomą patikrą ir turintys vaikiškas kėdutes."]], ["Automobilio būklė", ["Galiojanti techninė apžiūra ir draudimas, jų terminus stebime.", "Reguliari priežiūra ir švarus salonas.", "Kėdutės ir paaukštinimai pagal vaiko ūgį ir svorį."]], ["Kelionėje", ["Visi keleiviai prisisegę, vairuotojas neskuba: tarp kelionių planuojama pertrauka, o darbo diena ne ilgesnė nei 7,5 val.", "Matote, kas ir kokiu automobiliu atvyks, ir gaunate pranešimą, kai keleivis paimtas ir nuvežtas."]]];
+const SAFETY=[["Kaip atrenkame vairuotojus", ["Su kiekvienu vairuotoju susitinkame asmeniškai ir domimės jo patirtimi.", "Tikriname dokumentus ir patikimumą. Aplikacija seka dokumentų galiojimą: jam pasibaigus, vairuotojas naujų kelionių negauna.", "Vaikus veža tik vairuotojai, praėję papildomą patikrą ir turintys vaikiškas kėdutes."]], ["Automobilio būklė", ["Techninė apžiūra kas pusmetį ir galiojantis draudimas, jų terminus stebime.", "Reguliari priežiūra ir švarus salonas.", "Kėdutės ir paaukštinimai pagal vaiko ūgį ir svorį."]], ["Kelionėje", ["Visi keleiviai prisisegę, vairuotojas neskuba: tarp kelionių planuojama pertrauka, o darbo diena ne ilgesnė nei 7,5 val.", "Matote, kas ir kokiu automobiliu atvyks, ir gaunate pranešimą, kai keleivis paimtas ir nuvežtas."]]];
 const VISIT_HOW={home:"Vairuotojas atvyksta pas jus",institution:"Susitinkame įstaigoje",phone:"Pokalbis telefonu"};
 const VISIT_WHO={child:"Vaikui",self:"Sau",relative:"Artimajam (pvz., tėvams)"};
 const VISIT_ST={new:["Laukia patvirtinimo","s-requested"],confirmed:["Patvirtinta","s-confirmed"],done:["Įvyko","s-delivered"],declined:["Atšaukta","s-rejected"]};

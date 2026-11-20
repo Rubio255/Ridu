@@ -35,7 +35,7 @@ export const SAFETY: [string, string[]][] = [
   [
     "Automobilio būklė",
     [
-      "Galiojanti techninė apžiūra ir draudimas, jų terminus stebime.",
+      "Techninė apžiūra kas pusmetį ir galiojantis draudimas, jų terminus stebime.",
       "Reguliari priežiūra ir švarus salonas.",
       "Kėdutės ir paaukštinimai pagal vaiko ūgį ir svorį."
     ]

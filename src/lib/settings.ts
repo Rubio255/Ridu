@@ -91,8 +91,8 @@ export const DEFAULT_SETTINGS: Settings = {
   surcharge_approved: false,
   vat_pct: 21,
   tax_pct: 15,
-  cost_insurance: 35,
-  cost_wash: 45,
+  cost_insurance: 60,
+  cost_wash: 40,
   cost_service: 50,
   fuel_l_100km: 4.8,
   fuel_price: 1.8,
@@ -132,7 +132,7 @@ export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][
     ["vat_pct", "PVM, %"], ["tax_pct", "Mokesčiai MB, % nuo pelno"], ["target_net", "MB tikslas į rankas, €/mėn."], ["single_base", "Vienos dienos kelionės kaina, €"],
   ]},
   { title: "Vairuotojo automobilio išlaidos (uždarbio skaičiavimui)", fields: [
-    ["cost_insurance", "Draudimas, €/mėn."], ["cost_wash", "Plovimas, €/mėn."], ["cost_service", "Priežiūra, €/mėn."],
+    ["cost_insurance", "Draudimas pavežėjui, €/mėn."], ["cost_wash", "Plovimas, €/mėn."], ["cost_service", "Priežiūra, €/mėn."],
     ["fuel_l_100km", "Kuras, l/100 km"], ["fuel_price", "Kuro kaina, €/l"],
   ]},
 ];
