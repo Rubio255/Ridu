@@ -24,8 +24,8 @@ export function SavingsCalc({ moreHref }: { moreHref?: string }) {
       <h2 className="text-xl font-bold">Ar man apsimoka?</h2>
       <p className="text-sm muted">Vežiodami patys mokate ne tik už kurą. Mokate ir savo laiku, o jūsų valanda taip pat kainuoja.</p>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <label className="grid gap-1 text-sm font-semibold muted">Atstumas, km<input className="input" type="number" min={1} max={40} step={0.5} value={f.km} onChange={(e) => setF({ ...f, km: Number(e.target.value) })} /></label>
-        <label className="grid gap-1 text-sm font-semibold muted">Kartų per savaitę<input className="input" type="number" min={1} max={14} value={f.perWeek} onChange={(e) => setF({ ...f, perWeek: Number(e.target.value) })} /></label>
+        <label className="grid gap-1 text-sm font-semibold muted">Vienos kelionės atstumas, km<input className="input" type="number" min={1} max={40} step={0.5} value={f.km} onChange={(e) => setF({ ...f, km: Number(e.target.value) })} /><span className="text-xs font-normal">Į vieną pusę, pvz. nuo mokyklos iki būrelio</span></label>
+        <label className="grid gap-1 text-sm font-semibold muted">Kelionių per savaitę<input className="input" type="number" min={1} max={14} value={f.perWeek} onChange={(e) => setF({ ...f, perWeek: Number(e.target.value) })} /><span className="text-xs font-normal">Ten ir atgal skaičiuokite kaip 2</span></label>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis<select className="input" value={f.passenger} onChange={(e) => setF({ ...f, passenger: e.target.value as typeof f.passenger })}><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Senjoras su palyda</option></select></label>
         <label className="grid gap-1 text-sm font-semibold muted">Jūsų valandos vertė, €<input className="input" type="number" min={0} max={200} value={f.hourValue} onChange={(e) => setF({ ...f, hourValue: Number(e.target.value) })} /></label>
       </div>
