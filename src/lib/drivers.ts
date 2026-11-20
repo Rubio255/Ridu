@@ -5,7 +5,7 @@ import type { Settings } from "./settings";
 import { vilniusToday, weekday } from "./time";
 
 export type DriverRow = { profile_id: string; cert_no: string; car: string | null; seats: string | null; workdays: number[]; payout_pct: number | null; active: boolean;
-  child_qr_verified: boolean; child_seats: boolean;
+  child_qr_verified: boolean; child_seats: boolean; since_year: number | null; bio: string | null;
   profile: { full_name: string; email: string | null; phone: string | null }; docs: { id: string; name: string; number: string | null; valid_until: string | null }[];
   absences: { id: string; reason: "sick" | "repair" | "other"; starts_on: string; ends_on: string; note: string | null }[] };
 

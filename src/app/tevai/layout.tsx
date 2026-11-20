@@ -4,7 +4,7 @@ import { EnablePush } from "@/components/enable-push";
 import { hasRequired, loadConsents, clientHasKids } from "@/lib/consents";
 import { ConsentForm, TermsList } from "@/components/terms";
 
-const TABS: [string, string][] = [["/tevai", "Mano kelionės"], ["/tevai/uzsakyti", "Ilgalaikis užsakymas"], ["/tevai/sutartys", "Sutartys"], ["/tevai/vaikai", "Keleiviai ir adresai"], ["/tevai/salygos", "Sąlygos"]];
+const TABS: [string, string][] = [["/tevai/pradzia", "Pradžia"], ["/tevai", "Mano kelionės"], ["/tevai/uzsakyti", "Ilgalaikis užsakymas"], ["/tevai/sutartys", "Sutartys"], ["/tevai/vaikai", "Keleiviai ir adresai"], ["/tevai/salygos", "Sąlygos"]];
 
 export default async function L({ children }: { children: React.ReactNode }) {
   const p = await requireProfile();

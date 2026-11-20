@@ -1,6 +1,6 @@
 import { requireDriver } from "@/lib/auth";
 import { docState, loadDrivers } from "@/lib/drivers";
-import { saveDriverDoc, saveWorkdays, reportAbsence, deleteAbsence } from "@/app/actions";
+import { saveDriverDoc, saveWorkdays, reportAbsence, deleteAbsence, saveDriverProfile } from "@/app/actions";
 import { ABSENCE_LT } from "@/lib/drivers";
 import { vilniusToday } from "@/lib/time";
 import { DAYS } from "@/lib/time";
@@ -40,6 +40,13 @@ export default async function Page() {
           <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>{ABSENCE_LT[a.reason]}: {fmt(a.starts_on)} – {fmt(a.ends_on)}</span>
             <button formAction={deleteAbsence} name="id" value={a.id} formNoValidate className="btn">Panaikinti</button></div>
         ))}
+      </form>
+      <form action={saveDriverProfile} className="card content-start">
+        <h2 className="font-bold">Prisistatymas klientams</h2>
+        <p className="text-sm muted">Klientai tai mato pirmame ekrane prieš pažintinį pokalbį. Rašykite trumpai, 2–3 sakiniai.</p>
+        <label className="grid gap-1 text-sm font-semibold muted">Vairuoju nuo (metai)<input name="since_year" type="number" min={1950} max={new Date().getFullYear()} defaultValue={d?.since_year ?? ""} className="input" /></label>
+        <label className="grid gap-1 text-sm font-semibold muted">Apie mane<textarea name="bio" rows={3} maxLength={400} defaultValue={d?.bio ?? ""} className="input" placeholder="Pvz. Pats auginu du vaikus, vairuoju ramiai ir visada laiku." /></label>
+        <button className="btn btn-primary">Išsaugoti</button>
       </form>
       <form action={saveWorkdays} className="card content-start">
         <h2 className="font-bold">Kada dirbu</h2>

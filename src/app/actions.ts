@@ -2,7 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
-import { requireOwner, requireProfile, requireStaff, requireDriver, loadSettings, type Profile } from "@/lib/auth";
+import { requireOwner, requireProfile, requireStaff, requireDriver, loadSettings, currentProfile, type Profile } from "@/lib/auth";
+import { quickCalc, VISIT_HOW, VISIT_WHO } from "@/lib/welcome";
 import { bestDriverQuote, loadDrivers, affectedTrips, absenceOn, ABSENCE_LT, childOk } from "@/lib/drivers";
 import { offerNext } from "@/lib/offers";
 import { familyAlreadyPays } from "@/lib/fees-server";
@@ -449,3 +450,48 @@ export async function cancelForProvider(fd: FormData) {
   revalidatePath("/savininkas", "layout"); revalidatePath("/tevai");
 }
 const eurLt = (v: number) => `${Number(v).toFixed(2).replace(".", ",")} €`;
+
+/* ---------- Pirmas ekranas: skaičiuoklė ir pažintinis pokalbis ---------- */
+
+// Viešai prieinama: grąžinami tik galutiniai skaičiai, ne kainodaros formulė
+export async function calcAction(i: { km: number; perWeek: number; passenger: PassengerType; leisure: boolean }) {
+  const passenger: PassengerType = ["child", "adult", "senior"].includes(i.passenger) ? i.passenger : "child";
+  return quickCalc(await loadSettings(), { km: Number(i.km) || 1, perWeek: Number(i.perWeek) || 1, passenger, leisure: !!i.leisure });
+}
+
+// Pokalbio užklausą gali pateikti ir neprisijungęs lankytojas (atėjęs iš įstaigos)
+export async function requestVisit(fd: FormData): Promise<{ ok: boolean; error?: string }> {
+  if (String(fd.get("website") ?? "")) return { ok: true }; // apsauga nuo robotų
+  const me = await currentProfile();
+  const str = (k: string, max = 200) => String(fd.get(k) ?? "").trim().slice(0, max);
+  const name = me?.full_name || str("name", 80), phone = str("phone", 30) || me?.phone || "";
+  const who = str("who"), how = str("how"), date = str("date"), time = str("time");
+  if (!name || (!me && !/^\+?[\d\s()-]{7,}$/.test(phone))) return { ok: false, error: "Įrašykite vardą ir telefono numerį." };
+  if (!(who in VISIT_WHO) || !(how in VISIT_HOW) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= vilniusToday() || !/^\d{2}:\d{2}$/.test(time)) return { ok: false, error: "Patikrinkite pokalbio būdą, datą ir laiką." };
+  const driverId = str("driver_id") || null;
+  const { error } = await supabaseAdmin().from("visit_requests").insert({ profile_id: me?.id ?? null, name, phone: phone || null, who, how, org: str("org", 120) || null, wanted_date: date, wanted_time: time, driver_id: driverId, note: str("note", 500) || null });
+  if (error) return { ok: false, error: "Nepavyko išsiųsti. Bandykite dar kartą arba paskambinkite mums." };
+  await notifyOwner("Nauja pokalbio užklausa", `${name}, ${date} ${time}: ${VISIT_HOW[how as keyof typeof VISIT_HOW]}.`, "/savininkas/pokalbiai");
+  if (me) revalidatePath("/tevai/pradzia");
+  return { ok: true };
+}
+
+export async function setVisitStatus(fd: FormData) {
+  await requireOwner();
+  const id = String(fd.get("id")), status = String(fd.get("status")), driverId = String(fd.get("driver_id") ?? "") || null;
+  if (!["confirmed", "done", "declined"].includes(status)) return;
+  const { data: v } = await supabaseAdmin().from("visit_requests").update({ status, driver_id: driverId }).eq("id", id).select("profile_id, wanted_date, wanted_time, name").single();
+  if (v && status === "confirmed") {
+    if (driverId) await notifyProfiles([driverId], "Pažintinis pokalbis", `${v.name}, ${v.wanted_date} ${String(v.wanted_time).slice(0, 5)}.`, "/vairuotojas");
+    if (v.profile_id) await notifyProfiles([v.profile_id], "Pokalbis patvirtintas", `${v.wanted_date} ${String(v.wanted_time).slice(0, 5)}. Iki pasimatymo!`, "/tevai/pradzia");
+  }
+  revalidatePath("/savininkas/pokalbiai"); revalidatePath("/vairuotojas");
+}
+
+// Vairuotojas pats aprašo save klientams
+export async function saveDriverProfile(fd: FormData) {
+  const me = await requireDriver();
+  const y = Number(fd.get("since_year")) || null;
+  await supabaseAdmin().from("drivers").update({ bio: String(fd.get("bio") ?? "").trim().slice(0, 400) || null, since_year: y && y >= 1950 && y <= new Date().getFullYear() ? y : null }).eq("profile_id", me.id);
+  revalidatePath("/vairuotojas/duomenys");
+}

@@ -4,13 +4,15 @@ import { Calendar } from "@/components/calendar";
 import { expireOffers } from "@/lib/offers";
 import { payoutPct, loadDrivers } from "@/lib/drivers";
 import { respondOffer } from "@/app/actions";
-import { eur, fmtDay, fmtTime } from "@/lib/time";
+import { eur, fmtDay, fmtTime, vilniusToday } from "@/lib/time";
+import { VISIT_HOW, VISIT_WHO } from "@/lib/welcome";
 
 export default async function Page() {
   const me = await requireDriver();
   await expireOffers();
-  const [s, drivers, { data: offers }] = await Promise.all([loadSettings(), loadDrivers(),
-    supabaseAdmin().from("trip_offers").select("id, expires_at, trip:trips(pickup_at, from_label, to_label, block_min, price_eur, child:children(first_name))").eq("driver_id", me.id).eq("status", "pending").order("expires_at")]);
+  const [s, drivers, { data: offers }, { data: visits }] = await Promise.all([loadSettings(), loadDrivers(),
+    supabaseAdmin().from("trip_offers").select("id, expires_at, trip:trips(pickup_at, from_label, to_label, block_min, price_eur, child:children(first_name))").eq("driver_id", me.id).eq("status", "pending").order("expires_at"),
+    supabaseAdmin().from("visit_requests").select("id, name, phone, how, who, org, note, wanted_date, wanted_time").eq("driver_id", me.id).eq("status", "confirmed").gte("wanted_date", vilniusToday()).order("wanted_date")]);
   const pct = payoutPct(s, drivers.find((d) => d.profile_id === me.id) ?? { payout_pct: null });
   return (
     <>
@@ -24,6 +26,11 @@ export default async function Page() {
               <div className="text-sm muted">{t.from_label} → {t.to_label} · {t.block_min} min · atsakykite iki {fmtTime(o.expires_at)}</div>
               <div className="flex gap-2"><button name="answer" value="yes" className="btn btn-ok">Priimti</button><button name="answer" value="no" className="btn btn-bad">Atsisakyti</button></div>
             </form>); })}
+        </section>
+      )}
+      {(visits ?? []).length > 0 && (
+        <section className="card"><h2 className="font-bold">Mano pažintiniai pokalbiai</h2>
+          {(visits ?? []).map((v) => <div key={v.id} className="grid gap-1 border-t border-[var(--line)] pt-3 text-sm first:border-0 first:pt-0"><b>{v.wanted_date} {String(v.wanted_time).slice(0, 5)} · {v.name}</b><span className="muted">{VISIT_HOW[v.how as keyof typeof VISIT_HOW]} · {VISIT_WHO[v.who as keyof typeof VISIT_WHO]}{v.phone ? ` · ${v.phone}` : ""}{v.org ? ` · ${v.org}` : ""}</span>{v.note && <span>{v.note}</span>}</div>)}
         </section>
       )}
       <Calendar driverId={me.id} />
