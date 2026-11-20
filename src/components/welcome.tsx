@@ -1,6 +1,6 @@
 import { SavingsCalc } from "./savings-calc";
 import { VisitForm } from "./visit-form";
-import { driverChecks } from "@/lib/welcome";
+import { isVerified } from "@/lib/welcome";
 import { childOk, type DriverRow } from "@/lib/drivers";
 import { addDays, vilniusToday } from "@/lib/time";
 
@@ -31,7 +31,7 @@ export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers:
                 <h3 className="text-lg font-bold">{d.profile.full_name}</h3>
                 <div className="text-sm muted">{d.since_year ? `Vairuoja ${new Date().getFullYear() - d.since_year} m. · ` : ""}{d.car ?? ""}</div>
                 {d.bio && <p className="italic">„{d.bio}“</p>}
-                <ul className="grid gap-1 text-sm">{driverChecks(d).map((c) => <li key={c}><span className="font-bold text-[var(--ok)]">✓</span> {c}</li>)}</ul>
+                {isVerified(d) && <span className="pill p-ok justify-self-start normal-case">✓ Patikimas ir patikrintas vairuotojas</span>}
                 <div className="text-sm muted">{childOk(d) ? "Veža vaikus, suaugusius ir senjorus" : "Veža suaugusius ir senjorus"}</div>
               </div>
             </article>

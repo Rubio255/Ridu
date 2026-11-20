@@ -18,14 +18,6 @@ export function quickCalc(s: Settings, i: { km: number; perWeek: number; passeng
   return { sub, self, hours: Math.round(hours * 10) / 10 };
 }
 
-// Ką klientas mato apie vairuotoją: tik galiojančius patikrinimus, be dokumentų numerių
-export function driverChecks(d: { child_qr_verified: boolean; child_seats: boolean; docs: { name: string; valid_until: string | null }[] }) {
-  const ok = (n: string) => d.docs.some((x) => x.name.startsWith(n) && (!x.valid_until || x.valid_until >= vilniusToday()));
-  return ([
-    [ok("Individualios veiklos"), "Dirba legaliai pagal individualios veiklos pažymą"],
-    [d.child_qr_verified, "Patikrinta: neteistas (QR kodas)"],
-    [!d.child_qr_verified && ok("Pažyma apie teistumą"), "Pateikta pažyma apie neteistumą"],
-    [ok("Automobilio draudimas") && ok("Techninė"), "Apdraustas, techniškai tvarkingas automobilis"],
-    [d.child_seats, "Turi vaikiškas kėdutes"],
-  ] as [boolean, string][]).filter((x) => x[0]).map((x) => x[1]);
-}
+// Klientui rodomas tik švelnus ženklas „Patikimas ir patikrintas vairuotojas“: visi dokumentai pateikti ir galioja.
+// Konkrečių pažymų (pvz., apie teistumą) klientams nevardijame.
+export const isVerified = (d: { docs: { valid_until: string | null }[] }) => d.docs.length > 0 && d.docs.every((x) => !x.valid_until || x.valid_until >= vilniusToday());
