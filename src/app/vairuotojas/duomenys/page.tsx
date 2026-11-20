@@ -50,7 +50,7 @@ export default async function Page() {
       </form>
       <form action={saveWorkdays} className="card content-start">
         <h2 className="font-bold">Kada dirbu</h2>
-        <p className="text-sm muted">Nauji ilgalaikiai užsakymai skiriami tik pažymėtomis dienomis.</p>
+        <p className="text-sm muted">Nauji abonementai skiriami tik pažymėtomis dienomis.</p>
         <div className="flex flex-wrap gap-3">{DAYS.slice(0, 5).map((x, i) => <label key={x} className="flex items-center gap-2"><input type="checkbox" name="workdays" value={i + 1} defaultChecked={d.workdays.includes(i + 1)} className="h-5 w-5" />{x}</label>)}</div>
         <button className="btn btn-primary">Išsaugoti</button>
       </form>

@@ -4,7 +4,7 @@ import { loadSettings } from "./auth";
 import { blockMin } from "./pricing";
 import { addDays, vilniusToday, vilniusToDate, weekday } from "./time";
 
-// Sukuria ilgalaikių užsakymų keliones į priekį (tik serveryje, ne veiksmas klientui)
+// Sukuria abonementų keliones į priekį (tik serveryje, ne veiksmas klientui)
 export async function generateTrips(subId?: string, days = 28) {
   const db = supabaseAdmin();
   let q = db.from("subscriptions").select("*, child:children(first_name), from:places!subscriptions_from_place_id_fkey(label,address), to:places!subscriptions_to_place_id_fkey(label,address)").eq("status", "active");

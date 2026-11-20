@@ -91,7 +91,7 @@ export async function createSubscription(input: SubInput, bidMonthly?: number) {
   });
   if (e) return { ok: false as const, error: "Nepavyko išsaugoti. Bandykite dar kartą." };
   const when = `${input.weekdays.map((w) => DAYS[w - 1]).join(", ")} ${input.period === "am" ? "rytas" : input.pickup_time}`;
-  await notifyOwner(isBid ? "Naujas kainos pasiūlymas" : "Naujas ilgalaikis užsakymas", `${me.full_name || me.email}: ${when}, ${monthly} €/mėn. Laukia patvirtinimo.`, "/savininkas/uzsakymai");
+  await notifyOwner(isBid ? "Naujas kainos pasiūlymas" : "Naujas abonementas", `${me.full_name || me.email}: ${when}, ${monthly} €/mėn. Laukia patvirtinimo.`, "/savininkas/uzsakymai");
   revalidatePath("/tevai");
   return { ok: true as const, isBid };
 }
@@ -154,13 +154,13 @@ export async function decideSubscription(fd: FormData) {
     await generateTrips(id);
     const moved = time && time !== String(sub.pickup_time).slice(0, 5) ? ` Laikas pakeistas į ${time}.` : "";
     await notifyGuardians(sub.child_id, sub.is_bid ? "Jūsų pasiūlymas laimėjo" : "Užsakymas patvirtintas",
-      `${name} ilgalaikis užsakymas patvirtintas, ${sub.monthly_eur} €/mėn.${moved}`);
-    await notifyProfiles([driverId], "Naujas ilgalaikis užsakymas", `${name}: ${sub.weekdays.map((w: number) => DAYS[w - 1]).join(", ")} ${time || String(sub.pickup_time).slice(0, 5)}.`, "/vairuotojas");
+      `${name} abonementas patvirtintas, ${sub.monthly_eur} €/mėn.${moved}`);
+    await notifyProfiles([driverId], "Naujas abonementas", `${name}: ${sub.weekdays.map((w: number) => DAYS[w - 1]).join(", ")} ${time || String(sub.pickup_time).slice(0, 5)}.`, "/vairuotojas");
   } else if (decision === "ended") {
     await db.from("subscriptions").update({ status: "ended", ends_on: vilniusToday() }).eq("id", id);
     await db.from("trips").update({ status: "cancelled" }).eq("subscription_id", id).eq("status", "scheduled").gt("pickup_at", new Date().toISOString());
-    await notifyGuardians(sub.child_id, "Užsakymas baigtas", `${name} ilgalaikis užsakymas baigtas. Būsimos kelionės atšauktos.`);
-    await notifyProfiles([sub.driver_id], "Sutartis baigta", `${name} ilgalaikis užsakymas baigtas.`, "/vairuotojas");
+    await notifyGuardians(sub.child_id, "Abonementas baigtas", `${name} abonementas baigtas. Būsimos kelionės atšauktos.`);
+    await notifyProfiles([sub.driver_id], "Sutartis baigta", `${name} abonementas baigtas.`, "/vairuotojas");
   } else {
     await db.from("subscriptions").update({ status: "rejected" }).eq("id", id);
     await notifyGuardians(sub.child_id, sub.is_bid ? "Pasiūlymas nelaimėjo" : "Užsakymas atmestas",
@@ -351,7 +351,7 @@ export async function savePushSubscription(sub: { endpoint: string; p256dh: stri
   await supabaseAdmin().from("push_subscriptions").upsert({ profile_id: me.id, ...sub }, { onConflict: "endpoint" });
 }
 
-// Klientas keičia ilgalaikio užsakymo laiką: grąžinama savininkui patvirtinti
+// Klientas keičia abonemento laiką: grąžinama savininkui patvirtinti
 export async function requestSubscriptionChange(fd: FormData) {
   const me = await requireProfile();
   const id = String(fd.get("id")), time = String(fd.get("pickup_time") ?? "");

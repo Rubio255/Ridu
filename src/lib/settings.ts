@@ -2,7 +2,7 @@
 // Pradinės reikšmės pagal kainodaros skaičiavimą (pricing_config.json v4).
 
 export type Settings = {
-  // Ilgalaikių užsakymų kaina
+  // Abonementų kaina
   minute_rate: number; // € už automobilio minutę
   km_rate: number; // € už km
   empty_km: number; // tušti km iki paėmimo
@@ -107,7 +107,7 @@ export function withDefaults(data: unknown): Settings {
 
 // Laukų aprašai nustatymų formai
 export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][] }[] = [
-  { title: "Ilgalaikių užsakymų kaina", fields: [
+  { title: "Abonementų kaina", fields: [
     ["minute_rate", "Automobilio minutė, €"], ["km_rate", "Kilometras, €"], ["empty_km", "Tušti km iki paėmimo"],
     ["share2", "Keleivio dalis, kai vežami 2, %"], ["share3", "Keleivio dalis, kai vežami 3, %"], ["share4", "Keleivio dalis, kai vežami 4, %"],
     ["commit3_pct", "Nuolaida įsipareigojus 3 mėn., %"], ["commit9_pct", "Nuolaida įsipareigojus 9 mėn., %"],

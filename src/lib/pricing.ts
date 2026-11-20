@@ -1,4 +1,4 @@
-// Ilgalaikio užsakymo kainos ir grafiko taisyklės (gryna logika, be duomenų bazės).
+// Abonemento kainos ir grafiko taisyklės (gryna logika, be duomenų bazės).
 import type { Settings } from "./settings";
 import { toMin } from "./time";
 

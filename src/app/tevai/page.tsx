@@ -29,12 +29,12 @@ export default async function Page() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Sveiki{me.full_name ? `, ${me.full_name.split(" ")[0]}` : ""}</h1>
-        <Link href="/tevai/uzsakyti" className="btn btn-primary">+ Ilgalaikis užsakymas</Link>
+        <Link href="/tevai/uzsakyti" className="btn btn-primary">+ Abonementas</Link>
       </div>
       {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje „Keleiviai ir adresai“. Vaikus įrašo MB pagal sutartį.</div>}
 
       <section className="card">
-        <h2 className="font-bold">Mano ilgalaikiai užsakymai</h2>
+        <h2 className="font-bold">Mano abonementai</h2>
         {(subs ?? []).length === 0 && <p className="muted text-sm">Užsakymų dar nėra.</p>}
         {(subs ?? []).map((x) => (
           <div key={x.id} className="grid gap-1 border-t border-[var(--line)] pt-3 first:border-0 first:pt-0">

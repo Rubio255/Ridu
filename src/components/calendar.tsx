@@ -24,7 +24,7 @@ export async function Calendar({ driverId }: { driverId?: string }) {
   return (
     <>
       <h1 className="text-xl font-bold">Kalendorius</h1>
-      {byDay.size === 0 && <div className="card muted">Artimiausią savaitę kelionių nėra. Jos atsiras patvirtinus ilgalaikius užsakymus.</div>}
+      {byDay.size === 0 && <div className="card muted">Artimiausią savaitę kelionių nėra. Jos atsiras patvirtinus abonementus.</div>}
       {[...byDay.entries()].map(([k, list]) => {
         // Darbo laiko riba taikoma kiekvienam vairuotojui atskirai
         const perDriver = new Map<string, number>(); list.forEach((t) => perDriver.set(t.driver_id ?? "-", (perDriver.get(t.driver_id ?? "-") ?? 0) + t.block_min));

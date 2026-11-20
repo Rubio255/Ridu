@@ -41,7 +41,7 @@ export function SubForm({ kids, places, hours }: {
   return (
     <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
       <div className="card">
-        <h1 className="text-xl font-bold">Ilgalaikis užsakymas</h1>
+        <h1 className="text-xl font-bold">Abonementas</h1>
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>

@@ -1,8 +1,8 @@
 # Ridu · pavežimas Vilniuje pagal sutartį
 
-Ilgalaikių vaikų pavėžėjimo užsakymų aplikacija Vilniuje (Next.js + Supabase + Vercel).
+Vaikų ir suaugusiųjų pavėžėjimo abonementų aplikacija Vilniuje (Next.js + Supabase + Vercel).
 
-- **Tėvai** (tik pakviesti klientai su sutartimi) užsako ilgalaikius užsakymus ir mato tik galutinę kainą.
+- **Tėvai** (tik pakviesti klientai su sutartimi) užsako abonementus ir mato tik galutinę kainą.
 - **Savininkas** tvirtina užsakymus, mato kalendorių, sąskaitas ir keičia visas kainas bei grafiko taisykles.
 
 ## Paleidimas

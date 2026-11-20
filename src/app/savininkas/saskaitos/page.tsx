@@ -44,7 +44,7 @@ export default async function Page() {
         <h2 className="font-bold">Sąskaitos klientams</h2>
         <div className="overflow-x-auto"><table><thead><tr><th>Klientas</th><th>Sutartis</th><th>Užsakymai</th><th>Nuvežta</th><th>Atšaukta</th><th>Įskaityta</th><th>Platformos mokestis</th><th>Mokėti / mėn.</th><th></th></tr></thead>
           <tbody>{rows.map((r) => <tr key={r.c.id}><td>{r.c.full_name || r.c.email}</td><td>{r.c.contract_no ?? "–"}</td><td>{r.subs}</td><td>{r.done}</td><td>{r.cancelled}</td><td>{r.credit ? `−${eur(r.credit)}` : "–"}</td><td>{r.fee ? eur(r.fee) : "–"}</td><td><b>{eur(r.total)}</b></td><td><form action={notifyInvoice}><input type="hidden" name="id" value={r.c.id} /><input type="hidden" name="amount" value={eur(r.total)} /><button className="btn">Pranešti apie sąskaitą</button></form></td></tr>)}</tbody></table></div>
-        <p className="text-sm muted">Ilgalaikių užsakymų mėnesio kaina fiksuota. Platformos mokestis {eur(s.platform_fee)} / mėn. šeimai skaičiuojamas pagal sutarties dienas, dalijamas tarp mokančių tėvų ir neimamas, jei visas mėnesio keliones atšaukėme mes. Vėlyvų atšaukimų mokesčiai pagal sutartį. MB dalis ({100 - s.driver_pct} %) klientams nerodoma.</p>
+        <p className="text-sm muted">Abonementų mėnesio kaina fiksuota. Platformos mokestis {eur(s.platform_fee)} / mėn. šeimai skaičiuojamas pagal sutarties dienas, dalijamas tarp mokančių tėvų ir neimamas, jei visas mėnesio keliones atšaukėme mes. Vėlyvų atšaukimų mokesčiai pagal sutartį. MB dalis ({100 - s.driver_pct} %) klientams nerodoma.</p>
       </section>
     </>
   );
