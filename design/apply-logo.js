@@ -1,11 +1,11 @@
-// Usage: node design/apply-logo.js <namai|sirdis|kelias>
+// Usage: node design/apply-logo.js <namai|sirdis|kelias|r>
 const fs = require("fs"), path = require("path");
 const L = require("./logos.js"), key = process.argv[2];
 if (!L[key]) throw new Error("unknown logo " + key);
 const root = path.join(__dirname, "..");
 const svg = L[key]();
 // Demo apps: replace the header mark (any previous content)
-for (const f of ["vezimas-demo.html", "vezimas-klientams.html", "vezimas-admin.html"]) {
+for (const f of ["vezimas-demo.html", "vezimas-klientams.html", "vezimas-admin.html", "vezimas-mb.html"]) {
   const p = path.join(root, "demo", f);
   let s = fs.readFileSync(p, "utf8");
   s = s.replace(/<div class="mark"[^>]*>[\s\S]*?<\/div><div><h1>/, `<div class="mark" aria-hidden="true">${svg}</div><div><h1>`);
