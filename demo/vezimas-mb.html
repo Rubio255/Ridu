@@ -61,6 +61,11 @@ main .wrap{padding-block:20px 48px;display:grid;gap:16px}
 .calc{border:2px solid var(--brand)}
 .qc{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .verdict{padding:12px 14px;border-radius:10px;background:var(--warn-bg)}.verdict.ok{background:var(--ok-bg)}
+.hours{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface-2)}.hours>span{font-size:2rem}.hours div{display:grid}.hours b{font-family:var(--display);font-size:1.3rem}
+.cmp{display:grid;gap:6px}.cmp .num{font-family:var(--display);font-size:1.3rem}
+.stack{display:flex;height:14px;border-radius:999px;background:var(--surface-2);overflow:hidden}.stack i{display:block;height:100%}
+.c-car{background:#8a9a97}.c-time{background:var(--accent)}.c-ridu{background:var(--brand)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .vs{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.vs>div{display:grid;gap:4px}.vs b{font-family:var(--display);font-size:2rem}
 html{scroll-behavior:smooth}#visit,#calc{scroll-margin-top:150px}
 @media (min-width:820px){.grid2{grid-template-columns:1.2fr 1fr}}
@@ -577,10 +582,11 @@ const VISIT_ST={new:["Laukia patvirtinimo","s-requested"],confirmed:["Patvirtint
 const initials=n=>n.split(/\s+/).map(x=>x[0]||"").join("").slice(0,2).toUpperCase();
 // Klientui rodomas tik švelnus ženklas: visi vairuotojo dokumentai patikrinti ir galioja (be konkrečių pažymų pavadinimų)
 const verified=d=>d.docs.length>0&&!d.docs.some(x=>docState(x)==="bad");
-function quickCalc(P,{km,tpw,type,leisure}){const n=tpw*52/12,drive=Math.round(km*2.75),extra=6;
+// Ar apsimoka: kiek kainuoja vežioti patiems (kelionės + jūsų laikas) ir kiek kainuoja Ridu
+function quickCalc(P,{km,tpw,type,hourValue}){const n=tpw*52/12,drive=Math.round(km*2.75),extra=6;
   const trip=(P.minute_rate*(drive+handoverFor(P,type)+P.deadhead_min+P.gap_min)+P.km_rate*(km+P.empty_km))*(1-P.commit3_pct/100);
-  const sub=Math.round(trip*n+P.platform_fee), hours=((km+extra)*2.75+15+5)*n/60, hour=2600/168*(leisure?0.45:1);
-  const self=Math.round((km+extra)*n*0.30+1*n+hours*hour);return {sub,self,hours}}
+  const sub=Math.round(trip*n+P.platform_fee), hours=Math.round(((km+extra)*2.75+15+5)*n/60*10)/10;
+  const car=Math.round((km+extra)*n*0.30+1*n), time=Math.round(hours*hourValue);return {sub,car,time,self:car+time,hours}}
 function vWelcome(v){
   const guest=isGuest(), P=S.pricing, mySubs=guest?[]:S.subs.filter(x=>x.status==="active"&&(x.payer===role||myChildren().some(c=>c.id===x.child)));
   const mine=[...new Set(mySubs.map(x=>x.driver))].map(drv).filter(Boolean);
@@ -600,11 +606,11 @@ function vWelcome(v){
     <p class="small muted" style="margin:0">${mine.length?"Šis vairuotojas veža pagal jūsų sutartį.":"Pažintinio pokalbio metu susipažinsite su vairuotoju, kuris vykdys jūsų užsakymą, ir kartu aptarsite maršrutą."}</p>
     <div class="drvs">${ds.map(card).join("")}</div></section>
   <section class="card" id="saugumas"><h2>Jūsų saugumas</h2><div class="safe">${SAFETY.map(([t,xs])=>`<div><h3>${t}</h3><ul class="checks">${xs.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("")}</div></section>
-  <section class="card calc" id="calc"><h2>Ar man apsimoka?</h2><p class="small muted" style="margin:0">Palyginkite abonementą su tuo, kiek kainuoja vežioti patiems: kuras, automobilio dėvėjimasis, parkavimas ir jūsų laikas.</p>
+  <section class="card calc" id="calc"><h2>Ar man apsimoka?</h2><p class="small muted" style="margin:0">Vežiodami patys mokate ne tik už kurą. Mokate ir savo laiku, o jūsų valanda taip pat kainuoja.</p>
     <div class="qc"><div class="field"><label for="qKm">Atstumas, km</label><input id="qKm" type="number" min="1" max="40" step="0.5" value="8"></div>
     <div class="field"><label for="qTpw">Kartų per savaitę</label><input id="qTpw" type="number" min="1" max="14" value="2"></div>
     <div class="field"><label for="qType">Keleivis</label><select id="qType"><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Senjoras su palyda</option></select></div>
-    <div class="field"><label for="qWhen">Patys važiuotumėte</label><select id="qWhen"><option value="work">Darbo laiku</option><option value="free">Laisvalaikiu</option></select></div></div>
+    <div class="field"><label for="qHour">Jūsų valandos vertė, €</label><input id="qHour" type="number" min="0" max="200" step="1" value="15"></div></div>
     <div id="qOut" aria-live="polite"></div>
     <button class="btn" type="button" data-tab="prices">Tikslesnis skaičiavimas ir kainos</button></section>
   <form class="card" id="visit"><h2>Užsakykite pažintinį pokalbį</h2><p class="small muted" style="margin:0">Nemokamai ir be įsipareigojimų. Patvirtinsime laiką per vieną darbo dieną.</p>
@@ -619,12 +625,18 @@ function vWelcome(v){
     <button class="btn primary big" type="submit">Užsakyti pokalbį</button>
     ${myVisits.length?`<div class="field"><span class="lbl">Jūsų pokalbiai</span>${myVisits.map(x=>`<div class="spread small"><span>${fmtD(x.date)} ${x.time} · ${VISIT_HOW[x.how]} · ${esc(drvName(x.driver))}</span><span class="pill ${VISIT_ST[x.status][1]}">${VISIT_ST[x.status][0]}</span></div>`).join("")}</div>`:""}
   </form>`;
-  const calc=()=>{const r=quickCalc(P,{km:Math.max(1,+$("#qKm").value||1),tpw:Math.max(1,+$("#qTpw").value||1),type:$("#qType").value,leisure:$("#qWhen").value==="free"});
-    const h=r.hours.toLocaleString("lt-LT",{maximumFractionDigits:1}), diff=r.sub-r.self, mx=Math.max(r.sub,r.self,1);
-    $("#qOut").innerHTML=`<div class="verdict ${diff<=0?"ok":""}">${diff<=0?`<b>Apsimoka.</b> Abonementas pigesnis ${eur(-diff)} per mėnesį, ir dar atgaunate ${h} val. laiko.`:`<b>Atgaunate ${h} val. per mėnesį.</b> Abonementas brangesnis ${eur(diff)}, tai ${eur(diff/r.hours)} už kiekvieną valandą be vairavimo.`}</div>
-      <div class="vs"><div><span class="small muted">Ridu abonementas</span><b class="num">${eur(r.sub)}</b><div class="bar"><i style="width:${r.sub/mx*100}%"></i></div><span class="small muted">per mėn. su platformos mokesčiu · 0 val. jūsų laiko</span></div>
-      <div><span class="small muted">Vežiojant patiems</span><b class="num">${eur(r.self)}</b><div class="bar"><i style="width:${r.self/mx*100}%;background:var(--muted)"></i></div><span class="small muted">per mėn. · ${h} val. jūsų laiko</span></div></div>`};
-  ["qKm","qTpw","qType","qWhen"].forEach(id=>{$("#"+id).addEventListener("input",calc);$("#"+id).addEventListener("change",calc)});calc();
+  const e0=n=>Math.round(n).toLocaleString("lt-LT")+" €";
+  const calc=()=>{const hv=Math.max(0,+$("#qHour").value||0),r=quickCalc(P,{km:Math.max(1,+$("#qKm").value||1),tpw:Math.max(1,+$("#qTpw").value||1),type:$("#qType").value,hourValue:hv});
+    const h=r.hours.toLocaleString("lt-LT",{maximumFractionDigits:1}), mx=Math.max(r.sub,r.self,1), w=x=>x/mx*100;
+    $("#qOut").innerHTML=`<div class="hours"><span aria-hidden="true">⏰</span><div><b>Atgaunate ${h} val. per mėnesį</b><span class="small muted">Tiek laiko nereikės vairuoti, laukti ir ieškoti, kur pastatyti automobilį.</span></div></div>
+      <div class="cmp"><div class="spread"><span>Vežiojate patys</span><b class="num">${e0(r.self)}</b></div>
+        <div class="stack" aria-hidden="true"><i class="c-car" style="width:${w(r.car)}%"></i><i class="c-time" style="width:${w(r.time)}%"></i></div>
+        <div class="legend small"><span><i class="dot c-car"></i>kuras, automobilis, parkavimas ${e0(r.car)}</span><span><i class="dot c-time"></i>jūsų laikas: ${h} val. × ${e0(hv)} = ${e0(r.time)}</span></div>
+        <div class="spread"><span>Su Ridu</span><b class="num">${e0(r.sub)}</b></div>
+        <div class="stack" aria-hidden="true"><i class="c-ridu" style="width:${w(r.sub)}%"></i></div>
+        <div class="legend small"><span><i class="dot c-ridu"></i>viskas įskaičiuota, jūsų laiko 0 val.</span></div></div>
+      <div class="verdict ${r.sub<=r.self?"ok":""}">${r.sub<=r.self?`<b>Su Ridu sutaupote ${e0(r.self-r.sub)} per mėnesį</b> ir dar ${h} val. laisvo laiko.`:`<b>Su Ridu mokate ${e0(r.sub-r.self)} daugiau, bet ${h} val. per mėnesį lieka jums.</b>`}</div>`};
+  ["qKm","qTpw","qType","qHour"].forEach(id=>{$("#"+id).addEventListener("input",calc);$("#"+id).addEventListener("change",calc)});calc();
   v.querySelectorAll("[data-meet]").forEach(b=>b.addEventListener("click",()=>{$("#vDrv").value=b.dataset.meet;$("#visit").scrollIntoView({behavior:"smooth"});$("#vHow").focus()}));
   $("#visit").addEventListener("submit",e=>{e.preventDefault();
     S.visits=S.visits||[];S.visits.push({id:"v"+Date.now(),name:guest?$("#vName").value.trim():users[role].name,phone:guest?$("#vPhone").value.trim():"",who:$("#vWho").value,how:$("#vHow").value,org:guest?$("#vOrg").value.trim():"",date:$("#vDate").value,time:$("#vTime").value,driver:$("#vDrv").value,note:$("#vNote").value.trim(),status:"new",by:role,at:new Date().toISOString()});
