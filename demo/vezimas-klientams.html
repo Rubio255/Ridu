@@ -61,6 +61,7 @@ main .wrap{padding-block:20px 48px;display:grid;gap:16px}
 .calc{border:2px solid var(--brand)}
 .qc{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .verdict{padding:12px 14px;border-radius:10px;background:var(--warn-bg)}.verdict.ok{background:var(--ok-bg)}
+.login-hint{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;border-top:1px solid var(--line)}
 .hours{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface-2)}.hours>span{font-size:2rem}.hours div{display:grid}.hours b{font-family:var(--display);font-size:1.3rem}
 .cmp{display:grid;gap:6px}.cmp .num{font-family:var(--display);font-size:1.3rem}
 .stack{display:flex;height:14px;border-radius:999px;background:var(--surface-2);overflow:hidden}.stack i{display:block;height:100%}
@@ -601,6 +602,7 @@ function vWelcome(v){
   v.innerHTML=`<section class="hero card"><h1>${guest?"Pavežimas, kuriuo galite pasitikėti":`Sveiki, ${esc(users[role]?.name||"")}!`}</h1>
     <p class="lead">${guest?"Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Prieš sutardami, susipažinkite su vairuotoju asmeniškai.":"Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį."}</p>
     <div class="row"><a class="btn primary big" href="#visit">Užsakyti pažintinį pokalbį</a><a class="btn big" href="#calc">Ar man apsimoka?</a></div>
+    ${guest?`<div class="login-hint">Jau esate klientas? <button type="button" class="btn" data-login="rasa">Prisijungti</button> <span class="small muted">Demo: prisijungsite kaip Rasa ir pamatysite keliones, sutartis, keleivius ir sąlygas.</span></div>`:""}
     <ul class="trust"><li><b>Patikrinti vairuotojai</b><span>Dokumentus tikriname ir stebime jų galiojimą. <a href="#saugumas">Kaip atrenkame?</a></span></li><li><b>Fiksuota mėnesio kaina</b><span>Be registracijos mokesčio</span></li><li><b>Be ilgų įsipareigojimų</b><span>Sutartį galite nutraukti įspėję prieš 30 d.</span></li></ul></section>
   <section class="card"><h2>${mine.length?"Jūsų vairuotojas":"Susipažinkite su vairuotoju, kuris jus veš"}</h2>
     <p class="small muted" style="margin:0">${mine.length?"Šis vairuotojas veža pagal jūsų sutartį.":"Pažintinio pokalbio metu susipažinsite su vairuotoju, kuris vykdys jūsų užsakymą, ir kartu aptarsite maršrutą."}</p>
@@ -1144,6 +1146,7 @@ document.addEventListener("click",e=>{
   const cf=e.target.closest("[data-cfilter]");if(cf){contractFilter=cf.dataset.cfilter;render();return}
   const en=e.target.closest("[data-end]");if(en){if(en.dataset.sure!=="1"){en.dataset.sure="1";en.textContent="Tikrai nutraukti?";return}
     const s=S.subs.find(x=>x.id===en.dataset.end);if(s){s.status="ended";s.end=isoAdd(0);s.endReason="Nutraukta";const now=new Date();S.trips.forEach(t=>{if(t.series===s.id&&new Date(t.at)>now&&ACTIVE.includes(t.status))t.status="cancelled"});save();render();toast("Sutartis nutraukta. Tėvams išsiųstas pranešimas.")}return}
+  const lg=e.target.closest("[data-login]");if(lg){role=lg.dataset.login;tab=null;save();render();window.scrollTo(0,0);toast("Prisijungėte kaip "+users[role].name);return}
   const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;render();window.scrollTo(0,0);return}
   const vb=e.target.closest("[data-visit]");if(vb){const x=S.visits.find(y=>y.id===vb.dataset.id);if(x){x.status=vb.dataset.visit;save();render();toast(x.status==="confirmed"?`Patvirtinta. ${x.name} ir ${drvName(x.driver)} gaus pranešimą.`:x.status==="done"?"Pažymėta, kad pokalbis įvyko":"Pokalbis atšauktas, klientui pranešta")}return}
   const fl=e.target.closest("[data-filter]");if(fl){tripFilter=fl.dataset.filter;render();return}
