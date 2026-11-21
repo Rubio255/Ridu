@@ -7,7 +7,8 @@ import { createBrowserClient } from "@supabase/ssr";
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "checking">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "checking" | "password">("idle");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
@@ -28,6 +29,29 @@ export function LoginForm() {
     location.href = "/";
   }
 
+  // Prisijungimas slaptažodžiu: tik paskyroms, kurioms MB nustatė slaptažodį (pvz. Apple peržiūros paskyrai)
+  async function withPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const { error } = await sb().auth.signInWithPassword({ email, password });
+    if (error) { setError("Neteisingas el. paštas arba slaptažodis."); return; }
+    location.href = "/";
+  }
+
+  if (state === "password") return (
+    <form onSubmit={withPassword} className="grid gap-3">
+      <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">El. paštas
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" autoComplete="username" />
+      </label>
+      <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">Slaptažodis
+        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="input" autoComplete="current-password" />
+      </label>
+      {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
+      <button className="btn btn-primary">Prisijungti</button>
+      <button type="button" className="btn" onClick={() => { setError(""); setState("idle"); }}>Prisijungti kodu iš laiško</button>
+    </form>
+  );
+
   if (state === "sent" || state === "checking") return (
     <form onSubmit={verify} className="grid gap-3">
       <p className="rounded-lg bg-[var(--ok-bg)] p-3 text-sm text-[var(--ok)]">Išsiuntėme laišką į {email}. Įveskite laiške esantį kodą.</p>
@@ -47,6 +71,7 @@ export function LoginForm() {
       </label>
       {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
       <button className="btn btn-primary" disabled={state === "sending"}>{state === "sending" ? "Siunčiama…" : "Gauti prisijungimo kodą"}</button>
+      <button type="button" className="text-sm underline text-[var(--muted)]" onClick={() => { setError(""); setState("password"); }}>Turiu slaptažodį</button>
     </form>
   );
 }

@@ -12,7 +12,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: lt.ridu.app
       vars:
-        APP_STORE_APPLE_ID: "0" # App Store Connect → Ridu → App Information → Apple ID (įrašyti sukūrus programėlę)
+        APP_STORE_APPLE_ID: "6837659784" # App Store Connect → Ridu → App Information → Apple ID
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
       node: 22
