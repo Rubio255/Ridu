@@ -4,20 +4,24 @@ import { Logo } from "./logo";
 // Pradžios ekranas kaip makete: ženklas, šūkis, nuotrauka, geltonas „Pradėti“ ir „Prisijungti“
 export function Start() {
   return (
-    <section className="-mx-4 -mt-5 grid min-h-[100svh] content-between overflow-hidden bg-gradient-to-b from-[#eef2fb] to-[var(--bg)] md:mx-0 md:mt-0 md:min-h-0 md:rounded-[24px]">
-      <div className="grid justify-items-center gap-2 px-6 pt-10 text-center">
-        <Logo size={64} />
-        <b className="text-5xl font-bold tracking-tight text-[var(--navy)]">Ridu</b>
-        <p className="text-xl font-bold leading-snug">Saugus ir patogus<br />keleivių vežimas</p>
-        <p className="muted">Jūsų šeimai. Jūsų kasdienybei.</p>
-      </div>
-      <div className="relative mt-4">
-        {/* eslint-disable-next-line @next/next/no-img-element -- paprastas paveikslėlis veikia ir iOS programėlėje be optimizatoriaus */}
-        <img src="/promo.jpg" alt="Mama su dukra prie automobilio prieš kelionę" width={900} height={786} fetchPriority="high" className="h-auto w-full" />
-        <div className="absolute inset-x-0 bottom-0 grid gap-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-6 pb-8 pt-24">
+    // Fiksuotas per visą ekraną (ir po iPhone būsenos juosta): nuotrauka fone, viršuje ženklas ir šūkis, apačioje mygtukai
+    <section className="fixed inset-0 z-[60] overflow-hidden bg-[#1b2a3a] text-white">
+      {/* eslint-disable-next-line @next/next/no-img-element -- paprastas paveikslėlis veikia ir iOS programėlėje be optimizatoriaus */}
+      <img src="/promo.jpg" alt="Mama su dukra prie automobilio prieš kelionę" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-[#f3f5f9] via-[#f3f5f9]/85 to-transparent" />
+      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[50%] bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
+      <div className="relative mx-auto grid h-full max-w-xl grid-rows-[auto_1fr_auto] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 24px)", paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)" }}>
+        <div className="grid justify-items-center gap-1.5 text-center text-[var(--fg)]">
+          <Logo size={56} />
+          <b className="text-4xl font-bold tracking-tight text-[#14254f]">Ridu</b>
+          <p className="text-xl font-bold leading-snug text-[#14211f]">Saugus ir patogus<br />keleivių vežimas</p>
+          <p className="font-medium text-[#3d4b48]">Jūsų šeimai. Jūsų kasdienybei.</p>
+        </div>
+        <div />
+        <div className="grid gap-3">
           <Link href="/susipazinti" className="btn btn-primary btn-lg rounded-full text-lg">Pradėti</Link>
           <Link href="/skaiciuokle" className="btn btn-lg rounded-full" style={{ background: "rgb(255 255 255 / .14)", borderColor: "rgb(255 255 255 / .35)", color: "#fff" }}>Ar man apsimoka?</Link>
-          <Link href="/prisijungti" className="justify-self-center font-semibold text-white underline">Prisijungti</Link>
+          <Link href="/prisijungti" className="justify-self-center py-1 font-semibold text-white underline">Prisijungti</Link>
         </div>
       </div>
     </section>
