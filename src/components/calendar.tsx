@@ -13,7 +13,7 @@ const hm = (m: number) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, 
 export async function Calendar({ driverId }: { driverId?: string }) {
   const s = await loadSettings();
   const from = new Date(Date.now() - 12 * 36e5), until = new Date(Date.now() + 8 * 864e5);
-  let tq = supabaseAdmin().from("trips").select("*, child:children(first_name, notes, passenger_type, dropoff, handover_to), payer:profiles!trips_payer_id_fkey(full_name, phone)")
+  let tq = supabaseAdmin().from("trips").select("*, child:children(first_name, notes, passenger_type, dropoff, handover_to, code_word), payer:profiles!trips_payer_id_fkey(full_name, phone)")
     .gte("pickup_at", from.toISOString()).lte("pickup_at", until.toISOString()).neq("status", "cancelled").order("pickup_at");
   if (driverId) tq = tq.eq("driver_id", driverId);
   const [{ data: trips }, drivers] = await Promise.all([tq, driverId ? Promise.resolve([]) : loadDrivers()]);
@@ -48,6 +48,7 @@ export async function Calendar({ driverId }: { driverId?: string }) {
                   <div className="text-sm muted">{t.from_address} → {t.to_address} · moka {t.payer?.full_name}{t.payer?.phone ? `, ${t.payer.phone}` : ""}</div>
                   {t.child.passenger_type === "senior" && <div className="text-sm">Palydėti iki durų ir padėti įlipti.</div>}
                   {t.child.passenger_type !== "child" && t.child.dropoff === "handover" && <div className="text-sm">Perduoti{t.child.handover_to ? `: ${t.child.handover_to}` : " asmeniui"}.</div>}
+                  {t.child.passenger_type === "child" && t.child.code_word && t.status === "scheduled" && <div className="justify-self-start rounded-lg bg-[var(--accent)] px-3 py-1 text-sm text-[var(--accent-fg)]">Slaptas žodis: <b className="tracking-wider">{t.child.code_word}</b> · pasakykite vaikui prieš įlipant</div>}
                   {t.child.notes && <div className="text-sm">Pastaba: {t.child.notes}</div>}
                   {!driverId && (
                     <form action={assignTrip} className="flex flex-wrap items-center gap-2 text-sm"><input type="hidden" name="id" value={t.id} />
