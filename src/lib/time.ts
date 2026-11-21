@@ -49,3 +49,10 @@ export const dayKey = (d: Date | string) => new Intl.DateTimeFormat("sv-SE", { t
 export const DAYS = ["Pr", "An", "Tr", "Kt", "Pn", "Še", "Se"];
 export const eur = (n: number) =>
   Number(n).toLocaleString("lt-LT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+
+// „Šiandien, 15:30“, „Rytoj, 08:00“ arba „lapkričio 24 d., 15:30“
+export const fmtWhen = (d: Date | string) => {
+  const k = dayKey(d), today = dayKey(new Date()), tomorrow = dayKey(new Date(Date.now() + 864e5));
+  const day = k === today ? "Šiandien" : k === tomorrow ? "Rytoj" : new Date(d).toLocaleDateString("lt-LT", { timeZone: TZ, month: "long", day: "numeric" });
+  return `${day}, ${new Date(d).toLocaleTimeString("lt-LT", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })}`;
+};

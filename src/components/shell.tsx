@@ -6,8 +6,8 @@ import { BottomNav } from "./bottom-nav";
 // Klientams: apatinė navigacija (kaip pasirinktame dizaine). MB ir vairuotojams paliekamos skiltys viršuje.
 export const CLIENT_NAV = [
   { href: "/tevai", label: "Pagrindinis", icon: "home" },
-  { href: "/tevai/grafikas", label: "Grafikas", icon: "cal", match: ["/tevai/istorija", "/tevai/kelione", "/tevai/uzsakyti"] },
-  { href: "/tevai/abonementas", label: "Abonementas", icon: "card", match: ["/tevai/planas", "/tevai/mokejimai", "/tevai/sutartys", "/tevai/skaiciuokle"] },
+  { href: "/tevai/grafikas", label: "Kelionės", icon: "cal", match: ["/tevai/istorija", "/tevai/kelione", "/tevai/uzsakyti"] },
+  { href: "/tevai/pranesimai", label: "Pranešimai", icon: "bell" },
   { href: "/tevai/profilis", label: "Profilis", icon: "user", match: ["/tevai/"] },
 ];
 

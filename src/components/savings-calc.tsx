@@ -30,45 +30,36 @@ export function SavingsCalc({ planHref = "/tevai/planas" }: { planHref?: string 
   const pct = r && r.self > 0 ? Math.round((r.self - r.sub) / r.self * 100) : 0;
 
   return (
-    <div className="grid gap-4">
-      <section className="card gap-4" aria-label="Parametrai">
-        <div className="grid gap-1"><span className="text-sm font-semibold muted">Dienų per savaitę</span>
-          <Stepper label="Dienų per savaitę" value={f.days} min={1} max={5} onChange={(n) => set({ days: n })} /></div>
-        <div className="grid gap-1"><span className="text-sm font-semibold muted">Kelionių per dieną</span>
-          <Stepper label="Kelionių per dieną" value={f.perDay} min={1} max={4} onChange={(n) => set({ perDay: n })} /></div>
-        <Slider id="c-km" label="Atstumas į vieną pusę" value={f.km} min={1} max={40} step={1} onChange={(n) => set({ km: n })} show={`${f.km} km`} />
-        <Slider id="c-hv" label="Jūsų valandos vertė" value={f.hourValue} min={0} max={60} step={1} onChange={(n) => set({ hourValue: n })} show={`${f.hourValue} €/val.`} />
-        <button type="button" aria-expanded={more} onClick={() => setMore(!more)} className="justify-self-start text-sm font-semibold text-[var(--brand)]">{more ? "Mažiau parametrų" : "Tikslinti: automobilis ir parkavimas"}</button>
-        {more && (
-          <>
-            <Slider id="c-km-cost" label="Automobilio kaina už km (kuras, nusidėvėjimas)" value={f.costPerKm} min={0.1} max={0.8} step={0.05} onChange={(n) => set({ costPerKm: n })} show={`${f.costPerKm.toFixed(2)} €/km`} />
-            <Slider id="c-park" label="Parkavimas vienai kelionei" value={f.parking} min={0} max={6} step={0.5} onChange={(n) => set({ parking: n })} show={`${f.parking.toLocaleString("lt-LT")} €`} />
-          </>
-        )}
-      </section>
-
+    <section className="card gap-4" aria-label="Skaičiuoklė">
+      <div className="grid gap-1"><span className="font-semibold">Kelionės per savaitę</span>
+        <Stepper label="Kelionės per savaitę" value={f.days} min={1} max={5} onChange={(n) => set({ days: n })} /></div>
+      <div className="grid gap-1"><span className="font-semibold">Kelionės per dieną</span>
+        <Stepper label="Kelionės per dieną" value={f.perDay} min={1} max={4} onChange={(n) => set({ perDay: n })} /></div>
+      <Slider id="c-km" label="Atstumas į vieną pusę" value={f.km} min={1} max={40} step={1} onChange={(n) => set({ km: n })} show={`${f.km} km`} />
+      <Slider id="c-hv" label="Jūsų valandos vertė" value={f.hourValue} min={0} max={60} step={1} onChange={(n) => set({ hourValue: n })} show={`${f.hourValue} €/val.`} />
+      <button type="button" aria-expanded={more} onClick={() => setMore(!more)} className="justify-self-start text-sm font-semibold text-[var(--navy)]">{more ? "Mažiau parametrų" : "Tikslinti: automobilis ir parkavimas"}</button>
+      {more && (
+        <>
+          <Slider id="c-km-cost" label="Automobilio kaina už km (kuras, nusidėvėjimas)" value={f.costPerKm} min={0.1} max={0.8} step={0.05} onChange={(n) => set({ costPerKm: n })} show={`${f.costPerKm.toFixed(2)} €/km`} />
+          <Slider id="c-park" label="Parkavimas vienai kelionei" value={f.parking} min={0} max={6} step={0.5} onChange={(n) => set({ parking: n })} show={`${f.parking.toLocaleString("lt-LT")} €`} />
+        </>
+      )}
       {r && (
-        <section className="card gap-3 bg-[var(--info-bg)]" aria-live="polite" aria-label="Rezultatas">
-          <div className="grid"><b>Rezultatas</b><span className="text-sm">Kelionių per mėnesį: {r.tripsPerMonth}</span></div>
-          <div className="grid grid-cols-2 divide-x divide-[var(--line)] rounded-2xl bg-[var(--surface)] p-3 num">
-            <div className="grid pr-3"><span className="text-sm muted">Vežiojant patiems</span><b className="text-3xl">{e0(r.self)}</b><span className="text-xs muted">automobilis {e0(r.car)} + laikas {e0(r.time)}</span></div>
-            <div className="grid pl-3"><span className="text-sm muted">Su Ridu</span><b className="text-3xl">{e0(r.sub)}</b><span className="text-xs muted">3 mėn. abonementas</span></div>
-          </div>
-          <p className={`flex items-center justify-between gap-2 rounded-full px-4 py-2 text-sm font-bold ${r.sub <= r.self ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>
-            {r.sub <= r.self ? <><span>Sutaupote {e0(r.self - r.sub)} / mėn.</span><span>≈ {pct} %</span></> : <span>Primokate {e0(r.sub - r.self)}, atgaunate {h} val.</span>}
+        <div className="grid gap-3" aria-live="polite">
+          <dl className="grid gap-1.5 rounded-2xl bg-[var(--soft-blue)] p-4 num">
+            <div className="flex justify-between"><dt>Mėnesio kelionių:</dt><dd className="font-bold">{r.tripsPerMonth}</dd></div>
+            <div className="flex justify-between"><dt>Vežiojant patiems:</dt><dd className="text-lg font-bold">{e0(r.self)}</dd></div>
+            <div className="flex justify-between"><dt>Abonementas:</dt><dd className="text-lg font-bold">{e0(r.sub)}</dd></div>
+            <div className={`flex justify-between font-bold ${r.sub <= r.self ? "text-[var(--ok)]" : "text-[var(--warn)]"}`}><dt>{r.sub <= r.self ? "Sutaupymas:" : "Primokėtumėte:"}</dt><dd className="text-lg">{e0(Math.abs(r.self - r.sub))}</dd></div>
+          </dl>
+          <p className={`flex items-center gap-3 rounded-2xl p-4 font-bold ${r.sub <= r.self ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>
+            <span aria-hidden="true" className="text-3xl">{r.sub <= r.self ? "🛡️" : "⏰"}</span>
+            {r.sub <= r.self ? `Abonementas apsimoka ${pct}%!` : `Atgaunate ${h} val. laiko per mėnesį`}
           </p>
-          <p className="text-sm">Laiko, kurio nereikės vairuoti ir laukti: <b>{h} val. per mėnesį</b>.</p>
-        </section>
+          <p className="text-xs muted">Vežiojant patiems: automobilis {e0(r.car)} ir jūsų laikas {e0(r.time)} ({h} val.). Abonementas: 3 mėn. su platformos mokesčiu. Arba planas „{r.plan.name}“ už {e0(r.plan.due)} / mėn. su {e0(r.plan.credit)} kredito.</p>
+          <a href={planHref} className="btn btn-primary btn-lg rounded-full">Pasirinkti planą</a>
+        </div>
       )}
-      {r && (
-        <section className="card gap-2" aria-label="Tinkamiausias planas">
-          <span className="text-sm muted">Tinkamiausias kredito planas</span>
-          <b className="text-lg">{r.plan.name}: {e0(r.plan.due)} / mėn.</b>
-          <span className="text-sm">{e0(r.plan.credit)} kredito kelionėms{r.plan.due > r.plan.price ? `, viršijus mokama ${e0(r.plan.due - r.plan.price)} daugiau` : ""}. Platformos mokestis įskaičiuotas.</span>
-          <a href={planHref} className="btn btn-primary btn-lg">Rinktis planą</a>
-          <p className="text-xs muted">Tikslią kainą pamatysite užsakydami. Palyginimui naudojama {f.hourValue} €/val. jūsų laiko vertė.</p>
-        </section>
-      )}
-    </div>
+    </section>
   );
 }

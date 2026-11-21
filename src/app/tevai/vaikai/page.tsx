@@ -26,17 +26,22 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
   const childKids = (kids ?? []).filter((c) => c.passenger_type === "child" && mine(c.id)), adults = (kids ?? []).filter((c) => c.passenger_type !== "child" && mine(c.id));
   return (
     <div className="grid gap-4">
-    <BackHeader href="/tevai/profilis" title="Šeimos nariai" />
+    <BackHeader href="/tevai/profilis" title="Šeimos nariai" right={<a href="#prideti" aria-label="Pridėti šeimos narį" className="grid h-10 w-10 place-items-center text-2xl">+</a>} />
     {/* Šeimos narių kortelės kaip makete */}
     <div className="grid gap-2">
-      {(kids ?? []).map((c) => (
+      <div className="card grid-cols-[auto_1fr_auto] items-center gap-3 py-3">
+        <Avatar text={initials(me.full_name || me.email || "?")} size={52} />
+        <div className="grid min-w-0"><b className="truncate text-lg">{(me.full_name || "Jūs").split(" ")[0]}</b><span className="text-sm muted">Klientas</span></div>
+        <span className="rounded-full bg-[var(--soft-blue)] px-2.5 py-0.5 text-xs font-bold text-[var(--navy)]">Pagrindinis</span>
+      </div>
+      {(kids ?? []).filter((c) => !c.is_self).map((c) => (
         <div key={c.id} className="card grid-cols-[auto_1fr] items-center gap-3 py-3">
           <Avatar text={initials(c.first_name)} size={52} />
           <div className="grid min-w-0"><b className="truncate text-lg">{c.first_name}</b>
             <span className="truncate text-sm muted">{[c.birth_year ? `${new Date().getFullYear() - c.birth_year} m.` : null, c.passenger_type === "child" ? "Vaikas" : c.passenger_type === "senior" ? "Vyresnio amžiaus" : "Suaugęs", who(c.id).length > 1 ? `${who(c.id).length} gauna pranešimus` : null].filter(Boolean).join(" · ")}</span></div>
         </div>
       ))}
-      <a href="#prideti" className="btn btn-lg bg-[var(--surface-2)]">+ Pridėti keleivį</a>
+      <a href="#prideti" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">+ Pridėti šeimos narį</a>
       <div className="card grid-cols-[auto_1fr] items-center gap-3 bg-[var(--ok-bg)]">
         <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--ok)] text-xl text-white">✓</span>
         <div className="grid"><b>Saugumas pirmoje vietoje</b><span className="text-sm">Vairuotojai patikrinti, o kelionę matote gyvai.</span></div>

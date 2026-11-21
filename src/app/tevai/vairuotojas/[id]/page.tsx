@@ -14,8 +14,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     sb.from("trips").select("id", { count: "exact", head: true }).eq("driver_id", id),
   ]);
   if (!subs && !trips) notFound();
-  const [cards, { data: extra }] = await Promise.all([
+  const [cards, { data: contract }, { data: extra }] = await Promise.all([
     driverCards([id]),
+    sb.from("subscriptions").select("starts_on, ends_on, months").eq("driver_id", id).eq("status", "active").order("ends_on", { ascending: false, nullsFirst: true }).limit(1).maybeSingle(),
     supabaseAdmin().from("drivers").select("bio, since_year").eq("profile_id", id).maybeSingle(),
   ]);
   const d = cards.get(id);
@@ -23,29 +24,34 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const tel = d.phone?.replace(/\s+/g, "");
   const years = extra?.since_year ? new Date().getFullYear() - extra.since_year : null;
 
+  const until = contract ? (contract.ends_on ?? (contract.starts_on && contract.months > 1 ? (() => { const x = new Date(contract.starts_on); x.setMonth(x.getMonth() + contract.months); return x.toISOString().slice(0, 10); })() : null)) : null;
+
   return (
     <>
       <BackHeader href="/tevai" title="Vairuotojas" />
-      <section className="card justify-items-center gap-2 py-6 text-center">
-        <Avatar text={initials(d.name)} size={84} />
-        <h1 className="text-2xl font-bold">{d.name}</h1>
-        {d.verified && <span className="pill p-ok normal-case">✓ Patikimas ir patikrintas vairuotojas</span>}
-        {years ? <span className="text-sm muted">Vairuoja {years} m.</span> : null}
-        {extra?.bio && <p className="italic">„{extra.bio}“</p>}
-      </section>
-      <section className="card" aria-labelledby="auto">
-        <h2 id="auto" className="font-bold">Automobilis</h2>
-        <CarArt className="mx-auto w-full max-w-xs" />
-        <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="grid rounded-xl bg-[var(--surface-2)] p-3"><span className="text-xs muted">Modelis</span><b>{d.car ?? "–"}</b></div>
-          <div className="grid rounded-xl bg-[var(--surface-2)] p-3"><span className="text-xs muted">Valst. numeris</span><b className="num tracking-wider">{d.plate ?? "–"}</b></div>
+      <section className="card gap-3 overflow-hidden p-0">
+        <div className="relative bg-gradient-to-b from-[var(--soft-blue)] to-[var(--surface)] px-6 pt-8">
+          <CarArt className="mx-auto w-full max-w-xs" />
+          {contract && <span className="absolute right-3 top-3 rounded-full bg-[var(--ok-bg)] px-3 py-1 text-sm font-bold text-[var(--ok)]">Aktyvus</span>}
         </div>
-        {d.childSeats && <p className="text-sm"><span className="font-bold text-[var(--ok)]">✓</span> Yra vaikiškos kėdutės</p>}
+        <div className="grid gap-1 px-4">
+          <div className="flex items-center gap-3"><Avatar text={initials(d.name)} size={48} /><h1 className="text-2xl font-bold">{d.name}</h1></div>
+          {d.verified && <span className="font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}
+          {years ? <span className="text-sm muted">Vairuoja {years} m.</span> : null}
+          {extra?.bio && <p className="italic">„{extra.bio}“</p>}
+        </div>
+        <ul className="grid gap-2 px-4 pb-4">
+          <li className="flex items-center gap-3"><span aria-hidden="true">🚘</span>{d.car ?? "Automobilis bus nurodytas"}</li>
+          {d.plate && <li className="flex items-center gap-3"><span aria-hidden="true">🪪</span><span className="num tracking-wider">{d.plate}</span></li>}
+          {d.phone && <li className="flex items-center gap-3"><span aria-hidden="true">📞</span>{d.phone}</li>}
+          {d.childSeats && <li className="flex items-center gap-3"><span aria-hidden="true">✓</span>Yra vaikiškos kėdutės</li>}
+        </ul>
       </section>
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/tevai/sutartys" className="btn btn-lg">Peržiūrėti sutartį</Link>
-        {tel ? <a href={`tel:${tel}`} className="btn btn-primary btn-lg">Susisiekti</a> : <span className="btn btn-lg opacity-60">Telefono nėra</span>}
-      </div>
+      {contract && (
+        <section className="card gap-1"><b>Sutarties informacija</b><span className="muted">{until ? `Galioja iki: ${until}` : "Pratęsiama kas mėnesį"}</span></section>
+      )}
+      <Link href="/tevai/sutartys" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">Peržiūrėti sutartį</Link>
+      {tel ? <a href={`tel:${tel}`} className="btn btn-lg rounded-full shadow-sm">🎧 Susisiekti</a> : <span className="btn btn-lg rounded-full opacity-60">Telefono nėra</span>}
     </>
   );
 }

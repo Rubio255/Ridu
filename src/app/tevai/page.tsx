@@ -1,110 +1,94 @@
 import Link from "next/link";
-import { requireProfile } from "@/lib/auth";
+import { requireProfile, loadSettings } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
 import { driverCards, firstName, initials } from "@/lib/client-view";
-import { dayKey, fmtDay, fmtTime } from "@/lib/time";
-import { TripSteps } from "@/components/trip-steps";
+import { planState } from "@/lib/client-plan";
+import { PLAN_NAMES, type PlanId } from "@/lib/settings";
+import { eur, fmtWhen } from "@/lib/time";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { LiveMap } from "@/components/live-map";
-import { Avatar, CarArt, QuickLink, StatusPill, TripRow, type TripLite } from "@/components/client-ui";
+import { Avatar, StatusPill } from "@/components/client-ui";
+import { isLive } from "@/lib/live";
 
-// Pagrindinis: abonementas, greiti veiksmai, svarbiausia kelionė ir artimiausios kelionės
+const monthEnd = () => { const d = new Date(); d.setUTCMonth(d.getUTCMonth() + 1, 0); return d.toISOString().slice(0, 10); };
+
+// Pagrindinis (kaip makete): pasisveikinimas, plano kortelė, 3 greiti veiksmai, artimiausios kelionės, skaičiuoklės kvietimas
 export default async function Page() {
-  const [me, sb] = await Promise.all([requireProfile(), supabaseServer()]);
+  const [me, sb, s] = await Promise.all([requireProfile(), supabaseServer(), loadSettings()]);
   const now = new Date();
-  const [{ data: trips }, { data: subs }, { data: kids }] = await Promise.all([
-    sb.from("trips").select("id, pickup_at, status, from_label, to_label, price_eur, child_id, driver_id, picked_up_at, delivered_at, child:children(first_name, passenger_type, code_word)")
-      .gte("pickup_at", new Date(now.getTime() - 12 * 36e5).toISOString()).lte("pickup_at", new Date(now.getTime() + 14 * 864e5).toISOString()).neq("status", "cancelled").order("pickup_at"),
-    sb.from("subscriptions").select("id, status, weekdays, child:children(first_name)").in("status", ["pending", "active"]),
+  const [{ data: trips }, { data: subs }, { data: kids }, st] = await Promise.all([
+    sb.from("trips").select("id, pickup_at, status, from_label, to_label, driver_id, child:children(first_name)")
+      .gte("pickup_at", new Date(now.getTime() - 3 * 36e5).toISOString()).lte("pickup_at", new Date(now.getTime() + 14 * 864e5).toISOString())
+      .in("status", ["scheduled", "picked_up"]).order("pickup_at"),
+    sb.from("subscriptions").select("id, status, weekdays").in("status", ["pending", "active"]),
     sb.from("child_guardians").select("child_id").eq("profile_id", me.id),
+    planState(me.id),
   ]);
-  const live = trips ?? [];
-  // Svarbiausia kelionė: vykstanti, artimiausia arba šiandien baigta
-  const focus = live.find((t) => t.status === "picked_up")
-    ?? live.find((t) => t.status === "scheduled" && new Date(t.pickup_at).getTime() > now.getTime() - 36e5)
-    ?? [...live].reverse().find((t) => t.status === "delivered" && dayKey(t.pickup_at) === dayKey(now));
-  const drivers = await driverCards([focus?.driver_id]);
-  const d = focus?.driver_id ? drivers.get(focus.driver_id) : undefined;
-  const next = live.filter((t) => t.id !== focus?.id && t.status === "scheduled" && new Date(t.pickup_at) > now).slice(0, 4);
+  const list = trips ?? [];
+  const live = list.find((t) => t.status === "picked_up") ?? list.find((t) => isLive(t));
+  const next = list.filter((t) => t.id !== live?.id && new Date(t.pickup_at) > now).slice(0, 3);
+  const drivers = await driverCards([live?.driver_id, ...next.map((t) => t.driver_id)]);
   const active = (subs ?? []).filter((x) => x.status === "active");
   const perWeek = active.reduce((a, x) => a + (x.weekdays?.length ?? 0), 0);
-  const soon = focus && focus.status !== "delivered" && Math.abs(new Date(focus.pickup_at).getTime() - now.getTime()) < 3 * 36e5;
-  const child = focus?.child as unknown as { first_name: string; passenger_type: string; code_word: string | null } | undefined;
+  const plan = st?.plan_id ? PLAN_NAMES[st.plan_id as PlanId] : null;
+  const card = plan ? [`${plan} planas`, `Galioja iki ${monthEnd()}`, "/tevai/abonementas"]
+    : active.length ? ["Abonementas galioja", `${perWeek} kel. per savaitę`, "/tevai/abonementas"]
+    : (subs ?? []).length ? ["Abonementas laukia patvirtinimo", "Netrukus patvirtinsime", "/tevai/abonementas"]
+    : ["Pasirinkite planą", `Kredito planai nuo ${eur(s.plan_basic_price)} / mėn.`, "/tevai/planas"];
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="grid gap-0.5">
-          <h1 className="text-2xl font-bold">Sveiki, {firstName(me.full_name) || "sveiki"} 👋</h1>
-          <p className="muted">Jūsų šeimos kelionės</p>
-        </div>
-        <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-xl">🔔</Link>
+      {live && <AutoRefresh />}
+      <div className="flex items-start justify-between gap-3 pt-1">
+        <h1 className="text-3xl font-bold leading-tight">Sveiki,<br />{firstName(me.full_name) || "sveiki"} 👋</h1>
+        <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full text-2xl">🔔</Link>
       </div>
 
-      {/* Abonemento juosta */}
-      {/* Žemėlapis kaip makete: vykstančios ar artimiausios kelionės maršrutas, vairuotojo vieta */}
-      <LiveMap src={focus && focus.status !== "delivered" ? `/api/vieta/${focus.id}` : undefined} tall bare />
-
-      {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą žmogų skiltyje <Link href="/tevai/vaikai" className="underline">„Šeimos nariai“</Link>. Vaikus įrašo MB pagal sutartį.</div>}
-
-      {focus ? (
-        <section className="card gap-4" aria-labelledby="dabar">
-          {soon && <AutoRefresh />}
-          <div className="flex items-center justify-between gap-2">
-            <h2 id="dabar" className="text-lg font-bold">{focus.status === "picked_up" ? "Kelionė vyksta" : focus.status === "delivered" ? "Šiandien nuvežta" : "Artimiausia kelionė"}</h2>
-            <StatusPill s={focus.status} />
-          </div>
-          <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-            <div className="grid">
-              <b className="text-lg">{child?.first_name}: {focus.from_label} → {focus.to_label}</b>
-              <span className="muted">{fmtDay(focus.pickup_at)} · {fmtTime(focus.pickup_at)}</span>
-            </div>
-            <CarArt className="w-24" />
-          </div>
-          <TripSteps t={focus} />
-          {d && (
-            <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3">
-              <Avatar text={initials(d.name)} />
-              <div className="grid min-w-0"><b className="truncate">{d.name}</b><span className="truncate text-sm muted">{[d.car, d.plate].filter(Boolean).join(" · ")}</span></div>
-            </div>
-          )}
-          {child?.passenger_type === "child" && focus.status === "scheduled" && !child.code_word && (
-            <Link href="/tevai/vaikai#slaptas-zodis" className="rounded-xl bg-[var(--accent-soft)] p-3 text-sm font-semibold">Sukurkite slaptą žodį vaikui →</Link>)}
-          <Link href={`/tevai/kelione/${focus.id}`} className="btn btn-primary btn-lg">Atidaryti kelionę</Link>
-        </section>
-      ) : (
-        <section className="card gap-4 border-2 border-dashed" aria-labelledby="pavyzdys">
-          <div className="flex items-center justify-between gap-2">
-            <h2 id="pavyzdys" className="text-lg font-bold">Taip matysite kelionę</h2>
-            <span className="pill p-info">Pavyzdys</span>
-          </div>
-          <div className="text-lg"><b>Ema</b> · Mokykla → Baseinas</div>
-          <TripSteps t={{ status: "picked_up", pickup_at: new Date(now.getTime() - 6 * 6e4).toISOString(), picked_up_at: new Date(now.getTime() - 6 * 6e4).toISOString(), from_label: "Mokykla", to_label: "Baseinas" }} />
-          <p className="text-sm muted">Kai keleivis bus paimtas ir nuvežtas, gausite pranešimą į telefoną.</p>
-        </section>
-      )}
-
-      <Link href="/tevai/abonementas" className="card grid-cols-[1fr_auto] items-center gap-3">
-        <div className="grid gap-0.5">
-          <span className="text-sm muted">{active.length ? "Abonementas galioja" : (subs ?? []).length ? "Abonementas laukia patvirtinimo" : "Abonemento dar nėra"}</span>
-          <b className="text-lg">{active.length ? `${perWeek} kelionės per savaitę` : (subs ?? []).length ? "Vairuotojas netrukus patvirtins" : "Užsisakykite pastovų grafiką"}</b>
-        </div>
-        <span className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm font-bold text-[var(--accent-fg)]">{active.length ? "Peržiūrėti" : "Plačiau"}</span>
+      <Link href={card[2]} className="navy flex items-center gap-3 rounded-[20px] p-4 shadow-lg">
+        <span aria-hidden="true" className="grid h-11 w-11 flex-none place-items-center rounded-full bg-[#2fb36b] text-xl font-bold text-white">✓</span>
+        <span className="grid flex-1"><b className="text-lg">{card[0]}</b><span className="text-sm opacity-80">{card[1]}</span></span>
+        <span aria-hidden="true" className="text-2xl opacity-80">›</span>
       </Link>
 
-      <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-3">
-        <QuickLink href="/tevai/grafikas?d=savaite" label="Tvarkaraštis" icon="🗓️" />
-        <QuickLink href="/tevai/skaiciuokle" label="Skaičiuoklė" icon="🧮" />
-        <QuickLink href="/tevai/saugumas" label="Saugumas" icon="🛡️" />
+      <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-2">
+        {[["/tevai/grafikas?d=savaite", "🗓️", "Tvarkaraštis"], ["/tevai/skaiciuokle", "🧮", "Skaičiuoklė"], ["/tevai/saugumas", "🛡️", "Saugumas"]].map(([h, i, l]) => (
+          <Link key={h} href={h} className="icon-tile"><span aria-hidden="true">{i}</span>{l}</Link>
+        ))}
       </nav>
 
-      <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Nauja kelionė</Link>
+      {live && (
+        <Link href={`/tevai/kelione/${live.id}`} className="card gap-1 border-2 !border-[var(--accent)]">
+          <div className="flex items-center justify-between gap-2"><b className="text-lg">{live.status === "picked_up" ? "Kelionė vyksta" : "Vairuotojas netrukus atvyks"}</b><StatusPill s={live.status} /></div>
+          <span>{(live.child as unknown as { first_name: string } | null)?.first_name}: {live.from_label} → {live.to_label}</span>
+          <span className="font-semibold text-[var(--navy)]">Stebėti gyvai →</span>
+        </Link>
+      )}
 
-      <section className="card" aria-labelledby="artimiausios">
-        <h2 id="artimiausios" className="font-bold">Artimiausios kelionės</h2>
-        {next.length === 0 && <p className="text-sm muted">Artimiausias dvi savaites kitų kelionių nėra.</p>}
-        {next.map((t) => <TripRow key={t.id} t={t as unknown as TripLite} day />)}
+      {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite juos skiltyje <Link href="/tevai/vaikai" className="underline">„Šeimos nariai“</Link>.</div>}
+
+      <section className="grid gap-3" aria-labelledby="artimiausios">
+        <div className="flex items-center justify-between"><h2 id="artimiausios" className="text-lg font-bold">Artimiausios kelionės</h2><Link href="/tevai/uzsakyti" className="text-sm font-bold text-[var(--navy)]">+ Nauja</Link></div>
+        {next.length === 0 && <div className="card muted">Artimiausias dvi savaites kelionių nėra.</div>}
+        {next.map((t) => {
+          const d = t.driver_id ? drivers.get(t.driver_id) : undefined;
+          return (
+            <Link key={t.id} href={`/tevai/kelione/${t.id}`} className="card gap-2">
+              <div className="flex items-center justify-between gap-2"><b className="text-lg">{fmtWhen(t.pickup_at)}</b><span className="rounded-full bg-[var(--ok-bg)] px-2.5 py-0.5 text-xs font-bold text-[var(--ok)]">Planuota</span></div>
+              <span className="flex items-center gap-1.5"><span aria-hidden="true" className="text-[var(--navy)]">📍</span>{t.from_label} → {t.to_label}</span>
+              <div className="flex items-center gap-2 border-t border-[var(--line)] pt-2 text-sm">
+                {d ? <><Avatar text={initials(d.name)} size={28} /><span>Vairuotojas: {firstName(d.name)}</span></> : <span className="muted">Vairuotojas bus priskirtas</span>}
+                <span className="ml-auto muted">{(t.child as unknown as { first_name: string } | null)?.first_name}</span>
+              </div>
+            </Link>
+          );
+        })}
+        <Link href="/tevai/grafikas?d=savaite" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">Peržiūrėti grafiką →</Link>
       </section>
+
+      <Link href="/tevai/skaiciuokle" className="card grid-cols-[auto_1fr_auto] items-center gap-3">
+        <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--soft-blue)] text-2xl">🧮</span>
+        <span className="grid"><b>Ar apsimoka abonementas?</b><span className="text-sm muted">Sužinokite per 1 minutę!</span></span>
+        <span aria-hidden="true" className="text-2xl muted">›</span>
+      </Link>
     </>
   );
 }

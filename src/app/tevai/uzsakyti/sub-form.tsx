@@ -8,9 +8,9 @@ const DAYS = ["Pr", "An", "Tr", "Kt", "Pn"];
 const eur = (n: number) => n.toLocaleString("lt-LT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 type Q = Awaited<ReturnType<typeof quoteAction>>;
 
-export function SubForm({ kids, places, hours }: {
+export function SubForm({ kids, places, hours, planName }: {
   kids: { id: string; first_name: string }[]; places: { id: string; label: string; address: string }[];
-  hours: { am: string; deliverBy: string; pmStart: string; pmEnd: string; bidDay: number };
+  hours: { am: string; deliverBy: string; pmStart: string; pmEnd: string; bidDay: number }; planName?: string | null;
 }) {
   const router = useRouter();
   const [f, setF] = useState({ child_id: kids[0]?.id ?? "", from_place_id: places[0]?.id ?? "", to_place_id: places[1]?.id ?? "", weekdays: [2, 4], period: "pm" as "am" | "pm", pickup_time: "14:00", extra_kids: 0, months: 1 });
@@ -39,32 +39,35 @@ export function SubForm({ kids, places, hours }: {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
-      <div className="card">
-        <h1 className="text-xl font-bold">Naujas abonementas</h1>
-        {/* Maršrutas žemėlapyje (be API rakto, Google Maps įterpimas) */}
-        {from && to && from.id !== to.id && (
-          <iframe title={`Maršrutas: ${from.label} → ${to.label}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-            src={`https://maps.google.com/maps?saddr=${encodeURIComponent(from.address)}&daddr=${encodeURIComponent(to.address)}&output=embed`}
-            className="h-56 w-full rounded-xl border border-[var(--line)]" />
-        )}
-        {from && to && <div className="grid gap-1 rounded-xl bg-[var(--surface-2)] p-3 text-sm"><span>🔵 {from.label}</span><span>🟡 {to.label}</span></div>}
+    <form onSubmit={submit} className="grid gap-4">
+      {/* Žemėlapis per visą plotį kaip makete (Google Maps įterpimas be API rakto) */}
+      <div className="relative -mx-4 -mt-5 h-72 overflow-hidden bg-[var(--surface-2)]">
+        {from && to && from.id !== to.id
+          ? <iframe title={`Maršrutas: ${from.label} → ${to.label}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+              src={`https://maps.google.com/maps?saddr=${encodeURIComponent(from.address)}&daddr=${encodeURIComponent(to.address)}&output=embed`} className="h-full w-full border-0" />
+          : <iframe title="Vilnius" loading="lazy" src="https://maps.google.com/maps?q=Vilnius&z=12&output=embed" className="h-full w-full border-0" />}
+        <a href="/tevai" aria-label="Atgal" className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-[var(--surface)] text-lg shadow">←</a>
+      </div>
+      <div className="card -mt-10 gap-3">
+        <h1 className="sr-only">Nauja kelionė</h1>
+        <div className="grid gap-0 rounded-2xl border border-[var(--line)] p-1">
+          <label className="flex items-center gap-3 px-3 py-2"><span aria-hidden="true" className="h-3 w-3 flex-none rounded-full bg-[#2f6fed]" /><span className="sr-only">Iš kur paimti</span>
+            <select className="w-full bg-transparent font-semibold outline-none" value={f.from_place_id} onChange={(e) => set({ from_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
+          <div className="mx-3 border-t border-[var(--line)]" />
+          <label className="flex items-center gap-3 px-3 py-2"><span aria-hidden="true" className="h-3 w-3 flex-none rounded-full bg-[var(--accent)]" /><span className="sr-only">Kur nuvežti</span>
+            <select className="w-full bg-transparent font-semibold outline-none" value={f.to_place_id} onChange={(e) => set({ to_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
+        </div>
+        {planName && <div className="flex items-center gap-3 rounded-2xl bg-[var(--soft-blue)] p-3"><span aria-hidden="true" className="text-2xl">🚗</span><span className="grid flex-1"><b>{planName}</b><span className="text-xs muted">Kelionės apmokamos iš plano kredito</span></span><span className="text-xs font-semibold muted">įskaičiuota</span></div>}
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>
         <div className="grid gap-1 text-sm font-semibold muted"><span>Kiek keleivių važiuos kartu</span>
           <Stepper label="Keleivių skaičius" value={f.extra_kids + 1} min={1} max={4} onChange={(n) => set({ extra_kids: n - 1 })} unit={(n) => n === 1 ? "1 keleivis" : `${n} keleiviai`} /></div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-semibold muted">Iš kur paimti
-            <select className="input" value={f.from_place_id} onChange={(e) => set({ from_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
-          <label className="grid gap-1 text-sm font-semibold muted">Kur nuvežti
-            <select className="input" value={f.to_place_id} onChange={(e) => set({ to_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
-        </div>
         <fieldset className="grid gap-1"><legend className="text-sm font-semibold muted">Savaitės dienos</legend>
           <div className="flex flex-wrap gap-2">{DAYS.map((d, i) => {
             const on = f.weekdays.includes(i + 1);
             return <button type="button" key={d} aria-pressed={on} onClick={() => set({ weekdays: on ? f.weekdays.filter((w) => w !== i + 1) : [...f.weekdays, i + 1].sort() })}
-              className={`h-9 w-11 rounded-lg border text-sm font-semibold ${on ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--brand-fg)]" : "border-[var(--line)] bg-[var(--bg)]"}`}>{d}</button>;
+              className={`h-10 w-12 rounded-full border text-sm font-semibold ${on ? "border-[var(--navy)] bg-[var(--navy)] text-white" : "border-[var(--line)] bg-[var(--bg)]"}`}>{d}</button>;
           })}</div></fieldset>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold muted">Kada
@@ -99,9 +102,9 @@ export function SubForm({ kids, places, hours }: {
                 <p className="rounded-lg bg-[var(--warn-bg)] p-3 text-sm font-semibold text-[var(--warn)]">{f.period === "am" ? "Rytinis maršrutas šiomis dienomis pilnas." : "Šis laikas užimtas."} Galite pateikti pasiūlymą kitam mėnesiui iki {hours.bidDay} d., ir vairuotojas su jumis susisieks.</p>
                 <label className="grid gap-1 text-sm font-semibold muted">Jūsų mėnesio kaina, € (ne mažiau {eur(q.monthly)})
                   <input type="number" className="input" min={q.monthly} step={1} value={bid} onChange={(e) => setBid(Number(e.target.value))} /></label>
-                <button className="btn btn-primary" disabled={pending}>Pateikti pasiūlymą</button>
+                <button className="btn btn-primary btn-lg rounded-full" disabled={pending}>Pateikti pasiūlymą</button>
               </>
-            ) : <button className="btn btn-primary" disabled={pending}>Užsakyti už {eur(q.monthly + q.platformFee)} / mėn.</button>}
+            ) : <button className="btn btn-primary btn-lg rounded-full" disabled={pending}>Patvirtinti kelionę · {eur(q.monthly + q.platformFee)} / mėn.</button>}
             <p className="text-sm muted">Kaina nesikeičia visą įsipareigojimo laikotarpį. Užsakymas įsigalioja, kai jį patvirtina vairuotojas.</p>
           </>
         )}

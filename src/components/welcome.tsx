@@ -1,6 +1,28 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 
+// Pradžios ekranas kaip makete: ženklas, šūkis, nuotrauka, geltonas „Pradėti“ ir „Prisijungti“
+export function Start() {
+  return (
+    <section className="-mx-4 -mt-5 grid min-h-[100svh] content-between overflow-hidden bg-gradient-to-b from-[#eef2fb] to-[var(--bg)] md:mx-0 md:mt-0 md:min-h-0 md:rounded-[24px]">
+      <div className="grid justify-items-center gap-2 px-6 pt-10 text-center">
+        <Logo size={64} />
+        <b className="text-5xl font-bold tracking-tight text-[var(--navy)]">Ridu</b>
+        <p className="text-xl font-bold leading-snug">Saugus ir patogus<br />keleivių vežimas</p>
+        <p className="muted">Jūsų šeimai. Jūsų kasdienybei.</p>
+      </div>
+      <div className="relative mt-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- paprastas paveikslėlis veikia ir iOS programėlėje be optimizatoriaus */}
+        <img src="/promo.jpg" alt="Mama su dukra prie automobilio prieš kelionę" width={900} height={786} fetchPriority="high" className="h-auto w-full" />
+        <div className="absolute inset-x-0 bottom-0 grid gap-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-6 pb-8 pt-24">
+          <Link href="/susipazinti" className="btn btn-primary btn-lg rounded-full text-lg">Pradėti</Link>
+          <Link href="/prisijungti" className="justify-self-center font-semibold text-white underline">Prisijungti</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Pirmas ekranas: be konkretaus vairuotojo. Šeimos nuotrauka (pasirinko MB), kvietimas susipažinti ir „Ar man apsimoka?“
 export function Welcome({ guest, greeting }: { guest: boolean; greeting?: string }) {
   // Kiekviena nuoroda veda į savo atskirą puslapį (neprisijungusiems – vieši, prisijungusiems – programėlės)

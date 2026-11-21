@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
-import { eur, vilniusToDate, vilniusToday } from "@/lib/time";
-import { BackHeader, TripRow, type TripLite } from "@/components/client-ui";
+import { eur, fmtWhen, vilniusToDate, vilniusToday } from "@/lib/time";
+import { BackHeader, type TripLite } from "@/components/client-ui";
 
-const TABS = [["visos", "Visos"], ["men", "Šį mėnesį"], ["praej", "Praėjusį"]] as const;
+const TABS = [["visos", "Visos"], ["men", "Šį mėnesį"], ["praej", "Praėjusį mėnesį"]] as const;
 
 function monthStart(ym: string, add = 0) {
   const [y, m] = ym.split("-").map(Number);
@@ -38,7 +38,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
       )}
       <section className="card">
         {trips.length === 0 && <p className="py-6 text-center muted">Šiuo laikotarpiu kelionių nebuvo.</p>}
-        {trips.map((t) => <TripRow key={t.id} t={t} day />)}
+        {trips.map((t) => (
+          <Link key={t.id} href={`/tevai/kelione/${t.id}`} className="grid grid-cols-[28px_1fr_auto] items-center gap-3 border-t border-[var(--line)] pt-3 first-of-type:border-0 first-of-type:pt-0">
+            <span aria-hidden="true" className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold text-white ${t.status === "delivered" ? "bg-[var(--ok)]" : "bg-[var(--bad)]"}`}>{t.status === "delivered" ? "✓" : "✕"}</span>
+            <span className="grid min-w-0"><b>{fmtWhen(t.pickup_at)}</b><span className="truncate text-sm">{t.from_label} → {t.to_label}</span>{t.status !== "delivered" && <span className="text-xs muted">{t.status === "cancelled" ? "Atšaukta" : t.status === "no_show" ? "Neatvyko" : "Suplanuota"}</span>}</span>
+            <b className="num">{eur(Number(t.price_eur ?? 0))}</b>
+          </Link>
+        ))}
       </section>
     </>
   );

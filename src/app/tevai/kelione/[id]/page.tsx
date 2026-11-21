@@ -6,11 +6,11 @@ import { cancelTrip } from "@/app/actions";
 import { cancelFeePct } from "@/lib/pricing";
 import { driverCards, firstName, initials } from "@/lib/client-view";
 import { eur, fmtDay, fmtTime } from "@/lib/time";
-import { TripSteps } from "@/components/trip-steps";
 import { mapsLink } from "@/lib/maps";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { Avatar, CarArt, StatusPill } from "@/components/client-ui";
+import { Avatar, StatusPill } from "@/components/client-ui";
 import { LiveMap } from "@/components/live-map";
+import { LiveEta } from "@/components/live-eta";
 import { ShareTrip } from "@/components/share-trip";
 import { isLive } from "@/lib/live";
 
@@ -37,48 +37,55 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : t.status === "scheduled" ? ["Kelionė suplanuota", `Paėmimas ${fmtTime(t.pickup_at)}`]
     : ["Kelionė", ""];
   const tel = d?.phone?.replace(/\s+/g, "");
+  const live = isLive(t);
 
   return (
     <>
       {t.status === "picked_up" || (t.status === "scheduled" && Math.abs(hours) < 3) ? <AutoRefresh /> : null}
-      <div className="grid grid-cols-[44px_1fr_44px] items-center">
-        <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm">←</Link>
-        <h1 className="text-center text-lg font-bold">Kelionės eiga</h1>
-        {tel ? <a href={`tel:${tel}`} aria-label="Skambinti vairuotojui" className="grid h-10 w-10 place-items-center justify-self-end rounded-full bg-[var(--surface)] shadow-sm">📞</a> : <span />}
-      </div>
-      <div className="grid justify-items-center text-center"><b className="text-xl">{head[1]}</b><span className="text-sm muted capitalize">{fmtDay(t.pickup_at)}</span></div>
+      <header className="navy-head grid gap-3 text-center">
+        <div className="grid grid-cols-[40px_1fr_40px] items-center">
+          <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-lg">←</Link>
+          <div className="grid"><h1 className="text-lg font-bold">{head[0]}</h1><span className="text-sm opacity-80">{t.status === "picked_up" ? "Keleivis jau automobilyje" : live ? "Vairuotojas jau pakeliui" : <span className="capitalize">{fmtDay(t.pickup_at)}</span>}</span></div>
+        </div>
+        <div className="grid justify-items-center">{live ? <LiveEta src={`/api/vieta/${t.id}`} fallback={head[1]} /> : <b className="text-3xl">{head[1]}</b>}</div>
+        <ol className="mx-auto grid w-full max-w-sm grid-cols-3 text-xs" aria-label="Kelionės eiga">
+          {[["Vairuotojas atvyksta", "🏠"], ["Kelionė vyksta", "🚗"], ["Atvykome", "🏁"]].map(([l, i], k) => {
+            const at = t.status === "delivered" ? 2 : t.status === "picked_up" ? 1 : 0, on = k <= at;
+            return <li key={l} className="grid justify-items-center gap-1"><span aria-hidden="true" className={`grid h-9 w-9 place-items-center rounded-full ${on ? "bg-white text-[var(--navy)]" : "bg-white/20"}`}>{i}</span><span className={on ? "font-bold" : "opacity-70"}>{l}</span></li>;
+          })}
+        </ol>
+      </header>
 
       {d ? (
-        <section className="card" aria-labelledby="vairuotojas">
+        <section className="card -mt-10" aria-labelledby="vairuotojas">
           <h2 id="vairuotojas" className="sr-only">Vairuotojas</h2>
           <Link href={`/tevai/vairuotojas/${d.id}`} className="flex items-center gap-3">
-            <Avatar text={initials(d.name)} size={52} />
+            <Avatar text={initials(d.name)} size={64} />
             <div className="grid min-w-0 flex-1">
               <b className="truncate text-lg">{d.name}</b>
-              <span className="truncate text-sm muted">{[d.car, d.plate].filter(Boolean).join(" · ") || "Automobilis bus nurodytas"}</span>
               {d.verified && <span className="text-sm font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}
+              <span className="truncate text-sm">{d.car ?? "Automobilis bus nurodytas"}</span>
+              {d.plate && <span className="justify-self-start rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-xs font-bold">{d.plate}</span>}
             </div>
-            <CarArt className="w-24 flex-none" />
           </Link>
           {tel ? (
-            <div className="grid grid-cols-2 gap-3">
-              <a href={`tel:${tel}`} className="btn btn-primary btn-lg">📞 Skambinti</a>
-              <a href={`sms:${tel}`} className="btn btn-lg">💬 Žinutė</a>
+            <div className="grid grid-cols-2 border-t border-[var(--line)] pt-2 text-sm font-semibold">
+              <a href={`tel:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)]">📞</span>Skambinti</a>
+              <a href={`sms:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)]">💬</span>Žinutė</a>
             </div>
           ) : <p className="text-sm muted">Vairuotojo telefonas dar nenurodytas. Susisiekite su MB.</p>}
         </section>
-      ) : <div className="card muted">Vairuotojas bus priskirtas prieš kelionę.</div>}
+      ) : <div className="card -mt-10 muted">Vairuotojas bus priskirtas prieš kelionę.</div>}
 
-      {isLive(t) && <LiveMap src={`/api/vieta/${t.id}`} />}
+      {live && <div id="zemelapis" className="scroll-mt-4"><LiveMap src={`/api/vieta/${t.id}`} /></div>}
+      <a href={live ? "#zemelapis" : mapsLink(t.from_address, t.to_address)} {...(live ? {} : { target: "_blank", rel: "noopener" })} className="btn btn-lg rounded-full shadow-sm">Stebėti maršrutą ➤</a>
 
-      <section className="card" aria-label="Kelionės eiga">
+      <section className="card" aria-label="Kelionės informacija">
         <div className="flex items-center justify-between gap-2"><b className="text-lg">{t.child.first_name}</b><StatusPill s={t.status} /></div>
-        <TripSteps t={t} />
+        <span className="text-sm muted">{t.from_label} → {t.to_label} · paėmimas {fmtTime(t.pickup_at)}</span>
         {t.status_note && <p className="rounded-xl bg-[var(--surface-2)] p-3 text-sm font-semibold">{t.status_note}</p>}
         <div className="flex justify-between border-t border-[var(--line)] pt-3 text-sm"><span className="muted">Kaina</span><b className="num">{eur(t.price_eur)}</b></div>
-        <a href={mapsLink(t.from_address, t.to_address)} target="_blank" rel="noopener" className="btn">🗺️ Maršrutas žemėlapyje</a>
       </section>
-
 
       {t.child.passenger_type === "child" && t.status === "scheduled" && (
         <section className="card bg-[var(--accent-soft)]">

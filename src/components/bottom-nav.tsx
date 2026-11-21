@@ -10,7 +10,7 @@ const ICON: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
 };
 
-// Klientų apatinė navigacija: Pagrindinis, Grafikas, Abonementas, Profilis (pranešimai – varpelis viršuje)
+// Klientų apatinė navigacija: Pagrindinis, Kelionės, Pranešimai, Profilis
 export function BottomNav({ items }: { items: { href: string; label: string; icon: string; match?: string[] }[] }) {
   const path = usePathname();
   // Tiksliausias atitikmuo laimi: „Profilis“ (/tevai/) apima visus kitus /tevai/… puslapius

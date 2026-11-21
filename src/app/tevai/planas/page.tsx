@@ -23,9 +23,9 @@ export default async function Page() {
   const typical = standardTripValue(s, 22, 8, "child");
   return (
     <>
-      <div className="flex items-center gap-3">
-        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm">←</Link>
-        <h1 className="text-2xl font-bold">Pasirinkite planą</h1>
+      <div className="grid grid-cols-[40px_1fr_40px] items-center">
+        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center text-2xl">‹</Link>
+        <h1 className="text-center text-xl font-bold">Abonementų planai</h1>
       </div>
       {st?.plan_request && <p className="rounded-xl bg-[var(--warn-bg)] p-3 text-sm font-semibold">Pasirinkote „{PLAN_NAMES[st.plan_request as PlanId]}“. Planas įsigalios, kai jį patvirtinsime.</p>}
       {mv.value > 0 && <p className="text-sm muted">Pagal jūsų grafiką kelionių vertė apie {eur(mv.value)} per mėnesį.</p>}
@@ -39,7 +39,7 @@ export default async function Page() {
                   {p.id === "family" && <span className="rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-bold text-[var(--accent-fg)]">Populiariausias</span>}
                   {p.id === rec && p.id !== "family" && <span className="pill p-ok">Jums tinka</span>}
                   {p.id === st?.plan_id && <span className="pill p-info">Dabartinis</span>}</div>
-                <input type="radio" name="plan_id" value={p.id} defaultChecked={p.id === chosen} className="mt-1 h-5 w-5 accent-[var(--accent)]" />
+                <input type="radio" name="plan_id" value={p.id} defaultChecked={p.id === chosen} className="mt-1 h-5 w-5 accent-[var(--navy)]" />
               </div>
               <span className="text-sm muted">Apie {trips} kelionių / mėn. · {FOR[p.id]}</span>
               <span className="mt-1"><b className="num text-2xl">{eur(p.price)}</b> <span className="font-semibold">/ mėn.</span></span>
@@ -49,7 +49,7 @@ export default async function Page() {
         })}
         <ul className="grid gap-2 py-1 text-sm">{INCLUDED.map((x) => <li key={x} className="flex items-center gap-2"><span aria-hidden="true" className="grid h-5 w-5 place-items-center rounded-full bg-[var(--ok)] text-[11px] font-bold text-white">✓</span>{x}</li>)}</ul>
         <p className="text-xs muted">Kelionių skaičius apytikslis, skaičiuojant 8 km kelionę. Viršijus kreditą, papildomos kelionės skaičiuojamos įprasta kaina.</p>
-        <button className="btn btn-primary btn-lg">Tęsti</button>
+        <button className="btn btn-primary btn-lg">Pasirinkti</button>
       </form>
     </>
   );

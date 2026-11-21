@@ -2,39 +2,47 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { signOut } from "@/app/actions";
 import { initials } from "@/lib/client-view";
+import { planState } from "@/lib/client-plan";
+import { PLAN_NAMES, type PlanId } from "@/lib/settings";
 import { Avatar } from "@/components/client-ui";
 
-const MENU: [string, string, string][] = [
-  ["/tevai/abonementas", "🎫", "Mano abonementas ir planas"],
-  ["/tevai/mokejimai", "💳", "Mokėjimai ir sąskaitos"],
-  ["/tevai/vaikai", "👨‍👩‍👧", "Šeimos nariai ir adresai"],
-  ["/tevai/istorija", "🕘", "Kelionių istorija"],
-  ["/tevai/pranesimai", "🔔", "Pranešimai"],
-  ["/tevai/sutartys", "📄", "Sutartys"],
-  ["/tevai/susipazinti", "🤝", "Susipažinti su vairuotoju"],
-  ["/tevai/pradzia", "ℹ️", "Apie Ridu"],
-  ["/tevai/salygos", "📋", "Sąlygos ir privatumas"],
-  ["/paskyra", "⚙️", "Paskyra ir pranešimų nustatymai"],
-];
-
+// Profilis kaip makete: nuotrauka ir vardas, meniu su piktogramomis, „Atsijungti“
 export default async function Page() {
   const me = await requireProfile();
+  const st = await planState(me.id);
+  const plan = st?.plan_id ? `${PLAN_NAMES[st.plan_id as PlanId]} planas` : "Abonementai ir planai";
+  const MENU: [string, string, string, string?][] = [
+    ["/tevai/abonementas", "🎫", "Mano abonementas", plan],
+    ["/tevai/mokejimai", "💳", "Mokėjimo būdai"],
+    ["/tevai/vaikai", "👨‍👩‍👧", "Šeimos nariai"],
+    ["/tevai/istorija", "🕘", "Kelionių istorija"],
+    ["/paskyra", "🔔", "Pranešimų nustatymai"],
+    ["/tevai/saugumas", "🛡️", "Saugumo nustatymai"],
+    ["/tevai/sutartys", "📄", "Sutartys"],
+    ["/privatumas#pagalba", "❓", "Pagalba ir palaikymas"],
+    ["/tevai/pradzia", "ℹ️", "Apie programėlę"],
+  ];
   return (
     <>
-      <h1 className="text-center text-xl font-bold">Profilis</h1>
-      <section className="card grid-cols-[auto_1fr] items-center gap-4">
+      <div className="grid grid-cols-[40px_1fr_40px] items-center">
+        <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center text-2xl">‹</Link>
+        <h1 className="text-center text-xl font-bold">Profilis</h1>
+        <Link href="/paskyra" aria-label="Nustatymai" className="grid h-10 w-10 place-items-center text-xl">⚙️</Link>
+      </div>
+      <section className="flex items-center gap-4 px-1">
         <Avatar text={initials(me.full_name || me.email || "?")} size={68} />
         <div className="grid min-w-0"><b className="truncate text-xl">{me.full_name || "Jūsų profilis"}</b><span className="truncate text-sm muted">{me.email}</span></div>
       </section>
-      <nav className="card gap-0 p-2" aria-label="Profilio meniu">
-        {MENU.map(([href, icon, label]) => (
+      <nav className="card gap-0 p-1" aria-label="Profilio meniu">
+        {MENU.map(([href, icon, label, sub]) => (
           <Link key={href} href={href} className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-[var(--surface-2)]">
-            <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-[var(--brand-soft)]">{icon}</span>
-            <span className="flex-1 font-semibold">{label}</span><span aria-hidden="true" className="muted">›</span>
+            <span aria-hidden="true" className="grid h-8 w-8 place-items-center text-lg">{icon}</span>
+            <span className="grid flex-1"><span className="font-semibold">{label}</span>{sub && <span className="text-xs muted">{sub}</span>}</span>
+            <span aria-hidden="true" className="muted">›</span>
           </Link>
         ))}
       </nav>
-      <form action={signOut}><button className="btn btn-bad btn-lg w-full">Atsijungti</button></form>
+      <form action={signOut}><button className="btn btn-lg w-full rounded-full border-0 bg-[var(--surface-2)]">Atsijungti</button></form>
     </>
   );
 }
