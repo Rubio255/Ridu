@@ -538,8 +538,15 @@ export async function requestVisit(fd: FormData): Promise<{ ok: boolean; error?:
   const who = str("who"), how = str("how"), date = str("date"), time = str("time");
   if (!name || (!me && !/^\+?[\d\s()-]{7,}$/.test(phone))) return { ok: false, error: "Įrašykite vardą ir telefono numerį." };
   if (!(who in VISIT_WHO) || !(how in VISIT_HOW) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= vilniusToday() || !/^\d{2}:\d{2}$/.test(time)) return { ok: false, error: "Patikrinkite pokalbio būdą, datą ir laiką." };
-  const driverId = str("driver_id") || null;
-  const { error } = await supabaseAdmin().from("visit_requests").insert({ profile_id: me?.id ?? null, name, phone: phone || null, who, how, org: str("org", 120) || null, wanted_date: date, wanted_time: time, driver_id: driverId, note: str("note", 500) || null });
+  const driverId = /^[0-9a-f-]{36}$/i.test(str("driver_id")) ? str("driver_id") : null;
+  // Apsauga nuo šlamšto: tas pats telefonas ne daugiau 3 kartų per parą, neprisijungusių ne daugiau 20 per valandą
+  const db = supabaseAdmin(), since = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
+  const [{ count: samePhone }, { count: anon }] = await Promise.all([
+    phone ? db.from("visit_requests").select("id", { count: "exact", head: true }).eq("phone", phone).gte("created_at", since(24)) : Promise.resolve({ count: 0 }),
+    me ? Promise.resolve({ count: 0 }) : db.from("visit_requests").select("id", { count: "exact", head: true }).is("profile_id", null).gte("created_at", since(1)),
+  ]);
+  if ((samePhone ?? 0) >= 3 || (anon ?? 0) >= 20) return { ok: false, error: "Užklausą jau gavome. Susisieksime su jumis artimiausiu metu." };
+  const { error } = await db.from("visit_requests").insert({ profile_id: me?.id ?? null, name, phone: phone || null, who, how, org: str("org", 120) || null, wanted_date: date, wanted_time: time, driver_id: driverId, note: str("note", 500) || null });
   if (error) return { ok: false, error: "Nepavyko išsiųsti. Bandykite dar kartą arba paskambinkite mums." };
   await notifyOwner("Nauja pokalbio užklausa", `${name}, ${date} ${time}: ${VISIT_HOW[how as keyof typeof VISIT_HOW]}.`, "/savininkas/pokalbiai");
   if (me) revalidatePath("/tevai/pradzia");

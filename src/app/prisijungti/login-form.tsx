@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import { Captcha, useCaptcha } from "./captcha";
 
 // Prisijungimas 6 skaitmenų kodu iš laiško. Kodas veikia ir programėlėje (nuoroda iš laiško
 // atsidarytų naršyklėje, ne programėlėje). Nuoroda laiške taip pat lieka veikti.
@@ -10,13 +11,15 @@ export function LoginForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "checking" | "password">("idle");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const captcha = useCaptcha();
   const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setState("sending");
     // shouldCreateUser: false – prisijungti gali tik pakviesti naudotojai
-    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${location.origin}/auth/callback` } });
+    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${location.origin}/auth/callback`, captchaToken: captcha.token } });
+    captcha.reset();
     if (error) { setError("Šio el. pašto neradome. Patikrinkite adresą arba susisiekite su mumis."); setState("idle"); }
     else setState("sent");
   }
@@ -33,7 +36,8 @@ export function LoginForm() {
   async function withPassword(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const { error } = await sb().auth.signInWithPassword({ email, password });
+    const { error } = await sb().auth.signInWithPassword({ email, password, options: { captchaToken: captcha.token } });
+    captcha.reset();
     if (error) { setError("Neteisingas el. paštas arba slaptažodis."); return; }
     location.href = "/";
   }
@@ -46,8 +50,9 @@ export function LoginForm() {
       <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">Slaptažodis
         <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="input" autoComplete="current-password" />
       </label>
+      <Captcha c={captcha} />
       {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
-      <button className="btn btn-primary">Prisijungti</button>
+      <button className="btn btn-primary" disabled={!captcha.ready}>Prisijungti</button>
       <button type="button" className="btn" onClick={() => { setError(""); setState("idle"); }}>Prisijungti kodu iš laiško</button>
     </form>
   );
@@ -69,8 +74,9 @@ export function LoginForm() {
       <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">El. paštas
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" autoComplete="email" />
       </label>
+      <Captcha c={captcha} />
       {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
-      <button className="btn btn-primary" disabled={state === "sending"}>{state === "sending" ? "Siunčiama…" : "Gauti prisijungimo kodą"}</button>
+      <button className="btn btn-primary" disabled={state === "sending" || !captcha.ready}>{state === "sending" ? "Siunčiama…" : "Gauti prisijungimo kodą"}</button>
       <button type="button" className="text-sm underline text-[var(--muted)]" onClick={() => { setError(""); setState("password"); }}>Turiu slaptažodį</button>
     </form>
   );

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
-import { currentProfile } from "@/lib/auth";
+import { currentAuthState } from "@/lib/auth";
 import { Start } from "@/components/welcome";
 
 // Viešas pirmas puslapis klientams, kurie apie Ridu sužinojo įstaigoje. Prisijungę nukreipiami į savo aplikaciją.
 export default async function Home() {
-  const p = await currentProfile();
+  const s = await currentAuthState();
+  if (s && s.mfa !== "ok") redirect("/prisijungti/patvirtinti");
+  const p = s?.profile;
   if (p) redirect(p.role === "owner" ? "/savininkas" : p.role === "driver" ? "/vairuotojas" : "/tevai");
   return (
     <>
