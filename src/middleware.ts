@@ -14,7 +14,9 @@ export async function middleware(req: NextRequest) {
       },
     },
   });
-  const { data: { user } } = await sb.auth.getUser();
+  // getClaims atnaujina sesiją ir patikrina raktą vietoje (be kreipimosi į Auth serverį, kai raktai asimetriniai)
+  const { data } = await sb.auth.getClaims();
+  const user = data?.claims?.sub;
   const p = req.nextUrl.pathname;
   const open = p === "/" || p === "/sw.js" || p.startsWith("/prisijungti") || p.startsWith("/auth") || p.startsWith("/api/cron") || p === "/privatumas";
   if (!user && !open) return NextResponse.redirect(new URL("/prisijungti", req.url));

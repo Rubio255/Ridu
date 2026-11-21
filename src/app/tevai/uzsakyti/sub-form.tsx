@@ -45,6 +45,9 @@ export function SubForm({ kids, places, hours }: {
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>
+        <label className="grid gap-1 text-sm font-semibold muted">Kiek keleivių važiuos kartu
+          <select className="input text-base" value={f.extra_kids} onChange={(e) => set({ extra_kids: Number(e.target.value) })}>
+            {[1, 2, 3, 4].map((n) => <option key={n} value={n - 1}>{n === 1 ? "1 keleivis" : `${n} keleiviai`}</option>)}</select></label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold muted">Iš kur paimti
             <select className="input" value={f.from_place_id} onChange={(e) => set({ from_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
@@ -66,8 +69,6 @@ export function SubForm({ kids, places, hours }: {
             <input type="time" className="input" min={hours.pmStart} max={hours.pmEnd} value={f.pickup_time} onChange={(e) => set({ pickup_time: e.target.value })} /></label>}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-semibold muted">Brolis ar sesuo kartu
-            <input type="number" min={0} max={3} className="input" value={f.extra_kids} onChange={(e) => set({ extra_kids: Number(e.target.value) || 0 })} /></label>
           <label className="grid gap-1 text-sm font-semibold muted">Įsipareigojimas
             <select className="input" value={f.months} onChange={(e) => set({ months: Number(e.target.value) })}><option value={1}>1 mėnuo</option><option value={3}>3 mėnesiai</option><option value={9}>9 mėnesiai</option></select></label>
         </div>

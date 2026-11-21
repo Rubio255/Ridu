@@ -9,9 +9,7 @@ import { TripSteps } from "@/components/trip-steps";
 import { AutoRefresh } from "@/components/auto-refresh";
 
 export default async function Page() {
-  const me = await requireProfile();
-  const sb = await supabaseServer();
-  const s = await loadSettings();
+  const [me, s, sb] = await Promise.all([requireProfile(), loadSettings(), supabaseServer()]);
   const now = new Date();
   const until = new Date(Date.now() + 14 * 864e5);
   const [{ data: trips }, { data: subs }, { data: kids }] = await Promise.all([
@@ -23,17 +21,19 @@ export default async function Page() {
   const canEdit = (childId: string) => (kids ?? []).some((k) => k.child_id === childId && k.relation !== "artimasis");
   // Priskirtas vairuotojas ir automobilis (tik vardas, automobilis ir valst. nr.)
   const dids = [...new Set((trips ?? []).map((t) => t.driver_id).filter(Boolean))];
-  const { data: drv } = dids.length ? await supabaseAdmin().from("drivers").select("profile_id, car, plate, profile:profiles(full_name)").in("profile_id", dids) : { data: [] };
-  const driverLine = (id: string | null) => { const d = (drv ?? []).find((x) => x.profile_id === id); if (!d) return null; const p = d.profile as unknown as { full_name: string };
-    return `Vairuotojas ${p.full_name}${d.car ? ` · ${d.car}` : ""}${d.plate ? ` · ${d.plate}` : ""}`; };
-  // Svarbiausia kelionė viršuje: vykstanti, kita artimiausia arba ką tik baigta
   const live = (trips ?? []).filter((t) => t.status !== "cancelled");
+  // Svarbiausia kelionė viršuje: vykstanti, kita artimiausia arba ką tik baigta
   const focus = live.find((t) => t.status === "picked_up")
     ?? live.find((t) => t.status === "scheduled" && new Date(t.pickup_at).getTime() > now.getTime() - 36e5)
     ?? [...live].reverse().find((t) => t.status === "delivered" && dayKey(t.pickup_at) === dayKey(now.toISOString()));
+  // Vairuotojai ir tie, kas gauna pranešimus (abu tėvai, artimieji), įkeliami kartu
+  const [{ data: drv }, { data: watchers }] = await Promise.all([
+    dids.length ? supabaseAdmin().from("drivers").select("profile_id, car, plate, profile:profiles(full_name)").in("profile_id", dids) : Promise.resolve({ data: [] as { profile_id: string; car: string | null; plate: string | null; profile: unknown }[] }),
+    focus ? supabaseAdmin().from("child_guardians").select("profile:profiles(full_name)").eq("child_id", focus.child_id) : Promise.resolve({ data: [] as { profile: unknown }[] }),
+  ]);
+  const driverLine = (id: string | null) => { const d = (drv ?? []).find((x) => x.profile_id === id); if (!d) return null; const p = d.profile as unknown as { full_name: string };
+    return `Vairuotojas ${p.full_name}${d.car ? ` · ${d.car}` : ""}${d.plate ? ` · ${d.plate}` : ""}`; };
   const soon = focus && focus.status !== "delivered" && Math.abs(new Date(focus.pickup_at).getTime() - now.getTime()) < 3 * 36e5;
-  // Kas gauna pranešimus apie šią kelionę (abu tėvai, artimieji)
-  const { data: watchers } = focus ? await supabaseAdmin().from("child_guardians").select("profile:profiles(full_name)").eq("child_id", focus.child_id) : { data: [] };
   const watcherNames = (watchers ?? []).map((w) => (w.profile as unknown as { full_name: string } | null)?.full_name?.split(" ")[0]).filter(Boolean);
   const rest = (trips ?? []).filter((t) => t.id !== focus?.id && !(t.status !== "scheduled" && new Date(t.pickup_at) < now));
   const byDay = new Map<string, typeof trips>();
