@@ -35,10 +35,25 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
         <span className="rounded-full bg-[var(--soft-blue)] px-2.5 py-0.5 text-xs font-bold text-[var(--navy)]">Pagrindinis</span>
       </div>
       {(kids ?? []).filter((c) => !c.is_self).map((c) => (
-        <div key={c.id} className="card grid-cols-[auto_1fr] items-center gap-3 py-3">
-          <Avatar text={initials(c.first_name)} size={52} />
-          <div className="grid min-w-0"><b className="truncate text-lg">{c.first_name}</b>
-            <span className="truncate text-sm muted">{[c.birth_year ? `${new Date().getFullYear() - c.birth_year} m.` : null, c.passenger_type === "child" ? "Vaikas" : c.passenger_type === "senior" ? "Vyresnio amžiaus" : "Suaugęs", who(c.id).length > 1 ? `${who(c.id).length} gauna pranešimus` : null].filter(Boolean).join(" · ")}</span></div>
+        <div key={c.id} className="card gap-2 py-3">
+          <div className="grid grid-cols-[auto_1fr] items-center gap-3">
+            <Avatar text={initials(c.first_name)} size={52} />
+            <div className="grid min-w-0"><b className="truncate text-lg">{c.first_name}</b>
+              <span className="truncate text-sm muted">{[c.birth_year ? `${new Date().getFullYear() - c.birth_year} m.` : null, c.passenger_type === "child" ? "Vaikas" : c.passenger_type === "senior" ? "Vyresnio amžiaus" : "Suaugęs"].filter(Boolean).join(" · ")}</span></div>
+          </div>
+          {c.passenger_type !== "child" && <div className="text-sm muted">{c.dropoff === "handover" ? `Palydėti ir perduoti${c.handover_to ? `: ${c.handover_to}` : ""}` : "Išlipa pats"}</div>}
+          {c.notes && <div className="text-sm">{c.notes}</div>}
+          <div className="grid gap-1 border-t border-[var(--line)] pt-2 text-sm">
+            <span className="text-xs font-semibold muted">Pranešimus gauna</span>
+            {who(c.id).map((g) => (
+              <div key={g.profile_id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>{g.profile_id === me.id ? "Jūs" : g.p?.full_name || g.p?.email || "Artimasis"}{g.relation === "artimasis" ? <span className="muted"> · artimasis</span> : null}</span>
+                {g.relation === "artimasis" && g.profile_id !== me.id && mine(c.id) && (
+                  <form action={removeRelative}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="profile_id" value={g.profile_id} /><button className="btn text-xs">Pašalinti</button></form>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
       <a href="#prideti" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">+ Pridėti šeimos narį</a>
@@ -61,27 +76,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
         ))}
       </section>
     )}
-    <section id="artimieji" className="card scroll-mt-20">
-      <h2 className="text-lg font-bold">Kas gauna pranešimus</h2>
-      <p className="text-sm muted">Kai keleivis paimamas ir nuvežamas, pranešimą gauna visi čia išvardyti žmonės.</p>
+    {(adults.length > 0 || childKids.length > 0 || q.pridetas || q.klaida) && <section id="artimieji" className="card scroll-mt-20">
+      <h2 className="text-lg font-bold">Pranešimai artimiesiems</h2>
+      <p className="text-sm muted">Kai keleivis paimamas ir nuvežamas, pranešimą gauna visi prie jo kortelės išvardyti žmonės.</p>
       {q.pridetas && <div className="pill p-ok justify-self-start normal-case">Pridėta. Artimajam išsiųstas kvietimas el. paštu.</div>}
       {q.klaida && <div className="pill p-bad justify-self-start normal-case">{q.klaida}</div>}
-      {(kids ?? []).map((c) => (
-        <div key={c.id} className="grid gap-2 border-t border-[var(--line)] pt-3 first-of-type:border-0">
-          <b>{c.first_name}</b>
-          <ul className="grid gap-1">
-            {who(c.id).map((g) => (
-              <li key={g.profile_id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span>{g.profile_id === me.id ? "Jūs" : g.p?.full_name || g.p?.email || "Artimasis"}{g.relation === "artimasis" ? <span className="muted"> · artimasis</span> : null}</span>
-                {g.relation === "artimasis" && g.profile_id !== me.id && mine(c.id) && (
-                  <form action={removeRelative}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="profile_id" value={g.profile_id} /><button className="btn text-xs">Pašalinti</button></form>
-                )}
-              </li>
-            ))}
-          </ul>
-          {c.passenger_type === "child" && <p className="text-xs muted">Kitą vaiko tėvą ar globėją prideda MB pagal sutartį. Parašykite mums, jei reikia.</p>}
-        </div>
-      ))}
+      {childKids.length > 0 && <p className="text-xs muted">Kitą vaiko tėvą ar globėją prideda MB pagal sutartį. Parašykite mums, jei reikia.</p>}
       {adults.length > 0 && (
         <form action={addRelative} className="grid gap-3 border-t border-[var(--line)] pt-3">
           <h3 className="font-bold">Pridėti artimąjį</h3>
@@ -94,17 +94,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
           <button className="btn btn-primary justify-self-start">Pridėti ir pakviesti</button>
         </form>
       )}
-    </section>
+    </section>}
     <div className="grid gap-4 md:grid-cols-2">
       <section className="card">
-        <h2 className="font-bold">Keleiviai</h2>
-        {(kids ?? []).map((c) => (
-          <div key={c.id} className="grid gap-1 border-t border-[var(--line)] pt-3 first:border-0 first:pt-0">
-            <div className="flex justify-between gap-2"><b>{c.first_name}{c.birth_year ? `, ${new Date().getFullYear() - c.birth_year} m.` : ""}</b><span className="text-xs muted">{c.is_self ? "Aš pats" : "Keleivis"}</span></div>
-            {c.passenger_type !== "child" && !c.is_self && <div className="text-sm muted">{c.dropoff === "handover" ? `Palydėti ir perduoti${c.handover_to ? `: ${c.handover_to}` : ""}` : "Išlipa pats"}</div>}
-            {c.notes && <div className="text-sm">{c.notes}</div>}
-          </div>
-        ))}
+        <h2 className="font-bold">Pridėti šeimos narį</h2>
         <p className="text-sm muted">Galite užsakyti sau, savo vaikui ar kitam žmogui, pavyzdžiui, tėvams. Vaikus ir jų globėjus įrašo MB pagal sutartį. {NO_SPECIAL}</p>
         <div id="prideti" className="scroll-mt-6"><PassengerForm myName={me.full_name ?? ""} /></div>
       </section>

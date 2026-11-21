@@ -16,6 +16,7 @@ export function Start() {
         <img src="/promo.jpg" alt="Mama su dukra prie automobilio prieš kelionę" width={900} height={786} fetchPriority="high" className="h-auto w-full" />
         <div className="absolute inset-x-0 bottom-0 grid gap-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-6 pb-8 pt-24">
           <Link href="/susipazinti" className="btn btn-primary btn-lg rounded-full text-lg">Pradėti</Link>
+          <Link href="/skaiciuokle" className="btn btn-lg rounded-full" style={{ background: "rgb(255 255 255 / .14)", borderColor: "rgb(255 255 255 / .35)", color: "#fff" }}>Ar man apsimoka?</Link>
           <Link href="/prisijungti" className="justify-self-center font-semibold text-white underline">Prisijungti</Link>
         </div>
       </div>
