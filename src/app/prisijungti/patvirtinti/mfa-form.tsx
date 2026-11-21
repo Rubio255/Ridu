@@ -26,9 +26,13 @@ export function MfaForm({ mode }: { mode: "enroll" | "verify" }) {
         if (f) setFactorId(f.id); else setError("Patvirtinimo būdo neradome. Susisiekite su mumis.");
         return;
       }
-      // Nebaigti ankstesni bandymai pašalinami, kad būtų galima pradėti iš naujo
-      for (const f of data.all.filter((x) => x.status === "unverified")) await auth.mfa.unenroll({ factorId: f.id });
-      const r = await auth.mfa.enroll({ factorType: "totp", friendlyName: `Ridu ${new Date().toISOString().slice(0, 16)}`, issuer: "Ridu" });
+      // Kitų įrenginių nebaigtų bandymų netriname (kitaip ten įvestas kodas nebetiktų). Tik jei jų per daug, išvalome senus.
+      const enroll = () => auth.mfa.enroll({ factorType: "totp", friendlyName: `Ridu ${new Date().toISOString().slice(0, 19)} ${Math.random().toString(36).slice(2, 6)}`, issuer: "Ridu" });
+      let r = await enroll();
+      if (r.error) {
+        for (const f of data.all.filter((x) => x.status === "unverified")) await auth.mfa.unenroll({ factorId: f.id });
+        r = await enroll();
+      }
       if (r.error || !r.data) { setError("Nepavyko pradėti. Atnaujinkite puslapį."); return; }
       setFactorId(r.data.id); setQr(r.data.totp.qr_code); setSecret(r.data.totp.secret);
     })();
@@ -38,7 +42,11 @@ export function MfaForm({ mode }: { mode: "enroll" | "verify" }) {
     e.preventDefault();
     setError(""); setBusy(true);
     const { error } = await sb().auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
-    if (error) { setBusy(false); setCode(""); setError("Kodas neteisingas arba nebegalioja. Įveskite naują kodą iš programėlės."); return; }
+    if (error) {
+      setBusy(false); setCode("");
+      setError(error.code === "mfa_factor_not_found" ? "Šis QR kodas nebegalioja. Atnaujinkite puslapį ir nuskenuokite naują." : "Kodas neteisingas arba nebegalioja. Įveskite naują kodą iš programėlės.");
+      return;
+    }
     location.href = "/";
   }
 
