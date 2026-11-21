@@ -8,9 +8,8 @@ const TABS: [string, string][] = [["/tevai/pradzia", "Pradžia"], ["/tevai", "Ma
 
 export default async function L({ children }: { children: React.ReactNode }) {
   const p = await requireProfile();
-  const consents = p.role === "owner" ? null : await loadConsents(p.id);
   // Pirmą kartą prisijungus (ar pasikeitus sąlygoms) klientas turi sutikti su privalomais punktais
-  const kids = consents ? await clientHasKids(p.id) : true;
+  const [consents, kids] = p.role === "owner" ? [null, true] : await Promise.all([loadConsents(p.id), clientHasKids(p.id)]);
   if (consents && !hasRequired(consents, kids)) {
     return (
       <Shell title="Ridu" name={p.full_name || p.email || ""} tabs={[]}>

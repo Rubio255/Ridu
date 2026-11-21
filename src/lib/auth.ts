@@ -1,16 +1,20 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "./supabase/server";
 import { withDefaults, type Settings } from "./settings";
 
 export type Profile = { id: string; full_name: string; email: string | null; phone: string | null; role: "owner" | "client" | "driver"; contract_no: string | null; active: boolean };
 
-export async function currentProfile(): Promise<Profile | null> {
+// Vienai užklausai profilis įkeliamas tik kartą (maketas ir puslapis jį dalijasi).
+// getClaims tikrina prieigos raktą vietoje, be papildomo kreipimosi į Supabase Auth, kai tai įmanoma.
+export const currentProfile = cache(async (): Promise<Profile | null> => {
   const sb = await supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return null;
-  const { data } = await sb.from("profiles").select("*").eq("id", user.id).single();
+  const { data: claims } = await sb.auth.getClaims();
+  const uid = claims?.claims?.sub;
+  if (!uid) return null;
+  const { data } = await sb.from("profiles").select("*").eq("id", uid).single();
   return (data as Profile) ?? null;
-}
+});
 
 export async function requireProfile(): Promise<Profile> {
   const p = await currentProfile();
@@ -39,7 +43,7 @@ export async function requireStaff(): Promise<Profile> {
 }
 
 // Nustatymai skaitomi serveriu (klientams jie neatiduodami)
-export async function loadSettings(): Promise<Settings> {
+export const loadSettings = cache(async (): Promise<Settings> => {
   const { data } = await supabaseAdmin().from("settings").select("data").eq("id", 1).single();
   return withDefaults(data?.data);
-}
+});
