@@ -495,3 +495,52 @@ export async function saveDriverProfile(fd: FormData) {
   await supabaseAdmin().from("drivers").update({ bio: String(fd.get("bio") ?? "").trim().slice(0, 400) || null, since_year: y && y >= 1950 && y <= new Date().getFullYear() ? y : null }).eq("profile_id", me.id);
   revalidatePath("/vairuotojas/duomenys");
 }
+
+/* ---------- Paskyros ištrynimas (Apple reikalavimas: naudotojas gali ištrinti paskyrą pats) ---------- */
+// Asmens duomenys ištrinami arba nuasmeninami. Kelionių ir sąskaitų įrašai lieka be asmens duomenų,
+// nes jų reikia buhalterinei apskaitai. Bendro vaiko kito globėjo abonementai nepaliečiami.
+export async function deleteAccount(fd: FormData) {
+  const me = await requireProfile();
+  if (me.role === "owner") redirect("/paskyra");
+  if (fd.get("confirm") !== "on") redirect("/paskyra?klaida=1");
+  const db = supabaseAdmin();
+  const now = new Date().toISOString();
+  const who = me.full_name || me.email || "Naudotojas";
+
+  if (me.role === "driver") {
+    await db.from("drivers").update({ active: false, bio: null, plate: null }).eq("profile_id", me.id);
+    await db.from("trips").update({ driver_id: null, status_note: "Vairuotojas ištrynė paskyrą, reikia perskirti" })
+      .eq("driver_id", me.id).eq("status", "scheduled").gt("pickup_at", now);
+    await db.from("subscriptions").update({ driver_id: null }).eq("driver_id", me.id).in("status", ["active", "pending"]);
+    await db.from("trip_offers").update({ status: "withdrawn" }).eq("driver_id", me.id).eq("status", "pending");
+    await db.from("driver_documents").delete().eq("driver_id", me.id);
+    await db.from("driver_absences").delete().eq("driver_id", me.id);
+  } else {
+    const { data: subs } = await db.from("subscriptions").select("id").eq("payer_id", me.id).in("status", ["active", "pending"]);
+    const ids = (subs ?? []).map((s) => s.id);
+    if (ids.length) {
+      await db.from("subscriptions").update({ status: "ended", ends_on: vilniusToday() }).in("id", ids);
+      await db.from("trips").update({ status: "cancelled" }).in("subscription_id", ids).eq("status", "scheduled").gt("pickup_at", now);
+    }
+    await db.from("trips").update({ status: "cancelled" }).eq("payer_id", me.id).eq("status", "scheduled").gt("pickup_at", now);
+    await db.from("trips").update({ from_address: "—", to_address: "—" }).eq("payer_id", me.id);
+    await db.from("places").update({ label: "Ištrinta", address: "—", lat: null, lng: null }).eq("profile_id", me.id);
+    // Keleiviai, kurių niekas kitas negloboja, nuasmeninami
+    const { data: mine } = await db.from("child_guardians").select("child_id").eq("profile_id", me.id);
+    await db.from("child_guardians").delete().eq("profile_id", me.id);
+    for (const { child_id } of mine ?? []) {
+      const { count } = await db.from("child_guardians").select("child_id", { count: "exact", head: true }).eq("child_id", child_id);
+      if (!count) await db.from("children").update({ first_name: "Ištrinta", notes: null, birth_year: null, handover_to: null }).eq("id", child_id);
+    }
+    await db.from("visit_requests").update({ name: "Ištrinta", phone: null, note: null, profile_id: null }).eq("profile_id", me.id);
+  }
+
+  await db.from("push_subscriptions").delete().eq("profile_id", me.id);
+  await db.from("profiles").update({ full_name: "Ištrinta paskyra", phone: null, email: null, active: false }).eq("id", me.id);
+  // Prisijungimas panaikinamas: el. paštas pakeičiamas ir naudotojas užblokuojamas
+  await db.auth.admin.updateUserById(me.id, { email: `istrinta-${me.id}@ridu.invalid`, ban_duration: "876000h", user_metadata: {} });
+  await notifyOwner("Paskyra ištrinta", `${who} (${me.role === "driver" ? "vairuotojas" : "klientas"}) ištrynė paskyrą.${me.role === "driver" ? " Perskirkite jo keliones." : ""}`, me.role === "driver" ? "/savininkas" : "/savininkas/klientai");
+  const sb = await supabaseServer();
+  await sb.auth.signOut();
+  redirect("/?istrinta=1");
+}

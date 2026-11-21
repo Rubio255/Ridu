@@ -11,7 +11,10 @@ export function Shell({ title, name, tabs, children }: { title: string; name: st
             <Logo />
             <div><div className="font-bold leading-tight">{title}</div><div className="text-xs opacity-80">{name}</div></div>
           </div>
-          <form action={signOut}><button className="rounded-md border border-current px-2 py-1 text-xs">Atsijungti</button></form>
+          <div className="flex items-center gap-2">
+            <Link href="/paskyra" className="rounded-md border border-current px-2 py-1 text-xs">Paskyra</Link>
+            <form action={signOut}><button className="rounded-md border border-current px-2 py-1 text-xs">Atsijungti</button></form>
+          </div>
         </div>
       </header>
       <nav className="border-b border-[var(--line)] bg-[var(--surface)]">
