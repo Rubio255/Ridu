@@ -18,9 +18,12 @@ workflows:
       node: 22
       xcode: latest
     triggering:
-      events: [tag]
-      tag_patterns:
-        - pattern: "ios-*"
+      # Naujas build paleidžiamas įkėlus kodą į šaką ios-release
+      events: [push]
+      branch_patterns:
+        - pattern: ios-release
+          include: true
+      cancel_previous_builds: true
     scripts:
       - name: Priklausomybės
         script: npm ci
