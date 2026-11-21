@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   appName: "Ridu",
   webDir: "mobile/www", // atsarginis puslapis, kai nėra interneto
   server: { url: RIDU_URL, cleartext: false, errorPath: "offline.html" },
-  ios: { contentInset: "automatic", scheme: "Ridu", limitsNavigationsToAppBoundDomains: false },
+  ios: { contentInset: "never", scheme: "Ridu", limitsNavigationsToAppBoundDomains: false },
   plugins: {
     PushNotifications: { presentationOptions: ["badge", "sound", "alert"] },
     SplashScreen: { launchShowDuration: 800, backgroundColor: "#0f4c45", showSpinner: false },

@@ -5,7 +5,7 @@ import { signOut } from "@/app/actions";
 export function Shell({ title, name, tabs, children }: { title: string; name: string; tabs: [string, string][]; children: React.ReactNode }) {
   return (
     <>
-      <header className="sticky top-0 z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
+      <header className="sticky-safe sticky z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <Logo />
