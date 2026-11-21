@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import { requireProfile } from "@/lib/auth";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { addPlace, saveCodeWord, addRelative, removeRelative } from "@/app/actions";
@@ -58,7 +59,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
       ))}
       <a href="#prideti" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">+ Pridėti šeimos narį</a>
       <div className="card grid-cols-[auto_1fr] items-center gap-3 bg-[var(--ok-bg)]">
-        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--ok)] text-xl text-white">✓</span>
+        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--ok)] text-white"><Ico n="shield" size={22} /></span>
         <div className="grid"><b>Saugumas pirmoje vietoje</b><span className="text-sm">Vairuotojai patikrinti, o kelionę matote gyvai.</span></div>
       </div>
     </div>

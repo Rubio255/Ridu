@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
 import { requestPlan } from "@/app/actions";
@@ -24,7 +25,7 @@ export default async function Page() {
   return (
     <>
       <div className="grid grid-cols-[40px_1fr_40px] items-center">
-        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center text-2xl">‹</Link>
+        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center text-2xl text-[var(--navy)]"><Ico n="back" /></Link>
         <h1 className="text-center text-xl font-bold">Abonementų planai</h1>
       </div>
       {st?.plan_request && <p className="rounded-xl bg-[var(--warn-bg)] p-3 text-sm font-semibold">Pasirinkote „{PLAN_NAMES[st.plan_request as PlanId]}“. Planas įsigalios, kai jį patvirtinsime.</p>}
@@ -47,7 +48,7 @@ export default async function Page() {
             </label>
           );
         })}
-        <ul className="grid gap-2 py-1 text-sm">{INCLUDED.map((x) => <li key={x} className="flex items-center gap-2"><span aria-hidden="true" className="grid h-5 w-5 place-items-center rounded-full bg-[var(--ok)] text-[11px] font-bold text-white">✓</span>{x}</li>)}</ul>
+        <ul className="grid gap-2 py-1 text-sm">{INCLUDED.map((x) => <li key={x} className="flex items-center gap-2"><span aria-hidden="true" className="grid h-5 w-5 place-items-center rounded-full bg-[var(--ok)] text-white"><Ico n="check" size={12} stroke={3.2} /></span>{x}</li>)}</ul>
         <p className="text-xs muted">Kelionių skaičius apytikslis, skaičiuojant 8 km kelionę. Viršijus kreditą, papildomos kelionės skaičiuojamos įprasta kaina.</p>
         <button className="btn btn-primary btn-lg">Pasirinkti</button>
       </form>

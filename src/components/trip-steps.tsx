@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import { fmtTime } from "@/lib/time";
 
 type T = { status: string; pickup_at: string; picked_up_at?: string | null; delivered_at?: string | null; from_label: string; to_label: string };
@@ -17,7 +18,7 @@ export function TripSteps({ t }: { t: T }) {
         return (
           <li key={label} className="grid grid-cols-[28px_1fr] gap-3">
             <div className="grid justify-items-center">
-              <span aria-hidden="true" className={`mt-1 grid h-6 w-6 place-items-center rounded-full border-[3px] text-xs font-bold ${done ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--brand-fg)]" : now ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-fg)]" : "border-[var(--line)] bg-[var(--surface)]"}`}>{done ? "✓" : ""}</span>
+              <span aria-hidden="true" className={`mt-1 grid h-6 w-6 place-items-center rounded-full border-[3px] text-xs font-bold ${done ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--brand-fg)]" : now ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-fg)]" : "border-[var(--line)] bg-[var(--surface)]"}`}>{done ? <Ico n="check" size={14} stroke={3} /> : null}</span>
               {i < 2 && <span aria-hidden="true" className={`w-[3px] flex-1 ${i < at ? "bg-[var(--brand)]" : "bg-[var(--line)]"}`} style={{ minHeight: 18 }} />}
             </div>
             <div className="grid pb-3">

@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { PublicPage } from "@/components/info";
@@ -27,7 +28,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
         <div className="flex items-center justify-between gap-2"><b className="text-lg">{child}</b><StatusPill s={t.status} /></div>
         <span className="text-sm muted capitalize">{fmtDay(t.pickup_at)}</span>
         <TripSteps t={t} />
-        {d && <p className="text-sm">Vairuotojas <b>{firstName(d.name)}</b>{d.car ? `, ${d.car}` : ""}{d.plate ? ` (${d.plate})` : ""}{d.verified && <span className="block font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}</p>}
+        {d && <p className="text-sm">Vairuotojas <b>{firstName(d.name)}</b>{d.car ? `, ${d.car}` : ""}{d.plate ? ` (${d.plate})` : ""}{d.verified && <span className="flex items-center gap-1 font-semibold text-[var(--ok)]"><Ico n="shield" size={16} />Patikimas ir patikrintas vairuotojas</span>}</p>}
       </section>
       <p className="text-xs muted">Šia nuoroda pasidalijo keleivio artimasis. Ji galioja ribotą laiką.</p>
     </PublicPage>

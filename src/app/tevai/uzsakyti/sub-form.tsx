@@ -1,4 +1,5 @@
 "use client";
+import { Ico } from "@/components/ico";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { quoteAction, createSubscription } from "@/app/actions";
@@ -46,7 +47,7 @@ export function SubForm({ kids, places, hours, planName }: {
           ? <iframe title={`Maršrutas: ${from.label} → ${to.label}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               src={`https://maps.google.com/maps?saddr=${encodeURIComponent(from.address)}&daddr=${encodeURIComponent(to.address)}&output=embed`} className="h-full w-full border-0" />
           : <iframe title="Žemėlapis" loading="lazy" src="https://maps.google.com/maps?q=Lietuva&z=7&output=embed" className="h-full w-full border-0" />}
-        <a href="/tevai" aria-label="Atgal" className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-[var(--surface)] text-lg shadow">←</a>
+        <a href="/tevai" aria-label="Atgal" className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-[var(--surface)] text-lg shadow text-[var(--navy)]"><Ico n="back" /></a>
       </div>
       <div className="card -mt-10 gap-3">
         <h1 className="sr-only">Nauja kelionė</h1>
@@ -57,7 +58,7 @@ export function SubForm({ kids, places, hours, planName }: {
           <label className="flex items-center gap-3 px-3 py-2"><span aria-hidden="true" className="h-3 w-3 flex-none rounded-full bg-[var(--accent)]" /><span className="sr-only">Kur nuvežti</span>
             <select className="w-full bg-transparent font-semibold outline-none" value={f.to_place_id} onChange={(e) => set({ to_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
         </div>
-        {planName && <div className="flex items-center gap-3 rounded-2xl bg-[var(--soft-blue)] p-3"><span aria-hidden="true" className="text-2xl">🚗</span><span className="grid flex-1"><b>{planName}</b><span className="text-xs muted">Kelionės apmokamos iš plano kredito</span></span><span className="text-xs font-semibold muted">įskaičiuota</span></div>}
+        {planName && <div className="flex items-center gap-3 rounded-2xl bg-[var(--soft-blue)] p-3"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-[var(--navy)]"><Ico n="car" size={20} /></span><span className="grid flex-1"><b>{planName}</b><span className="text-xs muted">Kelionės apmokamos iš plano kredito</span></span><span className="text-xs font-semibold muted">įskaičiuota</span></div>}
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>

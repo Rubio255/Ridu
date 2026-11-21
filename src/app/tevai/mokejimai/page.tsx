@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -28,7 +29,7 @@ export default async function Page() {
   return (
     <>
       <div className="grid grid-cols-[40px_1fr_40px] items-center">
-        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm">←</Link>
+        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm text-[var(--navy)]"><Ico n="back" /></Link>
         <h1 className="text-center text-lg font-bold">Mokėjimai</h1>
       </div>
       <section className="grid gap-1 rounded-[20px] bg-[#1d2742] p-5 text-white shadow-lg">
@@ -47,7 +48,7 @@ export default async function Page() {
       </section>
       <Link href="/tevai/sutartys" className="btn btn-lg">Sutartys</Link>
       <section className="card flex-row items-center gap-3">
-        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--brand-soft)] text-xl">🎧</span>
+        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n="support" size={22} /></span>
         <div className="grid"><b>Pagalba</b><span className="text-sm muted">Turite klausimų dėl sąskaitos?{COMPANY.email ? <> Rašykite <a className="underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></> : <> <Link className="underline" href="/privatumas#pagalba">Kontaktai</Link></>}</span></div>
       </section>
     </>

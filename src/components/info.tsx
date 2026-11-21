@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { Logo } from "./logo";
 import { SAFETY } from "@/lib/welcome";
@@ -14,7 +15,7 @@ export function PublicPage({ title, children }: { title: string; children: React
       </header>
       <main className="mx-auto grid max-w-xl gap-4 px-4 py-5 pb-12">
         <div className="grid grid-cols-[40px_1fr_40px] items-center">
-          <Link href="/" aria-label="Atgal į pradžią" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg">←</Link>
+          <Link href="/" aria-label="Atgal į pradžią" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg text-[var(--navy)]"><Ico n="back" /></Link>
           <h1 className="text-center text-lg font-bold">{title}</h1>
         </div>
         {children}
@@ -27,14 +28,14 @@ export function SafetyInfo() {
   return (
     <>
       <section className="card justify-items-center gap-2 py-6 text-center">
-        <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-full bg-[var(--ok-bg)] text-3xl">🛡️</span>
+        <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-full bg-[var(--ok-bg)] text-[var(--ok)]"><Ico n="shield" size={32} /></span>
         <h2 className="text-xl font-bold">Saugumas pirmoje vietoje</h2>
         <p className="muted">Patikimas ir patikrintas vairuotojas, tvarkingas automobilis ir pranešimai jums visos kelionės metu.</p>
       </section>
       {SAFETY.map(([t, xs]) => (
         <section key={t} className="card">
           <h2 className="font-bold">{t}</h2>
-          <ul className="grid gap-2">{xs.map((x) => <li key={x} className="grid grid-cols-[20px_1fr] gap-2"><span className="font-bold text-[var(--ok)]">✓</span><span>{x}</span></li>)}</ul>
+          <ul className="grid gap-2">{xs.map((x) => <li key={x} className="grid grid-cols-[20px_1fr] gap-2"><Ico n="check" size={18} stroke={2.6} className="mt-0.5 text-[var(--ok)]" /><span>{x}</span></li>)}</ul>
         </section>
       ))}
     </>
@@ -66,7 +67,7 @@ export function SubscriptionInfo({ fee, cta }: { fee: string; cta: React.ReactNo
       <section className="card">
         <h2 className="font-bold">Kas įskaičiuota</h2>
         <ul className="grid gap-2 text-sm">
-          {["Kelionės pagal jūsų grafiką", `Platformos mokestis šeimai ${fee} / mėn.: aplikacija, planavimas, pranešimai, vairuotojų patikra`, "10 min. nemokamo laukimo", "Be registracijos mokesčio", "Sutartį galite nutraukti įspėję prieš 30 d."].map((x) => <li key={x}><span className="font-bold text-[var(--ok)]">✓</span> {x}</li>)}
+          {["Kelionės pagal jūsų grafiką", `Platformos mokestis šeimai ${fee} / mėn.: aplikacija, planavimas, pranešimai, vairuotojų patikra`, "10 min. nemokamo laukimo", "Be registracijos mokesčio", "Sutartį galite nutraukti įspėję prieš 30 d."].map((x) => <li key={x} className="flex gap-2"><Ico n="check" size={18} stroke={2.6} className="mt-0.5 flex-none text-[var(--ok)]" />{x}</li>)}
         </ul>
       </section>
       {cta}
@@ -75,11 +76,11 @@ export function SubscriptionInfo({ fee, cta }: { fee: string; cta: React.ReactNo
 }
 
 const FAMILY: [string, string, string][] = [
-  ["👨‍👩‍👧", "Abu tėvai mato keliones", "Pranešimus gauna abu tėvai ar globėjai, net jei gyvena atskirai."],
-  ["🔔", "Artimieji gali stebėti", "Pakvieskite močiutę ar kitą artimąjį: jie matys kelionę, bet nieko nekeis."],
-  ["🔑", "Slaptas žodis vaikui", "Vairuotojas pasako jūsų šeimos žodį, ir vaikas sėda tik išgirdęs jį."],
-  ["👥", "Keli keleiviai kartu", "Broliai, sesės ar draugai gali važiuoti viena kelione."],
-  ["💶", "Mokestis dalijamas", "Platformos mokestis skaičiuojamas šeimai ir dalijamas tarp mokančių tėvų."],
+  ["family", "Abu tėvai mato keliones", "Pranešimus gauna abu tėvai ar globėjai, net jei gyvena atskirai."],
+  ["bell", "Artimieji gali stebėti", "Pakvieskite močiutę ar kitą artimąjį: jie matys kelionę, bet nieko nekeis."],
+  ["key", "Slaptas žodis vaikui", "Vairuotojas pasako jūsų šeimos žodį, ir vaikas sėda tik išgirdęs jį."],
+  ["group", "Keli keleiviai kartu", "Broliai, sesės ar draugai gali važiuoti viena kelione."],
+  ["euro", "Mokestis dalijamas", "Platformos mokestis skaičiuojamas šeimai ir dalijamas tarp mokančių tėvų."],
 ];
 
 export function FamilyInfo({ cta }: { cta: React.ReactNode }) {
@@ -88,7 +89,7 @@ export function FamilyInfo({ cta }: { cta: React.ReactNode }) {
       <section className="card gap-1"><h2 className="text-xl font-bold">Visa šeima mato, kas vyksta</h2><p className="muted">Ridu sukurta šeimoms, kuriose keliones planuoja keli žmonės.</p></section>
       {FAMILY.map(([i, t, d]) => (
         <section key={t} className="card grid-cols-[48px_1fr] items-center">
-          <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-[var(--brand-soft)] text-2xl">{i}</span>
+          <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n={i} size={24} /></span>
           <div className="grid"><b>{t}</b><span className="text-sm muted">{d}</span></div>
         </section>
       ))}

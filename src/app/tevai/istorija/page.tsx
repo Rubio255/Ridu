@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import { eur, fmtWhen, vilniusToDate, vilniusToday } from "@/lib/time";
@@ -40,7 +41,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
         {trips.length === 0 && <p className="py-6 text-center muted">Šiuo laikotarpiu kelionių nebuvo.</p>}
         {trips.map((t) => (
           <Link key={t.id} href={`/tevai/kelione/${t.id}`} className="grid grid-cols-[28px_1fr_auto] items-center gap-3 border-t border-[var(--line)] pt-3 first-of-type:border-0 first-of-type:pt-0">
-            <span aria-hidden="true" className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold text-white ${t.status === "delivered" ? "bg-[var(--ok)]" : "bg-[var(--bad)]"}`}>{t.status === "delivered" ? "✓" : "✕"}</span>
+            <span aria-hidden="true" className={`grid h-7 w-7 place-items-center rounded-full text-white ${t.status === "delivered" ? "bg-[var(--ok)]" : "bg-[var(--bad)]"}`}><Ico n={t.status === "delivered" ? "check" : "x"} size={16} stroke={2.8} /></span>
             <span className="grid min-w-0"><b>{fmtWhen(t.pickup_at)}</b><span className="truncate text-sm">{t.from_label} → {t.to_label}</span>{t.status !== "delivered" && <span className="text-xs muted">{t.status === "cancelled" ? "Atšaukta" : t.status === "no_show" ? "Neatvyko" : "Suplanuota"}</span>}</span>
             <b className="num">{eur(Number(t.price_eur ?? 0))}</b>
           </Link>

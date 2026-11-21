@@ -10,6 +10,10 @@ const km = (a: P, b: P) => {
   const r = Math.PI / 180, x = (b.lng - a.lng) * r * Math.cos(((a.lat + b.lat) / 2) * r), y = (b.lat - a.lat) * r;
   return Math.sqrt(x * x + y * y) * 6371;
 };
+const svg = (d: string, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const PIN = svg('<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>', "#14254f");
+const FLAG = svg('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>', "#14254f");
+const CAR = svg('<path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8"/><path d="M7 14h.01"/><path d="M17 14h.01"/><rect width="18" height="8" x="3" y="10" rx="2"/><path d="M5 18v2"/><path d="M19 18v2"/>', "#1e1a00");
 const pin = (emoji: string, bg: string) => `<div style="display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:${bg};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:20px">${emoji}</div>`;
 
 // Gyvas vairuotojo vietos žemėlapis (OpenStreetMap). src – API adresas, atnaujinama kas 5 s.
@@ -41,11 +45,11 @@ export function LiveMap({ src, tall = false, bare = false }: { src?: string; tal
         const c = d.car ?? d.from ?? d.to ?? { lat: 54.6872, lng: 25.2797 };
         map.current = L.map(box.current, { zoomControl: false, attributionControl: true }).setView([c.lat, c.lng], 13);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map.current);
-        if (d.from) L.marker([d.from.lat, d.from.lng], { icon: L.divIcon({ html: pin("📍", "#ffffff"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }) }).addTo(map.current);
-        if (d.to) L.marker([d.to.lat, d.to.lng], { icon: L.divIcon({ html: pin("🏁", "#ffffff"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }) }).addTo(map.current);
+        if (d.from) L.marker([d.from.lat, d.from.lng], { icon: L.divIcon({ html: pin(PIN, "#ffffff"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }) }).addTo(map.current);
+        if (d.to) L.marker([d.to.lat, d.to.lng], { icon: L.divIcon({ html: pin(FLAG, "#ffffff"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }) }).addTo(map.current);
       }
       if (d.car) {
-        if (!car.current) car.current = L.marker([d.car.lat, d.car.lng], { icon: L.divIcon({ html: pin("🚗", "#f2b705"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }), zIndexOffset: 1000 }).addTo(map.current);
+        if (!car.current) car.current = L.marker([d.car.lat, d.car.lng], { icon: L.divIcon({ html: pin(CAR, "#f2b705"), className: "", iconSize: [38, 38], iconAnchor: [19, 19] }), zIndexOffset: 1000 }).addTo(map.current);
         else car.current.setLatLng([d.car.lat, d.car.lng]);
         if (!fitted.current) {
           const target = d.status === "picked_up" ? d.to : d.from;

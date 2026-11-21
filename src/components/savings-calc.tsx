@@ -1,4 +1,5 @@
 "use client";
+import { Ico } from "@/components/ico";
 import { useEffect, useState, useTransition } from "react";
 import { calcAction } from "@/app/actions";
 import { Stepper } from "./stepper";
@@ -53,7 +54,7 @@ export function SavingsCalc({ planHref = "/tevai/planas" }: { planHref?: string 
             <div className={`flex justify-between font-bold ${r.sub <= r.self ? "text-[var(--ok)]" : "text-[var(--warn)]"}`}><dt>{r.sub <= r.self ? "Sutaupymas:" : "Primokėtumėte:"}</dt><dd className="text-lg">{e0(Math.abs(r.self - r.sub))}</dd></div>
           </dl>
           <p className={`flex items-center gap-3 rounded-2xl p-4 font-bold ${r.sub <= r.self ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>
-            <span aria-hidden="true" className="text-3xl">{r.sub <= r.self ? "🛡️" : "⏰"}</span>
+            <Ico n={r.sub <= r.self ? "ok" : "clock"} size={30} className="flex-none" />
             {r.sub <= r.self ? `Abonementas apsimoka ${pct}%!` : `Atgaunate ${h} val. laiko per mėnesį`}
           </p>
           <p className="text-xs muted">Vežiojant patiems: automobilis {e0(r.car)} ir jūsų laikas {e0(r.time)} ({h} val.). Abonementas: 3 mėn. su platformos mokesčiu. Arba planas „{r.plan.name}“ už {e0(r.plan.due)} / mėn. su {e0(r.plan.credit)} kredito.</p>

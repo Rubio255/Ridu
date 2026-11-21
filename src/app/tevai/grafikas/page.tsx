@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import { addDays, fmtDay, fmtTime, vilniusToDate, vilniusToday, dayKey } from "@/lib/time";
@@ -30,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
       </nav>
       {trips.length === 0 && (
         <div className="card justify-items-center py-8 text-center">
-          <span aria-hidden="true" className="text-4xl">🗓️</span>
+          <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-full bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n="calendar" size={30} /></span>
           <p className="muted">{tab === "siandien" ? "Šiandien kelionių nėra." : tab === "rytoj" ? "Rytoj kelionių nėra." : "Šią savaitę kelionių nėra."}</p>
           <Link href="/tevai/uzsakyti" className="btn btn-primary">+ Nauja kelionė</Link>
         </div>

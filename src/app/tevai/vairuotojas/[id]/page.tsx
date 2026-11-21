@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
@@ -36,22 +37,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
         <div className="grid gap-1 px-4">
           <div className="flex items-center gap-3"><Avatar text={initials(d.name)} size={48} /><h1 className="text-2xl font-bold">{d.name}</h1></div>
-          {d.verified && <span className="font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}
+          {d.verified && <span className="flex items-center gap-1 font-semibold text-[var(--ok)]"><Ico n="shield" size={18} />Patikimas ir patikrintas vairuotojas</span>}
           {years ? <span className="text-sm muted">Vairuoja {years} m.</span> : null}
           {extra?.bio && <p className="italic">„{extra.bio}“</p>}
         </div>
         <ul className="grid gap-2 px-4 pb-4">
-          <li className="flex items-center gap-3"><span aria-hidden="true">🚘</span>{d.car ?? "Automobilis bus nurodytas"}</li>
-          {d.plate && <li className="flex items-center gap-3"><span aria-hidden="true">🪪</span><span className="num tracking-wider">{d.plate}</span></li>}
-          {d.phone && <li className="flex items-center gap-3"><span aria-hidden="true">📞</span>{d.phone}</li>}
-          {d.childSeats && <li className="flex items-center gap-3"><span aria-hidden="true">✓</span>Yra vaikiškos kėdutės</li>}
+          <li className="flex items-center gap-3"><Ico n="car" size={20} className="text-[var(--navy)]" />{d.car ?? "Automobilis bus nurodytas"}</li>
+          {d.plate && <li className="flex items-center gap-3"><Ico n="id" size={20} className="text-[var(--navy)]" /><span className="num tracking-wider">{d.plate}</span></li>}
+          {d.phone && <li className="flex items-center gap-3"><Ico n="phone" size={20} className="text-[var(--navy)]" />{d.phone}</li>}
+          {d.childSeats && <li className="flex items-center gap-3"><Ico n="check" size={20} className="text-[var(--navy)]" />Yra vaikiškos kėdutės</li>}
         </ul>
       </section>
       {contract && (
         <section className="card gap-1"><b>Sutarties informacija</b><span className="muted">{until ? `Galioja iki: ${until}` : "Pratęsiama kas mėnesį"}</span></section>
       )}
       <Link href="/tevai/sutartys" className="btn btn-lg rounded-full border-0 bg-[var(--soft-blue)] text-[var(--navy)]">Peržiūrėti sutartį</Link>
-      {tel ? <a href={`tel:${tel}`} className="btn btn-lg rounded-full shadow-sm">🎧 Susisiekti</a> : <span className="btn btn-lg rounded-full opacity-60">Telefono nėra</span>}
+      {tel ? <a href={`tel:${tel}`} className="btn btn-lg flex items-center justify-center gap-2 rounded-full shadow-sm"><Ico n="support" size={20} />Susisiekti</a> : <span className="btn btn-lg rounded-full opacity-60">Telefono nėra</span>}
     </>
   );
 }

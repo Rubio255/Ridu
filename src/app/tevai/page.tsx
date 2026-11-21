@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -39,19 +40,19 @@ export default async function Page() {
     <>
       {live && <AutoRefresh />}
       <div className="flex items-start justify-between gap-3 pt-1">
-        <h1 className="text-3xl font-bold leading-tight">Sveiki,<br />{firstName(me.full_name) || "sveiki"} 👋</h1>
-        <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full text-2xl">🔔</Link>
+        <h1 className="text-3xl font-bold leading-tight">Sveiki,<br />{firstName(me.full_name) || "sveiki"}</h1>
+        <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--surface)] text-[var(--navy)] shadow-sm"><Ico n="bell" /></Link>
       </div>
 
       <Link href={card[2]} className="navy flex items-center gap-3 rounded-[20px] p-4 shadow-lg">
-        <span aria-hidden="true" className="grid h-11 w-11 flex-none place-items-center rounded-full bg-[#2fb36b] text-xl font-bold text-white">✓</span>
+        <span aria-hidden="true" className="grid h-11 w-11 flex-none place-items-center rounded-full bg-[#2fb36b] text-white"><Ico n="check" stroke={2.6} /></span>
         <span className="grid flex-1"><b className="text-lg">{card[0]}</b><span className="text-sm opacity-80">{card[1]}</span></span>
         <span aria-hidden="true" className="text-2xl opacity-80">›</span>
       </Link>
 
       <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-2">
-        {[["/tevai/grafikas?d=savaite", "🗓️", "Tvarkaraštis"], ["/tevai/skaiciuokle", "🧮", "Skaičiuoklė"], ["/tevai/saugumas", "🛡️", "Saugumas"]].map(([h, i, l]) => (
-          <Link key={h} href={h} className="icon-tile"><span aria-hidden="true">{i}</span>{l}</Link>
+        {[["/tevai/grafikas?d=savaite", "calendar", "Tvarkaraštis"], ["/tevai/skaiciuokle", "calc", "Skaičiuoklė"], ["/tevai/saugumas", "shield", "Saugumas"]].map(([h, i, l]) => (
+          <Link key={h} href={h} className="icon-tile"><span><Ico n={i} size={26} /></span>{l}</Link>
         ))}
       </nav>
 
@@ -73,7 +74,7 @@ export default async function Page() {
           return (
             <Link key={t.id} href={`/tevai/kelione/${t.id}`} className="card gap-2">
               <div className="flex items-center justify-between gap-2"><b className="text-lg">{fmtWhen(t.pickup_at)}</b><span className="rounded-full bg-[var(--ok-bg)] px-2.5 py-0.5 text-xs font-bold text-[var(--ok)]">Planuota</span></div>
-              <span className="flex items-center gap-1.5"><span aria-hidden="true" className="text-[var(--navy)]">📍</span>{t.from_label} → {t.to_label}</span>
+              <span className="flex items-center gap-1.5"><Ico n="pin" size={18} className="flex-none text-[var(--navy)]" />{t.from_label} → {t.to_label}</span>
               <div className="flex items-center gap-2 border-t border-[var(--line)] pt-2 text-sm">
                 {d ? <><Avatar text={initials(d.name)} size={28} /><span>Vairuotojas: {firstName(d.name)}</span></> : <span className="muted">Vairuotojas bus priskirtas</span>}
                 <span className="ml-auto muted">{(t.child as unknown as { first_name: string } | null)?.first_name}</span>
@@ -85,7 +86,7 @@ export default async function Page() {
       </section>
 
       <Link href="/tevai/skaiciuokle" className="card grid-cols-[auto_1fr_auto] items-center gap-3">
-        <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--soft-blue)] text-2xl">🧮</span>
+        <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n="calc" size={24} /></span>
         <span className="grid"><b>Ar apsimoka abonementas?</b><span className="text-sm muted">Sužinokite per 1 minutę!</span></span>
         <span aria-hidden="true" className="text-2xl muted">›</span>
       </Link>

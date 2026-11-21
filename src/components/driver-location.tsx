@@ -1,4 +1,5 @@
 "use client";
+import { Ico } from "@/components/ico";
 import { useEffect, useRef, useState } from "react";
 import { sendLocation } from "@/app/actions";
 
@@ -40,8 +41,8 @@ export function DriverLocation({ tripId }: { tripId: string }) {
   const stop = () => { setOn(false); setMsg("Vieta nebesiunčiama."); try { sessionStorage.removeItem(key); } catch { /* nėra saugyklos */ } };
   return (
     <div className="grid gap-2">
-      {on ? <button type="button" onClick={stop} className="btn">⏸ Sustabdyti vietos rodymą</button>
-        : <button type="button" onClick={() => setOn(true)} className="btn btn-primary btn-lg">📍 Rodyti mano vietą artimiesiems</button>}
+      {on ? <button type="button" onClick={stop} className="btn">Sustabdyti vietos rodymą</button>
+        : <button type="button" onClick={() => setOn(true)} className="btn btn-primary btn-lg flex items-center justify-center gap-2"><Ico n="pin" size={20} />Rodyti mano vietą artimiesiems</button>}
       {msg && <p className="text-sm muted" role="status">{msg}</p>}
       <p className="text-xs muted">Kelionės metu laikykite programėlę atidarytą. Vieta rodoma tik šios kelionės metu ir ištrinama ją baigus.</p>
     </div>

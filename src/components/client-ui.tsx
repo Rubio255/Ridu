@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { STATUS_LT } from "./shell";
 import { fmtTime } from "@/lib/time";
@@ -6,7 +7,7 @@ import { fmtTime } from "@/lib/time";
 export function BackHeader({ href, title, right }: { href: string; title: string; right?: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[44px_1fr_44px] items-center">
-      <Link href={href} aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg">←</Link>
+      <Link href={href} aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg text-[var(--navy)]"><Ico n="back" /></Link>
       <h1 className="text-center text-lg font-bold">{title}</h1>
       <div className="justify-self-end">{right}</div>
     </div>

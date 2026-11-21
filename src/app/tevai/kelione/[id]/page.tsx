@@ -1,3 +1,4 @@
+import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireProfile, loadSettings } from "@/lib/auth";
@@ -44,14 +45,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {t.status === "picked_up" || (t.status === "scheduled" && Math.abs(hours) < 3) ? <AutoRefresh /> : null}
       <header className="navy-head grid gap-3 text-center">
         <div className="grid grid-cols-[40px_1fr_40px] items-center">
-          <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-lg">←</Link>
+          <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-white/10"><Ico n="back" /></Link>
           <div className="grid"><h1 className="text-lg font-bold">{head[0]}</h1><span className="text-sm opacity-80">{t.status === "picked_up" ? "Keleivis jau automobilyje" : live ? "Vairuotojas jau pakeliui" : <span className="capitalize">{fmtDay(t.pickup_at)}</span>}</span></div>
         </div>
         <div className="grid justify-items-center">{live ? <LiveEta src={`/api/vieta/${t.id}`} fallback={head[1]} /> : <b className="text-3xl">{head[1]}</b>}</div>
         <ol className="mx-auto grid w-full max-w-sm grid-cols-3 text-xs" aria-label="Kelionės eiga">
-          {[["Vairuotojas atvyksta", "🏠"], ["Kelionė vyksta", "🚗"], ["Atvykome", "🏁"]].map(([l, i], k) => {
+          {[["Vairuotojas atvyksta", "home"], ["Kelionė vyksta", "car"], ["Atvykome", "flag"]].map(([l, i], k) => {
             const at = t.status === "delivered" ? 2 : t.status === "picked_up" ? 1 : 0, on = k <= at;
-            return <li key={l} className="grid justify-items-center gap-1"><span aria-hidden="true" className={`grid h-9 w-9 place-items-center rounded-full ${on ? "bg-white text-[var(--navy)]" : "bg-white/20"}`}>{i}</span><span className={on ? "font-bold" : "opacity-70"}>{l}</span></li>;
+            return <li key={l} className="grid justify-items-center gap-1"><span aria-hidden="true" className={`grid h-9 w-9 place-items-center rounded-full ${on ? "bg-white text-[var(--navy)]" : "bg-white/20"}`}><Ico n={i} size={18} /></span><span className={on ? "font-bold" : "opacity-70"}>{l}</span></li>;
           })}
         </ol>
       </header>
@@ -63,22 +64,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <Avatar text={initials(d.name)} size={64} />
             <div className="grid min-w-0 flex-1">
               <b className="truncate text-lg">{d.name}</b>
-              {d.verified && <span className="text-sm font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}
+              {d.verified && <span className="flex items-center gap-1 text-sm font-semibold text-[var(--ok)]"><Ico n="shield" size={16} />Patikimas ir patikrintas vairuotojas</span>}
               <span className="truncate text-sm">{d.car ?? "Automobilis bus nurodytas"}</span>
               {d.plate && <span className="justify-self-start rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-xs font-bold">{d.plate}</span>}
             </div>
           </Link>
           {tel ? (
             <div className="grid grid-cols-2 border-t border-[var(--line)] pt-2 text-sm font-semibold">
-              <a href={`tel:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)]">📞</span>Skambinti</a>
-              <a href={`sms:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)]">💬</span>Žinutė</a>
+              <a href={`tel:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n="phone" size={18} /></span>Skambinti</a>
+              <a href={`sms:${tel}`} className="grid justify-items-center gap-1 py-1"><span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--soft-blue)] text-[var(--navy)]"><Ico n="msg" size={18} /></span>Žinutė</a>
             </div>
           ) : <p className="text-sm muted">Vairuotojo telefonas dar nenurodytas. Susisiekite su MB.</p>}
         </section>
       ) : <div className="card -mt-10 muted">Vairuotojas bus priskirtas prieš kelionę.</div>}
 
       {live && <div id="zemelapis" className="scroll-mt-4"><LiveMap src={`/api/vieta/${t.id}`} /></div>}
-      <a href={live ? "#zemelapis" : mapsLink(t.from_address, t.to_address)} {...(live ? {} : { target: "_blank", rel: "noopener" })} className="btn btn-lg rounded-full shadow-sm">Stebėti maršrutą ➤</a>
+      <a href={live ? "#zemelapis" : mapsLink(t.from_address, t.to_address)} {...(live ? {} : { target: "_blank", rel: "noopener" })} className="btn btn-lg flex items-center justify-center gap-2 rounded-full shadow-sm">Stebėti maršrutą <Ico n="go" size={18} /></a>
 
       <section className="card" aria-label="Kelionės informacija">
         <div className="flex items-center justify-between gap-2"><b className="text-lg">{t.child.first_name}</b><StatusPill s={t.status} /></div>
