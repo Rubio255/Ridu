@@ -181,13 +181,14 @@ export async function setTripStatus(fd: FormData) {
   if (!STATUS_MSG[status]) return;
   await assertTripAccess(me, id);
   const db = supabaseAdmin();
-  const { data: t } = await db.from("trips").update({ status }).eq("id", id).select("child_id, pickup_at, to_label, child:children(first_name)").single();
+  const stamp = status === "picked_up" ? { picked_up_at: new Date().toISOString() } : status === "delivered" ? { delivered_at: new Date().toISOString() } : {};
+  const { data: t } = await db.from("trips").update({ status, ...stamp }).eq("id", id).select("child_id, pickup_at, to_label, child:children(first_name)").single();
   if (t) {
     const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Keleivis";
     const [title, verb] = STATUS_MSG[status];
     await notifyGuardians(t.child_id, title, `${name} ${verb}${status === "delivered" ? ` (${t.to_label})` : ""}, ${fmtTime(new Date().toISOString())}.`);
   }
-  revalidatePath("/savininkas"); revalidatePath("/vairuotojas");
+  revalidatePath("/savininkas"); revalidatePath("/vairuotojas"); revalidatePath("/tevai");
 }
 
 // Savininkas perkelia vieną kelionę į kitą laiką
@@ -536,8 +537,12 @@ export async function deleteAccount(fd: FormData) {
     const { data: mine } = await db.from("child_guardians").select("child_id").eq("profile_id", me.id);
     await db.from("child_guardians").delete().eq("profile_id", me.id);
     for (const { child_id } of mine ?? []) {
-      const { count } = await db.from("child_guardians").select("child_id", { count: "exact", head: true }).eq("child_id", child_id);
-      if (!count) await db.from("children").update({ first_name: "Ištrinta", notes: null, birth_year: null, handover_to: null }).eq("id", child_id);
+      // Artimieji (tik gauna pranešimus) keleivio neišlaiko: jei kito globėjo nėra, jie atsiejami
+      const { count } = await db.from("child_guardians").select("child_id", { count: "exact", head: true }).eq("child_id", child_id).or("relation.is.null,relation.neq.artimasis");
+      if (!count) {
+        await db.from("child_guardians").delete().eq("child_id", child_id).eq("relation", "artimasis");
+        await db.from("children").update({ first_name: "Ištrinta", notes: null, birth_year: null, handover_to: null, code_word: null }).eq("id", child_id);
+      }
     }
     await db.from("visit_requests").update({ name: "Ištrinta", phone: null, note: null, profile_id: null }).eq("profile_id", me.id);
   }
@@ -550,4 +555,51 @@ export async function deleteAccount(fd: FormData) {
   const sb = await supabaseServer();
   await sb.auth.signOut();
   redirect("/?istrinta=1");
+}
+
+/* ---------- Šeima: slaptas žodis ir artimieji ---------- */
+
+// Šeimos slaptas žodis vaikui: vairuotojas jį pasako prieš vaikui įlipant
+export async function saveCodeWord(fd: FormData) {
+  const me = await requireProfile();
+  const id = String(fd.get("id"));
+  await assertGuardian(id, me.id);
+  const word = String(fd.get("code_word") ?? "").trim().slice(0, 40) || null;
+  await supabaseAdmin().from("children").update({ code_word: word }).eq("id", id).eq("passenger_type", "child");
+  revalidatePath("/tevai", "layout");
+}
+
+// Artimasis (pvz. senjoro dukra) gauna pranešimus apie suaugusio keleivio keliones ir mato jas programėlėje.
+// Vaikų globėjus įrašo MB pagal sutartį, todėl čia tik suaugusiems keleiviams.
+export async function addRelative(fd: FormData) {
+  const me = await requireProfile();
+  const id = String(fd.get("id")), email = String(fd.get("email") ?? "").trim().toLowerCase(), name = String(fd.get("full_name") ?? "").trim();
+  const back = (e: string) => redirect(`/tevai/vaikai?klaida=${encodeURIComponent(e)}#artimieji`);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) back("Įrašykite teisingą el. pašto adresą.");
+  await assertGuardian(id, me.id);
+  const db = supabaseAdmin();
+  const { data: pax } = await db.from("children").select("first_name, passenger_type").eq("id", id).single();
+  if (!pax || pax.passenger_type === "child") back("Vaiko globėjus įrašo MB pagal sutartį.");
+  let { data: prof } = await db.from("profiles").select("id, role").eq("email", email).maybeSingle();
+  if (prof && prof.role !== "client") back("Šio adreso pridėti negalima.");
+  if (!prof) {
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const { data, error } = await db.auth.admin.inviteUserByEmail(email, { redirectTo: `${site}/auth/callback`, data: { full_name: name } });
+    if (error || !data.user) back("Nepavyko išsiųsti kvietimo. Patikrinkite adresą.");
+    await db.from("profiles").upsert({ id: data.user!.id, email, full_name: name, role: "client" });
+    prof = { id: data.user!.id, role: "client" };
+  }
+  await db.from("child_guardians").upsert({ child_id: id, profile_id: prof!.id, relation: "artimasis" }, { onConflict: "child_id,profile_id", ignoreDuplicates: true });
+  await notifyProfiles([prof!.id], "Ridu", `${me.full_name || "Artimasis"} pridėjo jus: gausite pranešimus apie ${pax!.first_name} keliones.`);
+  revalidatePath("/tevai", "layout");
+  redirect("/tevai/vaikai?pridetas=1#artimieji");
+}
+
+export async function removeRelative(fd: FormData) {
+  const me = await requireProfile();
+  const id = String(fd.get("id")), pid = String(fd.get("profile_id"));
+  await assertGuardian(id, me.id);
+  if (pid === me.id) return;
+  await supabaseAdmin().from("child_guardians").delete().eq("child_id", id).eq("profile_id", pid).eq("relation", "artimasis");
+  revalidatePath("/tevai", "layout");
 }

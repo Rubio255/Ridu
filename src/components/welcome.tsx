@@ -10,33 +10,33 @@ const initials = (n: string) => n.split(/\s+/).map((x) => x[0] ?? "").join("").s
 export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers: DriverRow[]; guest: boolean; mine: boolean; greeting?: string; moreHref?: string }) {
   return (
     <>
-      <section className="card gap-4">
+      <section className="card gap-5">
         <h1 className="text-balance text-3xl font-bold leading-tight">{greeting ?? "Pavežimas, kuriuo galite pasitikėti"}</h1>
-        <p className="muted text-lg">{guest ? "Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Prieš sutardami, susipažinkite su vairuotoju asmeniškai." : "Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį."}</p>
-        <div className="flex flex-wrap gap-2"><a href="#pokalbis" className="btn btn-primary px-5 py-3 text-base">Užsakyti pažintinį pokalbį</a><a href="#skaiciuokle" className="btn px-5 py-3 text-base">Ar man apsimoka?</a></div>
+        <p className="muted text-lg">{guest ? "Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Pirmiausia susipažinkite su vairuotoju." : mine ? "Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį." : "Susipažinkite su vairuotoju, kuris jus veš."}</p>
+        <h2 className="sr-only">{mine ? "Jūsų vairuotojas" : "Vairuotojai"}</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {drivers.map((d) => (
+            <article key={d.profile_id} className="grid gap-4 rounded-2xl border-2 border-[var(--line)] p-5">
+              <div className="flex items-center gap-4">
+                <div aria-hidden="true" className="grid h-20 w-20 flex-none place-items-center rounded-full bg-[var(--brand)] text-2xl font-bold text-[var(--brand-fg)]">{initials(d.profile.full_name || "?")}</div>
+                <div className="grid min-w-0 gap-1">
+                  <h3 className="text-xl font-bold">{d.profile.full_name}</h3>
+                  <div className="muted">{d.since_year ? `Vairuoja ${new Date().getFullYear() - d.since_year} m. · ` : ""}{d.car ?? ""}</div>
+                </div>
+              </div>
+              {isVerified(d) && <a href="#saugumas" className="pill p-ok justify-self-start text-sm normal-case no-underline">✓ Patikimas ir patikrintas vairuotojas</a>}
+              {d.bio && <p className="text-lg italic">„{d.bio}“</p>}
+              <div className="text-sm muted">{childOk(d) ? "Veža vaikus, suaugusius ir senjorus" : "Veža suaugusius ir senjorus"}</div>
+              <a href="#pokalbis" className="btn btn-primary py-3 text-center text-base">Susitikti su vairuotoju</a>
+            </article>
+          ))}
+        </div>
+        <a href="#skaiciuokle" className="btn justify-self-start px-5 py-3 text-base">Ar man apsimoka?</a>
         <ul className="grid gap-2 sm:grid-cols-3">
           {[["Patikrinti vairuotojai", "Dokumentus tikriname ir stebime jų galiojimą"], ["Fiksuota mėnesio kaina", "Be registracijos mokesčio"], ["Be ilgų įsipareigojimų", "Sutartį galite nutraukti įspėję prieš 30 d."]].map(([b, t]) => (
             <li key={b} className="grid rounded-lg bg-[var(--surface-2)] p-3"><b>{b}</b><span className="text-sm muted">{t}</span></li>
           ))}
         </ul>
-      </section>
-      <section className="card">
-        <h2 className="text-xl font-bold">{mine ? "Jūsų vairuotojas" : "Susipažinkite su vairuotoju, kuris jus veš"}</h2>
-        <p className="text-sm muted">{mine ? "Šis vairuotojas veža pagal jūsų sutartį." : "Pažintinio pokalbio metu susipažinsite su vairuotoju, kuris vykdys jūsų užsakymą."}</p>
-        <div className="grid gap-3 md:grid-cols-2">
-          {drivers.map((d) => (
-            <article key={d.profile_id} className="flex items-start gap-4 rounded-xl border border-[var(--line)] p-4">
-              <div aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-full bg-[var(--brand)] text-xl font-bold text-[var(--brand-fg)]">{initials(d.profile.full_name || "?")}</div>
-              <div className="grid min-w-0 gap-1">
-                <h3 className="text-lg font-bold">{d.profile.full_name}</h3>
-                <div className="text-sm muted">{d.since_year ? `Vairuoja ${new Date().getFullYear() - d.since_year} m. · ` : ""}{d.car ?? ""}</div>
-                {d.bio && <p className="italic">„{d.bio}“</p>}
-                {isVerified(d) && <a href="#saugumas" className="pill p-ok justify-self-start normal-case no-underline">✓ Patikimas ir patikrintas vairuotojas</a>}
-                <div className="text-sm muted">{childOk(d) ? "Veža vaikus, suaugusius ir senjorus" : "Veža suaugusius ir senjorus"}</div>
-              </div>
-            </article>
-          ))}
-        </div>
       </section>
       <section id="saugumas" className="card scroll-mt-20">
         <h2 className="text-xl font-bold">Jūsų saugumas</h2>
