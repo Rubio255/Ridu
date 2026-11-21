@@ -38,9 +38,9 @@ export default async function Page() {
         <h2 className="pt-2 font-bold">Klientai</h2>
         {(clients ?? []).map((c) => (
           <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
-            <div><b>{c.full_name || c.email}</b><div className="text-sm muted">{c.email}{c.phone ? ` · ${c.phone}` : ""}{c.contract_no ? ` · ${c.contract_no}` : ""}</div><div className="text-xs muted">{consentLine(c.id)}</div></div>
+            <div><b>{c.full_name || c.email}</b><div className="text-sm muted">{c.email}{c.phone ? ` · ${c.phone}` : ""}{c.contract_no ? ` · ${c.contract_no}` : ""}</div><div className="text-xs muted">{consentLine(c.id)}</div>{c.plan_request && <div className="pill p-warn mt-1">Pasirinko planą: {plans.find((p) => p.id === c.plan_request)?.name}. Patvirtinkite.</div>}</div>
             <form action={setClientPlan} className="flex items-center gap-2"><input type="hidden" name="id" value={c.id} />
-              <select name="plan_id" defaultValue={c.plan_id ?? ""} className="input" aria-label="Kredito planas"><option value="">Be plano</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.name} {eur(p.price)}</option>)}</select>
+              <select name="plan_id" defaultValue={c.plan_request ?? c.plan_id ?? ""} className="input" aria-label="Kredito planas"><option value="">Be plano</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.name} {eur(p.price)}</option>)}</select>
               <button className="btn">Išsaugoti</button></form>
             <form action={setClientActive}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="active" value={c.active ? "0" : "1"} /><button className="btn">{c.active ? "Išjungti" : "Įjungti"}</button></form>
           </div>

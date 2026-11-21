@@ -15,6 +15,7 @@ const SECTIONS: [string, string[]][] = [
     "Vairuotojų: vardą, kontaktus, individualios veiklos pažymos numerį, automobilio duomenis, dokumentų galiojimo datas ir trumpą prisistatymą.",
     "Pažintinio pokalbio užklausoje: vardą, telefoną ir pageidaujamą laiką.",
     "Techninius duomenis: prisijungimo sesiją ir, jei leidžiate, pranešimų gavimo raktą telefone.",
+    "Vairuotojo vietą (GPS) tik kelionės metu, kai vairuotojas įjungia vietos rodymą: ją mato keleivio artimieji ir tie, kam jie pasidalijo kelionės nuoroda. Saugome tik paskutinę vietą ir ištriname ją kelionei pasibaigus. Klientų vietos nerenkame.",
   ]],
   ["Kam naudojame", [
     "Kad suplanuotume ir atliktume keliones, praneštume apie jų eigą, išrašytume sąskaitas ir vykdytume sutartį (BDAR 6 str. 1 d. b p.).",
@@ -22,7 +23,7 @@ const SECTIONS: [string, string[]][] = [
     "Naujienoms ir sveikatos pastaboms – tik jūsų sutikimu, kurį galite bet kada atšaukti.",
   ]],
   ["Kam perduodame", [
-    "Duomenis saugome Supabase (ES, Airija) ir svetainę teikiame per Vercel. Atstumams skaičiuoti adresai gali būti perduoti Google Maps. Pranešimus siunčiame per Apple ir Google pranešimų paslaugas.",
+    "Duomenis saugome Supabase (ES, Airija) ir svetainę teikiame per Vercel. Atstumams skaičiuoti adresai gali būti perduoti Google Maps. Pranešimus siunčiame per Apple ir Google pranešimų paslaugas. Žemėlapis rodomas iš OpenStreetMap serverių.",
     "Duomenų neparduodame ir nenaudojame reklamai.",
   ]],
   ["Kiek laiko saugome", [

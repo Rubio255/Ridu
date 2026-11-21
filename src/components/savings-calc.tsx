@@ -16,7 +16,7 @@ function Slider({ id, label, value, min, max, step, onChange, show }: { id: stri
 }
 
 // „Ar man apsimoka?“ su tikslinimu: visi parametrai keičiami. Skaičiuojama serveryje, klientas mato tik rezultatą.
-export function SavingsCalc() {
+export function SavingsCalc({ planHref = "/tevai/planas" }: { planHref?: string }) {
   const [f, setF] = useState({ days: 2, perDay: 1, km: 8, hourValue: 15, costPerKm: 0.3, parking: 1 });
   const [more, setMore] = useState(false);
   const [r, setR] = useState<R | null>(null);
@@ -60,6 +60,12 @@ export function SavingsCalc() {
             <span aria-hidden="true" className="text-2xl">{r.sub <= r.self ? "✅" : "⏰"}</span>
             {r.sub <= r.self ? `Abonementas apsimoka: sutaupote ${e0(r.self - r.sub)} (${pct}%) ir ${h} val. per mėnesį.` : `Su Ridu mokate ${e0(r.sub - r.self)} daugiau, bet atgaunate ${h} val. per mėnesį.`}
           </p>
+          <div className="grid gap-2 rounded-xl border-2 border-[var(--accent)] p-4">
+            <span className="text-sm muted">Arba kredito planas</span>
+            <b className="text-lg">{r.plan.name}: {e0(r.plan.due)} / mėn.</b>
+            <span className="text-sm">Plane {e0(r.plan.credit)} kredito kelionėms{r.plan.due > r.plan.price ? `, viršijus mokama ${e0(r.plan.due - r.plan.price)} daugiau` : ""}. Platformos mokestis įskaičiuotas.</span>
+            <a href={planHref} className="btn btn-primary">Rinktis planą</a>
+          </div>
           <p className="text-xs muted">Su Ridu kaina apima 3 mėn. abonementą ir platformos mokestį. Tikslią kainą pamatysite užsakydami.</p>
         </section>
       )}

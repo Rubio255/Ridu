@@ -6,6 +6,8 @@ import { payoutPct, loadDrivers } from "@/lib/drivers";
 import { respondOffer } from "@/app/actions";
 import { eur, fmtDay, fmtTime, vilniusToday } from "@/lib/time";
 import { VISIT_HOW, VISIT_WHO } from "@/lib/welcome";
+import { DriverLocation } from "@/components/driver-location";
+import { isLive } from "@/lib/live";
 
 export default async function Page() {
   const me = await requireDriver();
@@ -13,9 +15,20 @@ export default async function Page() {
   const [s, drivers, { data: offers }, { data: visits }] = await Promise.all([loadSettings(), loadDrivers(),
     supabaseAdmin().from("trip_offers").select("id, expires_at, trip:trips(pickup_at, from_label, to_label, block_min, price_eur, child:children(first_name))").eq("driver_id", me.id).eq("status", "pending").order("expires_at"),
     supabaseAdmin().from("visit_requests").select("id, name, phone, how, who, org, note, wanted_date, wanted_time").eq("driver_id", me.id).eq("status", "confirmed").gte("wanted_date", vilniusToday()).order("wanted_date")]);
+  // Dabartinė kelionė: vežamas keleivis arba paėmimas artimiausiu metu
+  const { data: near } = await supabaseAdmin().from("trips").select("id, status, pickup_at, from_label, to_label, child:children(first_name)").eq("driver_id", me.id).in("status", ["scheduled", "picked_up"])
+    .gte("pickup_at", new Date(Date.now() - 6 * 36e5).toISOString()).lte("pickup_at", new Date(Date.now() + 2 * 36e5).toISOString()).order("pickup_at");
+  const live = (near ?? []).find((t) => t.status === "picked_up") ?? (near ?? []).find((t) => isLive(t));
   const pct = payoutPct(s, drivers.find((d) => d.profile_id === me.id) ?? { payout_pct: null });
   return (
     <>
+      {live && (
+        <section className="card border-2 border-[var(--accent)]" aria-label="Dabartinė kelionė">
+          <h2 className="font-bold">{live.status === "picked_up" ? "Vežate dabar" : "Artimiausia kelionė"}: {fmtTime(live.pickup_at)} · {(live.child as unknown as { first_name: string }).first_name}</h2>
+          <p className="text-sm muted">{live.from_label} → {live.to_label}</p>
+          <DriverLocation tripId={live.id} />
+        </section>
+      )}
       {(offers ?? []).length > 0 && (
         <section className="card">
           <h2 className="font-bold">Pasiūlymai perimti kelionę</h2>

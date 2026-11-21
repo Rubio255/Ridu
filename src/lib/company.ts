@@ -6,4 +6,4 @@ export const COMPANY = {
   email: "",                    // TODO: kontaktinis el. paštas klientams ir Apple
   phone: "",                    // nebūtina
 };
-export const PRIVACY_VERSION = "2026-11-21";
+export const PRIVACY_VERSION = "2026-11-21b";

@@ -1,4 +1,4 @@
-import { standardTripValue, type PassengerType } from "./pricing";
+import { recommendPlan, standardTripValue, type PassengerType } from "./pricing";
 import type { Settings } from "./settings";
 import { vilniusToday } from "./time";
 
@@ -20,7 +20,9 @@ export function quickCalc(s: Settings, i: CalcInput) {
   const selfKm = km * 2 + extra;
   const hours = Math.round((selfKm * 2.75 + 15 + 5) * n / 60 * 10) / 10;
   const car = Math.round(selfKm * n * perKm + n * park), time = Math.round(hours * hv);
-  return { sub, car, time, self: car + time, hours, tripsPerMonth: Math.round(n) };
+  // Tinkamiausias kredito planas: kreditas leidžiamas standartine kelionių verte
+  const p = recommendPlan(s, standardTripValue(s, drive, km, i.passenger) * n);
+  return { sub, car, time, self: car + time, hours, tripsPerMonth: Math.round(n), plan: { name: p.name, price: p.price, credit: p.credit, due: Math.round(p.due) } };
 }
 
 // Klientui rodomas tik švelnus ženklas „Patikimas ir patikrintas vairuotojas“: visi dokumentai pateikti ir galioja.

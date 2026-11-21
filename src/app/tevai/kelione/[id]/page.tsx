@@ -10,8 +10,11 @@ import { TripSteps } from "@/components/trip-steps";
 import { mapsLink } from "@/lib/maps";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { Avatar, StatusPill } from "@/components/client-ui";
+import { LiveMap } from "@/components/live-map";
+import { ShareTrip } from "@/components/share-trip";
+import { isLive } from "@/lib/live";
 
-// „Kelionė vyksta“: būsena, žingsniai, vairuotojas su skambučiu ir žinute. Be gyvo GPS: rodome tik tikrus laikus.
+// „Kelionė vyksta“: būsena, gyvas vairuotojo vietos žemėlapis, žingsniai, vairuotojas su skambučiu ir žinute, „Dalintis kelione“.
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [me, s, sb] = await Promise.all([requireProfile(), loadSettings(), supabaseServer()]);
@@ -49,7 +52,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
       </section>
 
-      <section className="card -mt-8" aria-label="Kelionės eiga">
+      {isLive(t) && <div className="-mt-8"><LiveMap src={`/api/vieta/${t.id}`} /></div>}
+
+      <section className={`card ${isLive(t) ? "" : "-mt-8"}`} aria-label="Kelionės eiga">
         <div className="flex items-center justify-between gap-2"><b className="text-lg">{t.child.first_name}</b><StatusPill s={t.status} /></div>
         <TripSteps t={t} />
         {t.status_note && <p className="rounded-xl bg-[var(--surface-2)] p-3 text-sm font-semibold">{t.status_note}</p>}
@@ -86,6 +91,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             : <Link href="/tevai/vaikai#slaptas-zodis" className="text-sm font-semibold underline">Sukurkite slaptą žodį vaikui</Link>}
         </section>
       )}
+
+      {(t.status === "scheduled" || t.status === "picked_up") && <ShareTrip tripId={t.id} title={`${t.child.first_name}: ${t.from_label} → ${t.to_label}, ${fmtTime(t.pickup_at)}`} />}
 
       {names.length > 0 && <p className="text-sm muted">Pranešimus gauna: {names.join(", ")}</p>}
 

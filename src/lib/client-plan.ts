@@ -1,0 +1,21 @@
+import "server-only";
+import { supabaseAdmin } from "./supabase/server";
+import { kidsShare, standardTripValue } from "./pricing";
+import type { Settings } from "./settings";
+
+// Kliento mėnesio kelionių standartinė vertė pagal galiojančius abonementus (planui parinkti)
+export async function clientMonthlyValue(s: Settings, profileId: string) {
+  const { data } = await supabaseAdmin().from("subscriptions").select("weekdays, extra_kids, standard_trip_eur, drive_min, km, passenger_type")
+    .eq("payer_id", profileId).in("status", ["active", "pending"]);
+  const v = (data ?? []).reduce((a, x) => {
+    const car = x.standard_trip_eur != null ? Number(x.standard_trip_eur) : standardTripValue(s, x.drive_min, Number(x.km), x.passenger_type);
+    const n = 1 + x.extra_kids;
+    return a + car * kidsShare(s, n) * n * x.weekdays.length * 52 / 12;
+  }, 0);
+  return { value: Math.round(v), trips: (data ?? []).reduce((a, x) => a + x.weekdays.length, 0), subs: data ?? [] };
+}
+
+export async function planState(profileId: string) {
+  const { data } = await supabaseAdmin().from("profiles").select("id, plan_id, plan_since, plan_request").eq("id", profileId).single();
+  return data as { id: string; plan_id: string | null; plan_since: string | null; plan_request: string | null } | null;
+}

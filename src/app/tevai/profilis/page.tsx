@@ -5,10 +5,12 @@ import { initials } from "@/lib/client-view";
 import { Avatar } from "@/components/client-ui";
 
 const MENU: [string, string, string][] = [
-  ["/tevai/abonementas", "💳", "Mano abonementai"],
+  ["/tevai/abonementas", "🎫", "Mano abonementas ir planas"],
+  ["/tevai/mokejimai", "💳", "Mokėjimai ir sąskaitos"],
   ["/tevai/vaikai", "👨‍👩‍👧", "Šeimos nariai ir adresai"],
   ["/tevai/istorija", "🕘", "Kelionių istorija"],
-  ["/tevai/sutartys", "📄", "Sutartys ir sąskaitos"],
+  ["/tevai/pranesimai", "🔔", "Pranešimai"],
+  ["/tevai/sutartys", "📄", "Sutartys"],
   ["/tevai/susipazinti", "🤝", "Susipažinti su vairuotoju"],
   ["/tevai/pradzia", "ℹ️", "Apie Ridu"],
   ["/tevai/salygos", "📋", "Sąlygos ir privatumas"],

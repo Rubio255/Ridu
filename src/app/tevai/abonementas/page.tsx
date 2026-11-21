@@ -7,6 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { feeForPayer } from "@/lib/fees";
 import { DAYS, eur, vilniusToday } from "@/lib/time";
 import { StatusPill } from "@/components/client-ui";
+import { quickCalc } from "@/lib/welcome";
 
 // Mano abonementas: mūsų modelis – kelionių kaina per mėnesį + platformos mokestis šeimai
 export default async function Page() {
@@ -23,16 +24,32 @@ export default async function Page() {
   const { data: prof } = await supabaseAdmin().from("profiles").select("id, plan_id, plan_since").eq("id", me.id).single();
   const plan = prof?.plan_id ? await loadPlanBill(s, prof, vilniusToday().slice(0, 7)) : null;
   const fee = plan ? 0 : feeForPayer(fees, me.id);
+  const due = plan ? plan.bill.due : trips + fee;
+  const month = vilniusToday().slice(0, 7);
+  const monthEnd = (m: string, add = 0) => { const d = new Date(`${m}-01T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() + 1 + add); d.setUTCDate(0); return d.toLocaleDateString("lt-LT", { month: "long", day: "numeric" }); };
+  // Sutaupytas laikas ir pinigai, palyginus su vežiojimu patiems (tos pačios prielaidos kaip skaičiuoklėje, 15 €/val.)
+  const perWeek = mine.reduce((a, x) => a + x.weekdays.length, 0);
+  const avgKm = perWeek ? mine.reduce((a, x) => a + Number(x.km) * x.weekdays.length, 0) / perWeek : 0;
+  const cmp = perWeek ? quickCalc(s, { km: avgKm, perWeek, passenger: "child", hourValue: 15 }) : null;
+  const tripHours = avgKm ? ((avgKm * 2 + 6) * 2.75 + 20) / 60 : 0;
+  const since = new Date(); since.setUTCMonth(since.getUTCMonth() - 5); since.setUTCDate(1);
+  const { data: done } = await sb.from("trips").select("pickup_at").eq("payer_id", me.id).eq("status", "delivered").gte("pickup_at", since.toISOString().slice(0, 10));
+  const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(since); d.setUTCMonth(d.getUTCMonth() + i); return d.toISOString().slice(0, 7); });
+  const hoursBy = months.map((m) => Math.round((done ?? []).filter((t) => t.pickup_at.slice(0, 7) === m).length * tripHours * 10) / 10);
+  const maxH = Math.max(1, ...hoursBy);
 
   return (
     <>
       <h1 className="text-2xl font-bold">Mano abonementas</h1>
       <section className="grid gap-3 rounded-[18px] bg-[var(--brand)] p-5 text-[var(--brand-fg)]">
         <span className="text-sm opacity-80">Šį mėnesį mokate</span>
-        <b className="num text-4xl">{eur(plan ? plan.bill.due : trips + fee)}</b>
+        <b className="num text-4xl">{eur(due)}</b>
         {plan ? <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
           <div className="flex justify-between"><span className="opacity-85">Planas „{plan.p.name}“</span><span className="num">{eur(plan.p.price)}</span></div>
-          <div className="flex justify-between"><span className="opacity-85">Kelionių už</span><span className="num">{eur(plan.bill.used)} iš {eur(plan.p.credit)}</span></div>
+          <div className="flex justify-between"><span className="opacity-85">Panaudota kredito</span><span className="num">{eur(plan.bill.used)} iš {eur(plan.p.credit)}</span></div>
+          <div className="h-2 overflow-hidden rounded-full bg-white/25" role="progressbar" aria-label="Panaudotas kreditas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, plan.bill.used / plan.p.credit) * 100)}>
+            <i className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, plan.bill.used / plan.p.credit * 100)}%` }} /></div>
+          <div className="flex justify-between"><span className="opacity-85">Kreditas galioja iki</span><span>{monthEnd(month)}{plan.bill.carryOut > 0 ? `, likutis iki ${monthEnd(month, 1)}` : ""}</span></div>
           {plan.bill.over > 0 && <div className="flex justify-between"><span className="opacity-85">Virš plano</span><span className="num">{eur(plan.bill.over)}</span></div>}
           {plan.bill.carryOut > 0 && <div className="flex justify-between"><span className="opacity-85">Nepanaudota, pereis į kitą mėnesį</span><span className="num">{eur(plan.bill.carryOut)}</span></div>}
         </div> : <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
@@ -41,6 +58,27 @@ export default async function Page() {
         </div>}
       </section>
       {plan ? <p className="text-sm muted">Plano kaina jau apima platformos mokestį. Registracijos mokesčio nėra.</p> : <p className="text-sm muted">Platformos mokestis ({eur(s.platform_fee)} / mėn.) apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Registracijos mokesčio nėra.</p>}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/tevai/planas" className="btn btn-lg">{plan ? "Keisti planą" : "Rinktis planą"}</Link>
+        <Link href="/tevai/mokejimai" className="btn btn-lg">Mokėjimai</Link>
+      </div>
+
+      {cmp && (
+        <section className="card gap-2" aria-label="Mėnesio sutaupymas">
+          <h2 className="font-bold">Mėnesio sutaupymas</h2>
+          <div className="flex items-end justify-between gap-3">
+            <div className="grid">
+              <b className="num text-3xl text-[var(--ok)]">{cmp.hours.toLocaleString("lt-LT")} val.</b>
+              <span className="text-sm muted">{cmp.self > due ? `ir apie ${eur(cmp.self - due)} pigiau nei vežioti patiems` : "laiko, kurio nereikia vairuoti ir laukti"}</span>
+            </div>
+            <div className="flex h-16 items-end gap-1" aria-label="Sutaupytos valandos per paskutinius 6 mėnesius">
+              {hoursBy.map((h, i) => <i key={months[i]} title={`${months[i]}: ${h} val.`} className="block w-3 rounded-t bg-[var(--ok)]" style={{ height: `${Math.max(6, h / maxH * 100)}%`, opacity: h ? 1 : 0.25 }} />)}
+            </div>
+          </div>
+          <p className="text-xs muted">Palyginta su vežiojimu patiems: 0,30 €/km, 1 € parkavimas ir 15 €/val. jūsų laiko. Stulpeliai rodo įvykusių kelionių sutaupytas valandas.</p>
+        </section>
+      )}
 
       <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Naujas abonementas</Link>
 

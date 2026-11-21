@@ -12,6 +12,7 @@ import { quoteSubscription, blockMin, cancelFeePct, type SubLike, type Passenger
 import { DEFAULT_SETTINGS, WINDOWS_RE, type Settings } from "@/lib/settings";
 import { addDays, vilniusToday, vilniusToDate, toMin, fmtTime } from "@/lib/time";
 import { generateTrips, reshareTrip } from "@/lib/trips";
+import { isLive } from "@/lib/live";
 import { CONSENTS, TERMS_VERSION, isRequired } from "@/lib/terms";
 import { loadConsents, clientHasKids } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
@@ -118,6 +119,7 @@ export async function cancelTrip(fd: FormData) {
   const hours = (new Date(t.pickup_at).getTime() - Date.now()) / 36e5;
   const fee = staff ? 0 : cancelFeePct(s, hours);
   await db.from("trips").update({ status: "cancelled", cancel_fee_pct: fee }).eq("id", id);
+  await db.from("trip_locations").delete().eq("trip_id", id);
   const when = whenLt(t.pickup_at);
   if (!staff) {
     await notifyOwner("Kelionė atšaukta", `${me.full_name || me.email} atšaukė kelionę ${when}${fee ? ` (mokestis ${fee}%)` : ""}.`, "/savininkas");
@@ -184,6 +186,8 @@ export async function setTripStatus(fd: FormData) {
   const db = supabaseAdmin();
   const stamp = status === "picked_up" ? { picked_up_at: new Date().toISOString() } : status === "delivered" ? { delivered_at: new Date().toISOString() } : {};
   const { data: t } = await db.from("trips").update({ status, ...stamp }).eq("id", id).select("child_id, pickup_at, to_label, child:children(first_name)").single();
+  // Kelionei pasibaigus vairuotojo vieta nebesaugoma
+  if (status !== "picked_up") await db.from("trip_locations").delete().eq("trip_id", id);
   if (t) {
     const name = (t.child as unknown as { first_name: string } | null)?.first_name ?? "Keleivis";
     const [title, verb] = STATUS_MSG[status];
@@ -299,12 +303,57 @@ export async function setClientActive(fd: FormData) {
   revalidatePath("/savininkas/klientai");
 }
 
+// Klientas pasirenka kredito planą; įsigalioja, kai patvirtina savininkas
+export async function requestPlan(fd: FormData) {
+  const me = await requireProfile();
+  const plan = String(fd.get("plan_id") ?? "");
+  if (me.role !== "client" || !["basic", "family", "premium"].includes(plan)) return;
+  await supabaseAdmin().from("profiles").update({ plan_request: plan }).eq("id", me.id);
+  const name = { basic: "Bazinis", family: "Šeimos", premium: "Premium" }[plan];
+  await notifyOwner("Klientas pasirinko planą", `${me.full_name || me.email}: ${name}. Patvirtinkite skiltyje „Klientai“.`, "/savininkas/klientai");
+  revalidatePath("/tevai", "layout");
+}
+
+// Vairuotojo vieta kelionės metu (iš telefono kas kelias sekundes)
+export async function sendLocation(i: { tripId: string; lat: number; lng: number; accuracy?: number | null; heading?: number | null; speed?: number | null }) {
+  const me = await requireDriver();
+  const lat = Number(i.lat), lng = Number(i.lng);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return { ok: false as const };
+  const db = supabaseAdmin();
+  const { data: t } = await db.from("trips").select("id, driver_id, status, pickup_at").eq("id", i.tripId).maybeSingle();
+  if (!t || t.driver_id !== me.id || !isLive(t)) return { ok: false as const, stop: true };
+  const num = (x: unknown) => (x == null || !isFinite(Number(x)) ? null : Number(x));
+  await db.from("trip_locations").upsert({ trip_id: t.id, driver_id: me.id, lat, lng, accuracy: num(i.accuracy), heading: num(i.heading), speed: num(i.speed), updated_at: new Date().toISOString() });
+  return { ok: true as const };
+}
+
+// „Dalintis kelione“: nuoroda be prisijungimo, galioja iki 4 val. po paėmimo laiko
+export async function shareTrip(tripId: string) {
+  const me = await requireProfile();
+  const db = supabaseAdmin();
+  const { data: t } = await db.from("trips").select("id, child_id, pickup_at, status, share_token").eq("id", tripId).single();
+  if (!t || !["scheduled", "picked_up"].includes(t.status)) return { ok: false as const, error: "Šios kelionės bendrinti nebegalima." };
+  if (me.role !== "owner") {
+    const { data: g } = await db.from("child_guardians").select("child_id").eq("child_id", t.child_id).eq("profile_id", me.id).maybeSingle();
+    if (!g) return { ok: false as const, error: "Neturite teisės." };
+  }
+  const token = t.share_token ?? crypto.randomUUID().replace(/-/g, "");
+  const until = new Date(Math.max(Date.now(), new Date(t.pickup_at).getTime()) + 4 * 36e5).toISOString();
+  await db.from("trips").update({ share_token: token, share_expires_at: until }).eq("id", t.id);
+  return { ok: true as const, url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/k/${token}` };
+}
+
 // Kliento kredito planas (v7). Pakeitus planą, kredito grandinė skaičiuojama nuo šio mėnesio.
 export async function setClientPlan(fd: FormData) {
   await requireOwner();
   const plan = String(fd.get("plan_id") ?? "");
   const plan_id = ["basic", "family", "premium"].includes(plan) ? plan : null;
-  await supabaseAdmin().from("profiles").update({ plan_id, plan_since: plan_id ? `${vilniusToday().slice(0, 7)}-01` : null }).eq("id", String(fd.get("id"))).eq("role", "client");
+  const id = String(fd.get("id"));
+  const { data: cur } = await supabaseAdmin().from("profiles").select("plan_id, plan_since").eq("id", id).single();
+  // Tas pats planas: kredito grandinė nepradedama iš naujo
+  const plan_since = !plan_id ? null : cur?.plan_id === plan_id && cur.plan_since ? cur.plan_since : `${vilniusToday().slice(0, 7)}-01`;
+  await supabaseAdmin().from("profiles").update({ plan_id, plan_since, plan_request: null }).eq("id", id).eq("role", "client");
+  if (plan_id) await notifyProfiles([id], "Planas patvirtintas", `Jūsų planas: ${{ basic: "Bazinis", family: "Šeimos", premium: "Premium" }[plan_id]}.`, "/tevai/abonementas");
   revalidatePath("/savininkas", "layout");
 }
 

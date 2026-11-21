@@ -6,10 +6,11 @@ const ICON: Record<string, React.ReactNode> = {
   home: <path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />,
   cal: <><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
   bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" /><path d="M10 20a2 2 0 0 0 4 0" /></>,
+  card: <><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18M7 15h4" /></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
 };
 
-// Klientų apatinė navigacija: Pagrindinis, Kelionės, Pranešimai, Profilis
+// Klientų apatinė navigacija: Pagrindinis, Grafikas, Abonementas, Profilis (pranešimai – varpelis viršuje)
 export function BottomNav({ items }: { items: { href: string; label: string; icon: string; match?: string[] }[] }) {
   const path = usePathname();
   // Tiksliausias atitikmuo laimi: „Profilis“ (/tevai/) apima visus kitus /tevai/… puslapius

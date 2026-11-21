@@ -5,6 +5,8 @@ import { driverCards, firstName, initials } from "@/lib/client-view";
 import { dayKey, fmtDay, fmtTime } from "@/lib/time";
 import { TripSteps } from "@/components/trip-steps";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { LiveMap } from "@/components/live-map";
+import { isLive } from "@/lib/live";
 import { Avatar, QuickLink, StatusPill, TripRow, type TripLite } from "@/components/client-ui";
 
 // Pagrindinis: abonementas, greiti veiksmai, svarbiausia kelionė ir artimiausios kelionės
@@ -66,6 +68,7 @@ export default async function Page() {
           </div>
           <div className="text-sm muted">{fmtDay(focus.pickup_at)} · {fmtTime(focus.pickup_at)}</div>
           <div className="text-lg"><b>{child?.first_name}</b> · {focus.from_label} → {focus.to_label}</div>
+          {isLive(focus) && <LiveMap src={`/api/vieta/${focus.id}`} />}
           <TripSteps t={focus} />
           {d && (
             <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3">
