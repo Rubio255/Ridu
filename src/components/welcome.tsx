@@ -19,8 +19,8 @@ export function Start() {
         </div>
         <div />
         <div className="grid gap-3">
-          <Link href="/susipazinti" className="btn btn-primary btn-lg rounded-full text-lg">Pradėti</Link>
-          <Link href="/skaiciuokle" className="btn btn-lg rounded-full" style={{ background: "rgb(255 255 255 / .14)", borderColor: "rgb(255 255 255 / .35)", color: "#fff" }}>Ar man apsimoka?</Link>
+          <Link href="/susipazinti" className="btn btn-primary btn-lg text-lg" style={{ borderRadius: 999 }}>Pradėti</Link>
+          <Link href="/skaiciuokle" className="btn btn-lg rounded-full" style={{ borderRadius: 999, background: "rgb(255 255 255 / .14)", borderColor: "rgb(255 255 255 / .35)", color: "#fff" }}>Ar man apsimoka?</Link>
           <Link href="/prisijungti" className="justify-self-center py-1 font-semibold text-white underline">Prisijungti</Link>
         </div>
       </div>
