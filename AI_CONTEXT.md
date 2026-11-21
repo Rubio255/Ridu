@@ -52,7 +52,7 @@ Keleiviai: vaikai, suaugę ir senjorai. Neveža neįgaliųjų vežimėliuose ir 
 |---|---|
 | Svetainė / programa | Next.js 15 (App Router), TypeScript, Tailwind v4 |
 | Duomenų bazė ir prisijungimas | Supabase (Postgres, ES regionas eu-west-1). Projektas `cixwloxnbsxpjvigsmsm` |
-| Prisijungimas | Tik pakviestiems: 6 skaitmenų kodas el. paštu arba nuoroda. Slaptažodis tik Apple peržiūros demo paskyrai |
+| Prisijungimas | Tik pakviestiems: 6 skaitmenų kodas el. paštu arba nuoroda. Slaptažodis tik Apple peržiūros demo paskyrai. **Antras žingsnis (TOTP, `/prisijungti/patvirtinti`, `src/lib/mfa.ts`)**: privalomas MB (kodas kas 12 val.) ir vairuotojams (kas 7 d.), klientams pasirinktinai. DB ribojanti taisyklė `mfa_required` (`private.mfa_ok()`) yra **kiekvienoje lentelėje: naujai lentelei ją pridėkite**. is_owner/is_driver/is_guardian dabar schemoje `private`. Turnstile CAPTCHA, kai nustatytas `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. `OWNER_LOGIN=off` išjungia MB paskyrą šioje programėlėje (kai bus atskira admin programėlė). CSP ir kitos antraštės `next.config.ts` |
 | Teisės | Skaitymas per RLS taisykles. Visi rašymai per serverio veiksmus (`src/app/actions.ts`) su service role raktu, patikrinus vaidmenį |
 | Talpinimas | Vercel (komanda `aleksandras255`, projektas `ridu`, regionas dub1). Adresas https://ridu-aleksandras255.vercel.app |
 | Planuotės (cron) | `/api/cron/trips` kasdien sukuria keliones į priekį. `/api/cron/offers` tvarko pakaitų pasiūlymus (Hobby plane kartą per parą, Pro plane kas 15 min.) |
