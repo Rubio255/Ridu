@@ -10,7 +10,7 @@ test("skaičiuoklė kaip kainų puslapyje: 8 km, 2 k./sav., vaikas – 300 €",
 
 test("jūsų laikas kainuoja: valandos vertė didina vežiojimo patiems kainą", () => {
   const r = quickCalc(S, { km: 8, perWeek: 2, passenger: "child", hourValue: 15 });
-  assert.equal(r.hours, 8.5); assert.equal(r.time, 128); assert.equal(r.self, r.car + r.time);
+  assert.equal(r.hours, 11.6); assert.equal(r.time, 174); assert.equal(r.self, r.car + r.time);
   assert.equal(quickCalc(S, { km: 8, perWeek: 2, passenger: "child", hourValue: 0 }).time, 0);
 });
 

@@ -23,11 +23,18 @@ export function SavingsCalc({ moreHref }: { moreHref?: string }) {
     <section id="skaiciuokle" className="card scroll-mt-20 border-2 border-[var(--brand)]">
       <h2 className="text-xl font-bold">Ar man apsimoka?</h2>
       <p className="text-sm muted">Vežiodami patys mokate ne tik už kurą. Mokate ir savo laiku, o jūsų valanda taip pat kainuoja.</p>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <label className="grid gap-1 text-sm font-semibold muted">Vienos kelionės atstumas, km<input className="input" type="number" min={1} max={40} step={0.5} value={f.km} onChange={(e) => setF({ ...f, km: Number(e.target.value) })} /><span className="text-xs font-normal">Į vieną pusę, pvz. nuo mokyklos iki būrelio</span></label>
-        <label className="grid gap-1 text-sm font-semibold muted">Kelionių per savaitę<input className="input" type="number" min={1} max={14} value={f.perWeek} onChange={(e) => setF({ ...f, perWeek: Number(e.target.value) })} /><span className="text-xs font-normal">Ten ir atgal skaičiuokite kaip 2</span></label>
-        <label className="grid gap-1 text-sm font-semibold muted">Keleivis<select className="input" value={f.passenger} onChange={(e) => setF({ ...f, passenger: e.target.value as typeof f.passenger })}><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Senjoras su palyda</option></select></label>
-        <label className="grid gap-1 text-sm font-semibold muted">Jūsų valandos vertė, €<input className="input" type="number" min={0} max={200} value={f.hourValue} onChange={(e) => setF({ ...f, hourValue: Number(e.target.value) })} /></label>
+      {/* Etiketė, laukelis ir paaiškinimas sulygiuoti eilutėmis (subgrid), kad laukeliai būtų viename aukštyje */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 md:grid-cols-4">
+        {([
+          ["Atstumas, km", <input key="km" id="calc-km" className="input" type="number" min={1} max={40} step={0.5} value={f.km} onChange={(e) => setF({ ...f, km: Number(e.target.value) })} />, "Į vieną pusę, pvz. nuo mokyklos iki būrelio"],
+          ["Kelionių per savaitę", <input key="pw" id="calc-pw" className="input" type="number" min={1} max={14} value={f.perWeek} onChange={(e) => setF({ ...f, perWeek: Number(e.target.value) })} />, "Ten ir atgal skaičiuokite kaip 2"],
+          ["Keleivis", <select key="px" id="calc-px" className="input" value={f.passenger} onChange={(e) => setF({ ...f, passenger: e.target.value as typeof f.passenger })}><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Senjoras su palyda</option></select>, ""],
+          ["Valandos vertė, €", <input key="hv" id="calc-hv" className="input" type="number" min={0} max={200} value={f.hourValue} onChange={(e) => setF({ ...f, hourValue: Number(e.target.value) })} />, "Kiek uždirbate per valandą"],
+        ] as [string, React.ReactNode, string][]).map(([label, field, hint]) => (
+          <label key={label} className="row-span-3 grid grid-rows-subgrid gap-1 pb-2 text-sm font-semibold muted">
+            <span className="self-end">{label}</span>{field}<span className="text-xs font-normal">{hint}</span>
+          </label>
+        ))}
       </div>
       {r && (
         <div aria-live="polite" className="grid gap-3">
