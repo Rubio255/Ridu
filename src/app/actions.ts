@@ -33,9 +33,10 @@ async function existingSubs(): Promise<SubLike[]> {
 }
 
 
+// Artimieji (relation = 'artimasis') tik stebi keliones ir gauna pranešimus: keisti ar užsakyti negali
 async function assertGuardian(childId: string, profileId: string) {
-  const { data } = await supabaseAdmin().from("child_guardians").select("child_id").eq("child_id", childId).eq("profile_id", profileId).maybeSingle();
-  if (!data) throw new Error("Neturite teisės užsakyti šiam keleiviui.");
+  const { data } = await supabaseAdmin().from("child_guardians").select("child_id, relation").eq("child_id", childId).eq("profile_id", profileId).maybeSingle();
+  if (!data || data.relation === "artimasis") throw new Error("Neturite teisės užsakyti šiam keleiviui.");
 }
 
 type SubInput = { child_id: string; from_place_id: string; to_place_id: string; weekdays: number[]; period: "am" | "pm"; pickup_time: string; extra_kids: number; months: number };

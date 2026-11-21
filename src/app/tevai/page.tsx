@@ -17,8 +17,10 @@ export default async function Page() {
   const [{ data: trips }, { data: subs }, { data: kids }] = await Promise.all([
     sb.from("trips").select("*, child:children(first_name, passenger_type, code_word)").gte("pickup_at", new Date(now.getTime() - 12 * 36e5).toISOString()).lte("pickup_at", until.toISOString()).order("pickup_at"),
     sb.from("subscriptions").select("*, child:children(first_name), from:places!subscriptions_from_place_id_fkey(label), to:places!subscriptions_to_place_id_fkey(label)").in("status", ["pending", "active"]).order("created_at"),
-    sb.from("child_guardians").select("child_id").eq("profile_id", me.id),
+    sb.from("child_guardians").select("child_id, relation").eq("profile_id", me.id),
   ]);
+  // Artimasis tik stebi: atšaukti ir keisti gali tik globėjai
+  const canEdit = (childId: string) => (kids ?? []).some((k) => k.child_id === childId && k.relation !== "artimasis");
   // Priskirtas vairuotojas ir automobilis (tik vardas, automobilis ir valst. nr.)
   const dids = [...new Set((trips ?? []).map((t) => t.driver_id).filter(Boolean))];
   const { data: drv } = dids.length ? await supabaseAdmin().from("drivers").select("profile_id, car, plate, profile:profiles(full_name)").in("profile_id", dids) : { data: [] };
@@ -56,7 +58,7 @@ export default async function Page() {
             ? <div className="rounded-lg bg-[var(--surface-2)] p-3 text-sm">Vairuotojas pasakys vaikui jūsų slaptą žodį. Priminkite vaikui, kad sėstų tik išgirdęs jį.</div>
             : <Link href="/tevai/vaikai#slaptas-zodis" className="rounded-lg bg-[var(--surface-2)] p-3 text-sm font-semibold">Sukurkite slaptą žodį vaikui →</Link>)}
           {watcherNames.length > 0 && <div className="text-sm muted">Pranešimus gauna: {watcherNames.join(", ")}</div>}
-          {focus.status === "scheduled" && new Date(focus.pickup_at) > now && (() => { const fee = cancelFeePct(s, (new Date(focus.pickup_at).getTime() - now.getTime()) / 36e5); return (
+          {focus.status === "scheduled" && new Date(focus.pickup_at) > now && canEdit(focus.child_id) && (() => { const fee = cancelFeePct(s, (new Date(focus.pickup_at).getTime() - now.getTime()) / 36e5); return (
             <form action={cancelTrip}><input type="hidden" name="id" value={focus.id} /><button className="btn">Atšaukti šią kelionę{fee ? ` (mokestis ${fee}%)` : ""}</button></form>); })()}
         </section>
       )}
@@ -78,7 +80,7 @@ export default async function Page() {
                   <div className="break-words font-semibold">{t.from_label} <span className="muted font-normal">→</span> {t.to_label}</div>
                   {t.status_note && <div className="text-sm font-semibold">{t.status_note}</div>}
                   {t.status !== "cancelled" && driverLine(t.driver_id) && <div className="text-sm muted">{driverLine(t.driver_id)}</div>}
-                  {t.status === "scheduled" && hours > 0 && (
+                  {t.status === "scheduled" && hours > 0 && canEdit(t.child_id) && (
                     <form action={cancelTrip}><input type="hidden" name="id" value={t.id} /><button className="btn">Atšaukti šią kelionę{fee ? ` (mokestis ${fee}%)` : ""}</button></form>
                   )}
                 </div>
@@ -100,7 +102,7 @@ export default async function Page() {
             </div>
             <div className="text-sm muted">{x.from.label} → {x.to.label}</div>
             <div className="text-sm">{eur(x.monthly_eur)} / mėn.{x.months > 1 ? ` · ${x.months} mėn.` : ""}{x.is_bid ? " · jūsų pasiūlymas" : ""}{x.payer_id !== me.id ? " · užsakė kitas globėjas" : ""}</div>
-            {x.status === "active" && x.period === "pm" && (
+            {x.status === "active" && x.period === "pm" && canEdit(x.child_id) && (
               <form action={requestSubscriptionChange} className="flex flex-wrap items-end gap-2">
                 <input type="hidden" name="id" value={x.id} />
                 <label className="grid gap-1 text-xs font-semibold muted">Norimas naujas laikas<input type="time" name="pickup_time" className="input" min={s.afternoon_start} max={s.afternoon_end} defaultValue={String(x.pickup_time).slice(0, 5)} /></label>

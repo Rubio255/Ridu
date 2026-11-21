@@ -20,7 +20,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
   const ids = (kids ?? []).map((c) => c.id);
   const { data: gs } = ids.length ? await supabaseAdmin().from("child_guardians").select("child_id, profile_id, relation, profile:profiles(full_name, email)").in("child_id", ids) : { data: [] };
   const who = (id: string) => (gs ?? []).filter((g) => g.child_id === id).map((g) => ({ ...g, p: g.profile as unknown as { full_name: string; email: string | null } | null }));
-  const childKids = (kids ?? []).filter((c) => c.passenger_type === "child"), adults = (kids ?? []).filter((c) => c.passenger_type !== "child");
+  // Artimasis tik stebi keleivį: keisti ir kviesti kitų negali
+  const mine = (id: string) => (gs ?? []).some((g) => g.child_id === id && g.profile_id === me.id && g.relation !== "artimasis");
+  const childKids = (kids ?? []).filter((c) => c.passenger_type === "child" && mine(c.id)), adults = (kids ?? []).filter((c) => c.passenger_type !== "child" && mine(c.id));
   return (
     <div className="grid gap-4">
     {childKids.length > 0 && (
@@ -49,7 +51,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
             {who(c.id).map((g) => (
               <li key={g.profile_id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span>{g.profile_id === me.id ? "Jūs" : g.p?.full_name || g.p?.email || "Artimasis"}{g.relation === "artimasis" ? <span className="muted"> · artimasis</span> : null}</span>
-                {g.relation === "artimasis" && g.profile_id !== me.id && (
+                {g.relation === "artimasis" && g.profile_id !== me.id && mine(c.id) && (
                   <form action={removeRelative}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="profile_id" value={g.profile_id} /><button className="btn text-xs">Pašalinti</button></form>
                 )}
               </li>
