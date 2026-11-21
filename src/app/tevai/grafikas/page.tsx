@@ -5,7 +5,7 @@ import { TripRow, type TripLite } from "@/components/client-ui";
 
 const TABS = [["siandien", "Šiandien"], ["rytoj", "Rytoj"], ["savaite", "Savaitė"]] as const;
 
-// Mano grafikas: šiandien, rytoj arba 7 dienos į priekį
+// Kelionės (grafikas): šiandien, rytoj arba 7 dienos į priekį
 export default async function Page({ searchParams }: { searchParams: Promise<{ d?: string }> }) {
   const { d } = await searchParams;
   const tab = TABS.some(([k]) => k === d) ? d! : "siandien";
@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Mano grafikas</h1>
+        <h1 className="text-2xl font-bold">Kelionės</h1>
         <Link href="/tevai/istorija" className="text-sm font-semibold text-[var(--brand)]">Istorija</Link>
       </div>
       <nav className="seg" aria-label="Laikotarpis">

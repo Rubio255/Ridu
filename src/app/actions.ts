@@ -463,9 +463,9 @@ const eurLt = (v: number) => `${Number(v).toFixed(2).replace(".", ",")} €`;
 /* ---------- Pirmas ekranas: skaičiuoklė ir pažintinis pokalbis ---------- */
 
 // Viešai prieinama: grąžinami tik galutiniai skaičiai, ne kainodaros formulė
-export async function calcAction(i: { km: number; perWeek: number; passenger: PassengerType; hourValue: number }) {
-  const passenger: PassengerType = ["child", "adult", "senior"].includes(i.passenger) ? i.passenger : "child";
-  return quickCalc(await loadSettings(), { km: Number(i.km) || 1, perWeek: Number(i.perWeek) || 1, passenger, hourValue: Number(i.hourValue) || 0 });
+// Skaičiuoklėje keleivio tipas neskirstomas: skaičiuojama su palyda (kaip daugumai keleivių)
+export async function calcAction(i: { km: number; perWeek: number; hourValue: number; costPerKm?: number; parking?: number }) {
+  return quickCalc(await loadSettings(), { km: Number(i.km) || 1, perWeek: Number(i.perWeek) || 1, passenger: "child", hourValue: Number(i.hourValue) || 0, costPerKm: i.costPerKm == null ? undefined : Number(i.costPerKm), parking: i.parking == null ? undefined : Number(i.parking) });
 }
 
 // Pokalbio užklausą gali pateikti ir neprisijungęs lankytojas (atėjęs iš įstaigos)

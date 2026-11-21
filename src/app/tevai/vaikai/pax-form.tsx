@@ -7,11 +7,10 @@ export function PassengerForm({ myName }: { myName: string }) {
   const [who, setWho] = useState<"self" | "other">("self"), [drop, setDrop] = useState("alone");
   return (
     <form action={addPassenger} className="grid gap-3 border-t border-[var(--line)] pt-3">
-      <h3 className="font-bold">Pridėti suaugusį keleivį</h3>
+      <h3 className="font-bold">Pridėti keleivį</h3>
       <label className="grid gap-1 text-sm font-semibold muted">Kas važiuos
-        <select name="who" className="input" value={who} onChange={(e) => setWho(e.target.value as "self" | "other")}><option value="self">Aš pats</option><option value="other">Kitas suaugęs</option></select></label>
+        <select name="who" className="input" value={who} onChange={(e) => setWho(e.target.value as "self" | "other")}><option value="self">Aš pats</option><option value="other">Kitas žmogus</option></select></label>
       <label className="grid gap-1 text-sm font-semibold muted">Vardas<input name="first_name" required className="input" key={who} defaultValue={who === "self" ? myName : ""} /></label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="senior" />Vyresnio amžiaus: palydėti iki durų ir padėti įlipti</label>
       {who === "other" && (
         <>
           <label className="grid gap-1 text-sm font-semibold muted">Atvykus

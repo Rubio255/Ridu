@@ -9,9 +9,10 @@ const MENU: [string, string, string][] = [
   ["/tevai/vaikai", "👨‍👩‍👧", "Šeimos nariai ir adresai"],
   ["/tevai/istorija", "🕘", "Kelionių istorija"],
   ["/tevai/sutartys", "📄", "Sutartys ir sąskaitos"],
-  ["/tevai/pradzia", "🛡️", "Apie Ridu ir saugumas"],
+  ["/tevai/susipazinti", "🤝", "Susipažinti su vairuotoju"],
+  ["/tevai/pradzia", "ℹ️", "Apie Ridu"],
   ["/tevai/salygos", "📋", "Sąlygos ir privatumas"],
-  ["/paskyra", "⚙️", "Paskyra"],
+  ["/paskyra", "⚙️", "Paskyra ir pranešimų nustatymai"],
 ];
 
 export default async function Page() {
