@@ -13,7 +13,10 @@
     color-scheme: dark;
   }
 }
-body { background: var(--bg); color: var(--fg); font-family: var(--font-body), system-ui, sans-serif; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body), system-ui, sans-serif; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+/* iPhone būsenos juosta (laikrodis, baterija): fiksuota spalvota juosta, po kuria turinys nelenda */
+body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top); background: var(--brand); z-index: 50; pointer-events: none; }
+.sticky-safe { top: env(safe-area-inset-top); }
 h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; text-wrap: balance; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
 .input { font: inherit; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 100%; font-weight: 400; }
