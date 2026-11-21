@@ -1,6 +1,26 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { familyFees, familyKey } from "@/lib/fees";
+import { countedPart, planById, planChain } from "@/lib/pricing";
+import type { Settings } from "@/lib/settings";
+
+const monthsFrom = (from: string, to: string) => {
+  const out: string[] = [];
+  for (let d = new Date(`${from.slice(0, 7)}-01T00:00:00Z`); d.toISOString().slice(0, 7) <= to; d.setUTCMonth(d.getUTCMonth() + 1)) out.push(d.toISOString().slice(0, 7));
+  return out;
+};
+
+/** Kredito plano sąskaita mėnesiui ("YYYY-MM"): kreditas leidžiamas standartine kelionių verte, likutis perkeliamas nuo plano pradžios. */
+export async function loadPlanBill(s: Settings, c: { id: string; plan_id: string | null; plan_since: string | null }, month: string) {
+  const p = planById(s, c.plan_id);
+  if (!p) return null;
+  const months = monthsFrom(c.plan_since ?? `${month}-01`, month);
+  const end = new Date(`${month}-01T00:00:00Z`); end.setUTCMonth(end.getUTCMonth() + 1);
+  const { data } = await supabaseAdmin().from("trips").select("pickup_at, price_eur, standard_eur, status, cancel_fee_pct, credit_eur")
+    .eq("payer_id", c.id).gte("pickup_at", `${months[0]}-01T00:00:00Z`).lt("pickup_at", end.toISOString());
+  const used = months.map((m) => (data ?? []).filter((t) => t.pickup_at.slice(0, 7) === m).reduce((a, t) => a + Number(t.standard_eur ?? t.price_eur) * countedPart(t), 0));
+  return { p, bill: planChain(s, p, used).pop()! };
+}
 
 async function guardiansMap() {
   const { data } = await supabaseAdmin().from("child_guardians").select("child_id, profile_id");

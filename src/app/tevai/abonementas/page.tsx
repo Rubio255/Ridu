@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireProfile, loadSettings } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requestSubscriptionChange } from "@/app/actions";
-import { loadFamilyFees } from "@/lib/fees-server";
+import { loadFamilyFees, loadPlanBill } from "@/lib/fees-server";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import { feeForPayer } from "@/lib/fees";
 import { DAYS, eur, vilniusToday } from "@/lib/time";
 import { StatusPill } from "@/components/client-ui";
@@ -18,20 +19,28 @@ export default async function Page() {
   const canEdit = (childId: string) => (kids ?? []).some((k) => k.child_id === childId && k.relation !== "artimasis");
   const mine = (subs ?? []).filter((x) => x.status === "active" && x.payer_id === me.id);
   const trips = mine.reduce((a, x) => a + Number(x.monthly_eur), 0);
-  const fee = feeForPayer(fees, me.id);
+  // Kredito planas (jei priskirtas): plano kaina jau su platformos mokesčiu, viršijus kreditą – papildomai
+  const { data: prof } = await supabaseAdmin().from("profiles").select("id, plan_id, plan_since").eq("id", me.id).single();
+  const plan = prof?.plan_id ? await loadPlanBill(s, prof, vilniusToday().slice(0, 7)) : null;
+  const fee = plan ? 0 : feeForPayer(fees, me.id);
 
   return (
     <>
       <h1 className="text-2xl font-bold">Mano abonementas</h1>
       <section className="grid gap-3 rounded-[18px] bg-[var(--brand)] p-5 text-[var(--brand-fg)]">
         <span className="text-sm opacity-80">Šį mėnesį mokate</span>
-        <b className="num text-4xl">{eur(trips + fee)}</b>
-        <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
+        <b className="num text-4xl">{eur(plan ? plan.bill.due : trips + fee)}</b>
+        {plan ? <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
+          <div className="flex justify-between"><span className="opacity-85">Planas „{plan.p.name}“</span><span className="num">{eur(plan.p.price)}</span></div>
+          <div className="flex justify-between"><span className="opacity-85">Kelionių už</span><span className="num">{eur(plan.bill.used)} iš {eur(plan.p.credit)}</span></div>
+          {plan.bill.over > 0 && <div className="flex justify-between"><span className="opacity-85">Virš plano</span><span className="num">{eur(plan.bill.over)}</span></div>}
+          {plan.bill.carryOut > 0 && <div className="flex justify-between"><span className="opacity-85">Nepanaudota, pereis į kitą mėnesį</span><span className="num">{eur(plan.bill.carryOut)}</span></div>}
+        </div> : <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
           <div className="flex justify-between"><span className="opacity-85">Kelionės pagal grafiką</span><span className="num">{eur(trips)}</span></div>
           <div className="flex justify-between"><span className="opacity-85">Platformos mokestis šeimai</span><span className="num">{fee ? eur(fee) : "–"}</span></div>
-        </div>
+        </div>}
       </section>
-      <p className="text-sm muted">Platformos mokestis ({eur(s.platform_fee)} / mėn.) apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Registracijos mokesčio nėra.</p>
+      {plan ? <p className="text-sm muted">Plano kaina jau apima platformos mokestį. Registracijos mokesčio nėra.</p> : <p className="text-sm muted">Platformos mokestis ({eur(s.platform_fee)} / mėn.) apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Registracijos mokesčio nėra.</p>}
 
       <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Naujas abonementas</Link>
 

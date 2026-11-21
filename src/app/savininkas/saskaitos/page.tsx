@@ -4,15 +4,8 @@ import { eur, vilniusToday } from "@/lib/time";
 import { notifyInvoice } from "@/app/actions";
 import { loadDrivers } from "@/lib/drivers";
 import { monthByDriver } from "@/lib/payouts";
-import { loadFamilyFees } from "@/lib/fees-server";
 import { feeForPayer } from "@/lib/fees";
-import { countedPart, planById, planChain } from "@/lib/pricing";
-
-const monthsFrom = (from: string, to: string) => {
-  const out: string[] = [];
-  for (let d = new Date(`${from.slice(0, 7)}-01T00:00:00Z`); d.toISOString().slice(0, 7) <= to; d.setUTCMonth(d.getUTCMonth() + 1)) out.push(d.toISOString().slice(0, 7));
-  return out;
-};
+import { loadFamilyFees, loadPlanBill } from "@/lib/fees-server";
 
 export default async function Page() {
   const s = await loadSettings();
@@ -24,25 +17,14 @@ export default async function Page() {
     db.from("trips").select("payer_id, price_eur, status, cancel_fee_pct, credit_eur").gte("pickup_at", start.toISOString()).lt("pickup_at", end.toISOString()),
     db.from("profiles").select("id, full_name, email, contract_no, plan_id, plan_since").eq("role", "client"),
   ]);
-  // Kredito planų klientams reikia kelionių nuo plano pradžios (nepanaudotas kreditas perkeliamas)
-  const planFrom = (clients ?? []).filter((c) => c.plan_id && c.plan_since).map((c) => c.plan_since as string).sort()[0];
-  const { data: planTrips } = planFrom
-    ? await db.from("trips").select("payer_id, pickup_at, price_eur, standard_eur, status, cancel_fee_pct, credit_eur").gte("pickup_at", `${planFrom}T00:00:00Z`).lt("pickup_at", end.toISOString())
-    : { data: [] as { payer_id: string; pickup_at: string; price_eur: number; standard_eur: number | null; status: string; cancel_fee_pct: number | null; credit_eur: number | null }[] };
-  const planOf = (c: { id: string; plan_id: string | null; plan_since: string | null }) => {
-    const p = planById(s, c.plan_id);
-    if (!p) return null;
-    const months = monthsFrom(c.plan_since ?? `${month}-01`, month);
-    const used = months.map((m) => (planTrips ?? []).filter((t) => t.payer_id === c.id && t.pickup_at.slice(0, 7) === m)
-      .reduce((a, t) => a + Number(t.standard_eur ?? t.price_eur) * countedPart(t), 0));
-    return { p, bill: planChain(s, p, used).pop()! };
-  };
+  const plans = new Map(await Promise.all((clients ?? []).filter((c) => c.plan_id).map(async (c) => [c.id, await loadPlanBill(s, c, month)] as const)));
+  const planOf = (c: { id: string }) => plans.get(c.id) ?? null;
   const fees = await loadFamilyFees(month, s.platform_fee);
+  // Su planu: plano kaina (jau su platformos mokesčiu) + viršijimas; be plano: abonementų kaina + platformos mokestis
   const rows = (clients ?? []).map((c) => {
     const ms = (subs ?? []).filter((x) => x.payer_id === c.id), ts = (trips ?? []).filter((t) => t.payer_id === c.id);
     const plan = planOf(c);
     return { c, plan, subs: ms.length, monthly: ms.reduce((a, x) => a + Number(x.monthly_eur), 0), done: ts.filter((t) => t.status === "delivered").length, cancelled: ts.filter((t) => t.status === "cancelled" || t.status === "no_show").length, credit: plan ? 0 : ts.reduce((a, t) => a + Number(t.credit_eur ?? 0), 0), fee: plan ? 0 : feeForPayer(fees, c.id) };
-  // Su planu: plano kaina (jau su platformos mokesčiu) + viršijimas; be plano: abonementų kaina + platformos mokestis
   }).map((r) => ({ ...r, total: r.plan ? r.plan.bill.due : Math.max(0, r.monthly - r.credit) + r.fee })).filter((r) => r.plan || r.subs || r.done || r.cancelled || r.fee);
   const feeSum = rows.reduce((a, r) => a + r.fee, 0), gross = rows.reduce((a, r) => a + r.total, 0);
   const vat = gross - gross / (1 + s.vat_pct / 100), net = gross - vat;
