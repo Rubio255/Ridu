@@ -1,10 +1,12 @@
 import { Logo } from "@/components/logo";
 import { LoginForm } from "./login-form";
+import Link from "next/link";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ klaida?: string }> }) {
   const { klaida } = await searchParams;
   return (
     <main className="mx-auto grid min-h-dvh max-w-sm content-center gap-6 px-4">
+      <Link href="/" className="justify-self-start text-sm font-semibold text-[var(--muted)]">← Grįžti į pradžią</Link>
       <div className="grid gap-2">
         <Logo size={64} />
         <h1 className="text-2xl font-bold">Ridu</h1>
