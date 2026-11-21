@@ -20,12 +20,10 @@ test("v7 pavyzdys: vaikas 8 km, 22 min – 23,04 €", async () => {
   assert.equal(standardTripValue(S, 22, 8, "child"), 23.04);
 });
 
-test("laiko koeficientai: pikas, ramus, įprastas, savaitgalis tik patvirtinus", async () => {
+test("laiko koeficientai: pikas, ramus, įprastas", async () => {
   const { timeMultiplier } = await import("../src/lib/pricing");
   assert.equal(timeMultiplier(S, "07:30"), 1.15); assert.equal(timeMultiplier(S, "15:59"), 1.15);
   assert.equal(timeMultiplier(S, "11:00"), 0.9); assert.equal(timeMultiplier(S, "17:00"), 1);
-  assert.equal(timeMultiplier(S, "17:00", true), 1);
-  assert.equal(timeMultiplier({ ...S, surcharge_approved: true }, "17:00", true), 1.25);
 });
 
 test("už darbo laiko ribų – atmetama", () => {
@@ -92,6 +90,9 @@ test("vienkartinė kelionė pagal zonas, suaugusiam 3 € pigiau", async () => {
   assert.equal(oneOffPrice(S, 4, 12), 21); assert.equal(oneOffPrice(S, 9, 25, "adult"), 25);
   assert.equal(oneOffPrice(S, 20, 50), 44);
   assert.equal(oneOffPrice(S, 25, 60), Math.round(standardTripValue(S, 60, 25) * 1.2));
+  // savaitgalio priemoka +25 % tik vienkartinėms ir tik patvirtinus
+  assert.equal(oneOffPrice(S, 4, 12, "child", true), Math.round(21 * 1.25));
+  assert.equal(oneOffPrice({ ...S, surcharge_approved: false }, 4, 12, "child", true), 21);
 });
 
 test("atšaukimai: vėlyvas – dalis, dėl teikėjo – nieko", async () => {

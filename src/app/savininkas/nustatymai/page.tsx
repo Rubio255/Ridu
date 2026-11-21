@@ -20,7 +20,7 @@ export default async function Page() {
         </section>
       ))}
       <section className="card">
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surcharge_approved" defaultChecked={s.surcharge_approved} /> Patvirtinu savaitgalio ir švenčių priemoką ({s.weekend_pct} %)</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surcharge_approved" defaultChecked={s.surcharge_approved} /> Taikyti savaitgalio ir švenčių priemoką ({s.weekend_pct} %) vienkartinėms kelionėms. Abonementų ir planų kainos nesikeičia.</label>
       </section>
       <div><button className="btn btn-primary">Išsaugoti</button> <span className="text-sm muted">Naujos kainos taikomos naujiems užsakymams. Galiojančių užsakymų kaina nesikeičia.</span></div>
     </form>

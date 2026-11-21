@@ -36,10 +36,10 @@ function inWindows(windows: string, time: string) {
     return a && b && m >= toMin(a) && m < toMin(b);
   });
 }
-// Laiko koeficientas: pikas, ramus laikas arba įprastas (1,0); savaitgalio priemoka tik savininkui patvirtinus
-export function timeMultiplier(s: Settings, time: string, weekend = false) {
-  const base = inWindows(s.peak_windows, time) ? s.peak_mult : inWindows(s.quiet_windows, time) ? s.quiet_mult : 1;
-  return weekend && s.surcharge_approved ? base * (1 + s.weekend_pct / 100) : base;
+// Laiko koeficientas: pikas, ramus laikas arba įprastas (1,0). Abonementams jis užfiksuojamas užsakant;
+// plano kreditas visada leidžiamas standartine verte be koeficientų.
+export function timeMultiplier(s: Settings, time: string) {
+  return inWindows(s.peak_windows, time) ? s.peak_mult : inWindows(s.quiet_windows, time) ? s.quiet_mult : 1;
 }
 
 export function inAfternoon(s: Settings, time: string) {
@@ -149,11 +149,13 @@ export function escortPrice(s: Settings, minutes: number, km: number) {
 }
 
 // Vienkartinė kelionė pagal zoną; virš 20 km – standartinė vertė su antkainiu. Antkainis lieka platformai.
-export function oneOffPrice(s: Settings, km: number, driveMin: number, t: PassengerType = "child") {
+// Savaitgalio ir švenčių priemoka (savininkas patvirtino 2026-11-21) taikoma TIK vienkartinėms kelionėms.
+export function oneOffPrice(s: Settings, km: number, driveMin: number, t: PassengerType = "child", weekend = false) {
   const zones: [number, number][] = [[5, s.zone_a], [10, s.zone_b], [15, s.zone_c], [20, s.zone_d]];
   const z = zones.find(([max]) => km <= max);
   const base = z ? z[1] : Math.round(standardTripValue(s, driveMin, km, t) * (1 + s.zone_over_pct / 100));
-  return Math.max(0, t === "adult" ? base - s.zone_adult_off : base);
+  const price = Math.max(0, t === "adult" ? base - s.zone_adult_off : base);
+  return weekend && s.surcharge_approved ? Math.round(price * (1 + s.weekend_pct / 100)) : price;
 }
 
 // Kiek kelionės vertės skaičiuojama: įvykusi, suplanuota ar neatvykus – visa; atšaukta – pagal atšaukimo mokestį;

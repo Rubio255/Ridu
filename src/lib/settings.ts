@@ -135,7 +135,7 @@ export const DEFAULT_SETTINGS: Settings = {
   very_late_hours: 2,
   very_late_pct: 100,
   weekend_pct: 25,
-  surcharge_approved: false,
+  surcharge_approved: true, // savininkas patvirtino 2026-11-21, tik vienkartinėms kelionėms
   vat_pct: 21,
   tax_pct: 15,
   cost_insurance: 60,
@@ -170,7 +170,7 @@ export const SETTINGS_GROUPS: { title: string; fields: [keyof Settings, string][
   ]},
   { title: "Laiko koeficientai", fields: [
     ["peak_windows", "Piko laikas (pvz. 07:15-08:30, 13:30-16:00)"], ["peak_mult", "Piko koeficientas"],
-    ["quiet_windows", "Ramus laikas"], ["quiet_mult", "Ramaus laiko koeficientas"], ["weekend_pct", "Savaitgalio ir švenčių priemoka, %"],
+    ["quiet_windows", "Ramus laikas"], ["quiet_mult", "Ramaus laiko koeficientas"], ["weekend_pct", "Savaitgalio ir švenčių priemoka vienkartinėms kelionėms, %"],
   ]},
   { title: "Aukcionas", fields: [
     ["auction_mult", "Minimalaus pasiūlymo koeficientas"], ["bid_step_pct", "Pasiūlymo žingsnis, %"], ["bid_close_day", "Pasiūlymai priimami iki mėnesio dienos"],
