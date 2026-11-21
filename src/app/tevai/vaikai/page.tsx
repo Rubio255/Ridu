@@ -3,7 +3,6 @@ import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { addPlace, saveCodeWord, addRelative, removeRelative } from "@/app/actions";
 import { PassengerForm } from "./pax-form";
 import { BackHeader } from "@/components/client-ui";
-import { PASSENGER_LT, type PassengerType } from "@/lib/pricing";
 
 const NO_SPECIAL = "Važiuojame įprastais automobiliais, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų. Sulankstomą vaikštynę ar vežimėlį vežame bagažinėje. Tai ne medicininis pervežimas.";
 
@@ -80,7 +79,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
         <h2 className="font-bold">Keleiviai</h2>
         {(kids ?? []).map((c) => (
           <div key={c.id} className="grid gap-1 border-t border-[var(--line)] pt-3 first:border-0 first:pt-0">
-            <div className="flex justify-between gap-2"><b>{c.first_name}{c.birth_year ? `, ${new Date().getFullYear() - c.birth_year} m.` : ""}</b><span className="text-xs muted">{c.passenger_type === "child" ? c.seat : c.is_self ? "Aš pats" : PASSENGER_LT[c.passenger_type as PassengerType]}</span></div>
+            <div className="flex justify-between gap-2"><b>{c.first_name}{c.birth_year ? `, ${new Date().getFullYear() - c.birth_year} m.` : ""}</b><span className="text-xs muted">{c.is_self ? "Aš pats" : "Keleivis"}</span></div>
             {c.passenger_type !== "child" && !c.is_self && <div className="text-sm muted">{c.dropoff === "handover" ? `Palydėti ir perduoti${c.handover_to ? `: ${c.handover_to}` : ""}` : "Išlipa pats"}</div>}
             {c.notes && <div className="text-sm">{c.notes}</div>}
           </div>

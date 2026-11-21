@@ -7,6 +7,7 @@ import { cancelFeePct } from "@/lib/pricing";
 import { driverCards, firstName, initials } from "@/lib/client-view";
 import { eur, fmtDay, fmtTime } from "@/lib/time";
 import { TripSteps } from "@/components/trip-steps";
+import { mapsLink } from "@/lib/maps";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { Avatar, StatusPill } from "@/components/client-ui";
 
@@ -53,6 +54,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <TripSteps t={t} />
         {t.status_note && <p className="rounded-xl bg-[var(--surface-2)] p-3 text-sm font-semibold">{t.status_note}</p>}
         <div className="flex justify-between border-t border-[var(--line)] pt-3 text-sm"><span className="muted">Kaina</span><b className="num">{eur(t.price_eur)}</b></div>
+        <a href={mapsLink(t.from_address, t.to_address)} target="_blank" rel="noopener" className="btn">🗺️ Maršrutas žemėlapyje</a>
       </section>
 
       {d ? (

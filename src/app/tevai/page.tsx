@@ -32,9 +32,12 @@ export default async function Page() {
 
   return (
     <>
-      <div className="grid gap-0.5">
-        <p className="muted">Laba diena,</p>
-        <h1 className="text-2xl font-bold">{firstName(me.full_name) || "Sveiki"} 👋</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid gap-0.5">
+          <p className="muted">Sveiki,</p>
+          <h1 className="text-2xl font-bold">{firstName(me.full_name) || "Sveiki"} 👋</h1>
+        </div>
+        <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-xl">🔔</Link>
       </div>
 
       {/* Abonemento juosta */}
@@ -47,12 +50,12 @@ export default async function Page() {
       </Link>
 
       <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-3">
-        <QuickLink href="/tevai/grafikas" label="Grafikas" icon="🗓️" />
-        <QuickLink href="/tevai/pradzia#skaiciuokle" label="Skaičiuoklė" icon="⏱️" />
-        <QuickLink href="/tevai/pradzia#saugumas" label="Saugumas" icon="🛡️" />
+        <QuickLink href="/tevai/grafikas?d=savaite" label="Tvarkaraštis" icon="🗓️" />
+        <QuickLink href="/tevai/skaiciuokle" label="Skaičiuoklė" icon="🧮" />
+        <QuickLink href="/tevai/saugumas" label="Saugumas" icon="🛡️" />
       </nav>
 
-      {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje „Šeimos nariai“. Vaikus įrašo MB pagal sutartį.</div>}
+      {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą žmogų skiltyje <Link href="/tevai/vaikai" className="underline">„Šeimos nariai“</Link>. Vaikus įrašo MB pagal sutartį.</div>}
 
       {focus ? (
         <section className="card gap-4" aria-labelledby="dabar">
@@ -89,10 +92,7 @@ export default async function Page() {
       <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Nauja kelionė</Link>
 
       <section className="card" aria-labelledby="artimiausios">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 id="artimiausios" className="font-bold">Artimiausios kelionės</h2>
-          <Link href="/tevai/grafikas" className="text-sm font-semibold text-[var(--brand)]">Visos</Link>
-        </div>
+        <h2 id="artimiausios" className="font-bold">Artimiausios kelionės</h2>
         {next.length === 0 && <p className="text-sm muted">Artimiausias dvi savaites kitų kelionių nėra.</p>}
         {next.map((t) => <TripRow key={t.id} t={t as unknown as TripLite} day />)}
       </section>

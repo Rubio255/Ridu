@@ -2,7 +2,6 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { quoteAction, createSubscription } from "@/app/actions";
-import { mapsLink } from "@/lib/maps";
 import { Stepper } from "@/components/stepper";
 
 const DAYS = ["Pr", "An", "Tr", "Kt", "Pn"];
@@ -43,6 +42,13 @@ export function SubForm({ kids, places, hours }: {
     <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
       <div className="card">
         <h1 className="text-xl font-bold">Naujas abonementas</h1>
+        {/* Maršrutas žemėlapyje (be API rakto, Google Maps įterpimas) */}
+        {from && to && from.id !== to.id && (
+          <iframe title={`Maršrutas: ${from.label} → ${to.label}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+            src={`https://maps.google.com/maps?saddr=${encodeURIComponent(from.address)}&daddr=${encodeURIComponent(to.address)}&output=embed`}
+            className="h-56 w-full rounded-xl border border-[var(--line)]" />
+        )}
+        {from && to && <div className="grid gap-1 rounded-xl bg-[var(--surface-2)] p-3 text-sm"><span>🔵 {from.label}</span><span>🟡 {to.label}</span></div>}
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>
@@ -88,7 +94,6 @@ export function SubForm({ kids, places, hours }: {
             </div>
             <p className="text-sm muted">Platformos mokestis apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Pirmą ir paskutinį mėnesį jis skaičiuojamas pagal dienas.</p>
             {f.period === "am" && <p className="text-sm muted">Rytinis maršrutas bendras keliems keleiviams. Tikslų paėmimo laiką nurodys vairuotojas.</p>}
-            {from && to && <a className="text-sm underline" href={mapsLink(from.address, to.address)} target="_blank" rel="noopener">Žiūrėti maršrutą Google Maps</a>}
             {q.full ? (
               <>
                 <p className="rounded-lg bg-[var(--warn-bg)] p-3 text-sm font-semibold text-[var(--warn)]">{f.period === "am" ? "Rytinis maršrutas šiomis dienomis pilnas." : "Šis laikas užimtas."} Galite pateikti pasiūlymą kitam mėnesiui iki {hours.bidDay} d., ir vairuotojas su jumis susisieks.</p>
