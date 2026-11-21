@@ -17,7 +17,7 @@ export default async function Page() {
       </div>
       <section className="card">
         <h2 className="font-bold">Atsiskaitymai su vairuotojais už {month}</h2>
-        <div className="overflow-x-auto"><table><thead><tr><th>Vairuotojas</th><th>Sutartys</th><th>Vienos d. kel.</th><th>Su PVM</th><th>Be PVM</th><th>Vairuotojui</th><th>MB</th></tr></thead>
+        <div className="overflow-x-auto"><table><thead><tr><th>Vairuotojas</th><th>Sutartys</th><th>Kelionės</th><th>Su PVM</th><th>Be PVM</th><th>Vairuotojui</th><th>MB</th></tr></thead>
           <tbody>{rows.map((r) => <tr key={r.d.profile_id}><td>{r.d.profile.full_name}<div className="text-xs muted">IV pažyma {r.d.cert_no}</div></td><td>{r.subs}</td><td>{r.trips}</td><td>{eur(r.gross)}</td><td>{eur(r.net)}</td><td><b>{eur(r.payout)}</b> <span className="text-xs muted">({r.pct} %)</span></td><td>{eur(r.mb)}</td></tr>)}</tbody></table></div>
         <p className="text-sm muted">Vairuotojas kas mėnesį išrašo MB sąskaitą pagal individualios veiklos pažymą. Kuras, automobilis ir vairuotojo mokesčiai yra vairuotojo išlaidos.</p>
       </section>

@@ -16,7 +16,7 @@ Keleiviai: vaikai, suaugę ir senjorai. Neveža neįgaliųjų vežimėliuose ir 
 ## 2. Verslo modelis ir taisyklės
 
 - MB yra platforma ir dispečeris. Vairuotojas gauna **70 %** kainos be PVM, MB **30 %**. Procentą galima keisti kiekvienam vairuotojui atskirai.
-- **Platformos mokestis 9,90 €/mėn.** šeimai su PVM. Rodomas atskira eilute ir skaičiuojamas proporcingai sutarties dienoms. Jis padalinamas mokantiems tėvams, yra 0 €, jei teikėjas atšaukė visas mėnesio keliones, ir baigiasi su sutartimi. Registracijos mokesčio nėra.
+- **Platformos mokestis 9,90 €/mėn.** šeimai su PVM (planuose ir maršruto vietoje jau įskaičiuotas). Rodomas atskira eilute ir skaičiuojamas proporcingai sutarties dienoms. Jis padalinamas mokantiems tėvams, yra 0 €, jei teikėjas atšaukė visas mėnesio keliones, ir baigiasi su sutartimi. Registracijos mokesčio nėra.
 - Kol kas parduodami tik abonementai. Vienkartinės kelionės įjungiamos nustatymuose.
 - Klientas **niekada nemato** kainodaros formulės, užimtumo ar MB dalies, tik galutinę kainą.
 - **Grafikas:**
@@ -24,12 +24,12 @@ Keleiviai: vaikai, suaugę ir senjorai. Neveža neįgaliųjų vežimėliuose ir 
   - popietė 13:30–18:30, iki 5 kelionių;
   - vairuotojo darbo diena iki 7,5 val., tarp kelionių 10 min. pertrauka.
 - **Perdavimo laikas** pagal keleivio tipą: vaikas 14 min., suaugęs 6 min., senjoras 14 min. Nemokamai laukiama 10 min.
-- **Kaina** (`src/lib/pricing.ts`, nustatymai `src/lib/settings.ts`) skaičiuojama iš:
-  - automobilio minutės kainos ir km kainos;
-  - užimtumo daugiklio;
-  - kelių vaikų nuolaidos;
-  - įsipareigojimo nuolaidos (3 mėn. 5 %, 9 mėn. 10 %);
-  - PVM.
+- **Kaina (kainodara v7)** (`src/lib/pricing.ts`, nustatymai `src/lib/settings.ts`):
+  - standartinė kelionės vertė = 0,37 €/min × (važiavimas + perdavimas + 10 min. privažiavimas) + 0,43 €/km × (km + 6), su PVM. Pertrauka planuojama, bet neskaičiuojama;
+  - keleivio kaina = standartinė vertė × dalis (1 / 0,6 / 0,45 / 0,37) × laiko koeficientas (pikas 07:15–08:30 ir 13:30–16:00 ×1,15, ramus 10:00–13:00 ×0,9) − įsipareigojimo nuolaida (3 mėn. 5 %, 9 mėn. 10 %);
+  - nėra vietų: aukcionas, minimumas su koeficientu 1,30;
+  - kredito planai Bazinis 219 € / 210 kredito, Šeimos 469 / 505, Premium 749 / 810 (su platformos mokesčiu; savininkas priskiria klientui; nepanaudotas kreditas galioja dar 1 mėn.);
+  - vairuotojui visada 70 % standartinės vertės be PVM, saugoma kiekvienai kelionei (`trips.driver_share_eur`).
 
   Visus parametrus keičia savininkas.
 - **Vairuotojo liga ar remontas.** Kelionė siūloma tik laisviems vairuotojams, kurie ją turi priimti. Pasiūlymas galioja 2 val., tada siūloma kitam. Jei niekas nepriima, kelionė atšaukiama „dėl teikėjo“ be mokesčio, o kaina įskaitoma klientui.
@@ -76,7 +76,7 @@ src/app/
   api/cron/                kasdieniai darbai
 src/lib/                   verslo logika: pricing, fees, drivers, offers, trips, consents, terms, push, apns, settings, welcome
 src/components/            bendri komponentai (shell, calendar, trip-steps, welcome, savings-calc ir kt.)
-supabase/migrations/       DB schema 0001–0010 (kita bus 0011)
+supabase/migrations/       DB schema 0001–0011 (kita bus 0012)
 tests/                     testai (npm test)
 demo/                      ankstesnės vieno failo HTML demonstracinės versijos
 ios/, capacitor.config.ts  iOS programėlė

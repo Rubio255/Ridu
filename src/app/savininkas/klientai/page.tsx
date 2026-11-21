@@ -1,12 +1,15 @@
 import { PASSENGER_LT, type PassengerType } from "@/lib/pricing";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { inviteClient, addChild, setClientActive } from "@/app/actions";
+import { inviteClient, addChild, setClientActive, setClientPlan } from "@/app/actions";
+import { loadSettings } from "@/lib/auth";
+import { plansOf } from "@/lib/settings";
+import { eur } from "@/lib/time";
 import { CONSENTS, TERMS_VERSION } from "@/lib/terms";
 
 const SHORT: Record<string, string> = { terms: "Taisyklės", privacy: "Privatumas", guardian: "Atstovas", health: "Sveikatos duomenys", alone: "Paleisti vieną", news: "Naujienos" };
 
 export default async function Page() {
-  const db = supabaseAdmin();
+  const db = supabaseAdmin(), plans = plansOf(await loadSettings());
   const [{ data: clients }, { data: kids }, { data: cons }] = await Promise.all([
     db.from("profiles").select("*").eq("role", "client").order("full_name"),
     db.from("children").select("*, guardians:child_guardians(profile:profiles(full_name, email))").order("first_name"),
@@ -36,6 +39,9 @@ export default async function Page() {
         {(clients ?? []).map((c) => (
           <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
             <div><b>{c.full_name || c.email}</b><div className="text-sm muted">{c.email}{c.phone ? ` · ${c.phone}` : ""}{c.contract_no ? ` · ${c.contract_no}` : ""}</div><div className="text-xs muted">{consentLine(c.id)}</div></div>
+            <form action={setClientPlan} className="flex items-center gap-2"><input type="hidden" name="id" value={c.id} />
+              <select name="plan_id" defaultValue={c.plan_id ?? ""} className="input" aria-label="Kredito planas"><option value="">Be plano</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.name} {eur(p.price)}</option>)}</select>
+              <button className="btn">Išsaugoti</button></form>
             <form action={setClientActive}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="active" value={c.active ? "0" : "1"} /><button className="btn">{c.active ? "Išjungti" : "Įjungti"}</button></form>
           </div>
         ))}

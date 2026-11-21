@@ -9,9 +9,9 @@ import { offerNext } from "@/lib/offers";
 import { familyAlreadyPays } from "@/lib/fees-server";
 import { geocode, route } from "@/lib/maps";
 import { quoteSubscription, blockMin, cancelFeePct, type SubLike, type PassengerType } from "@/lib/pricing";
-import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, WINDOWS_RE, type Settings } from "@/lib/settings";
 import { addDays, vilniusToday, vilniusToDate, toMin, fmtTime } from "@/lib/time";
-import { generateTrips } from "@/lib/trips";
+import { generateTrips, reshareTrip } from "@/lib/trips";
 import { CONSENTS, TERMS_VERSION, isRequired } from "@/lib/terms";
 import { loadConsents, clientHasKids } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
@@ -88,7 +88,7 @@ export async function createSubscription(input: SubInput, bidMonthly?: number) {
     child_id: input.child_id, payer_id: me.id, from_place_id: input.from_place_id, to_place_id: input.to_place_id,
     weekdays: input.weekdays, period: input.period, pickup_time: input.period === "am" ? s.morning_start : input.pickup_time,
     extra_kids: input.extra_kids, months: input.months, km: r.km, drive_min: r.min,
-    per_trip_eur: perTrip, monthly_eur: monthly, is_bid: isBid, status: "pending", driver_id: driver, passenger_type: req?.passenger ?? "child",
+    per_trip_eur: perTrip, monthly_eur: monthly, standard_trip_eur: q.standard, is_bid: isBid, status: "pending", driver_id: driver, passenger_type: req?.passenger ?? "child",
   });
   if (e) return { ok: false as const, error: "Nepavyko išsaugoti. Bandykite dar kartą." };
   const when = `${input.weekdays.map((w) => DAYS[w - 1]).join(", ")} ${input.period === "am" ? "rytas" : input.pickup_time}`;
@@ -220,6 +220,7 @@ export async function assignTrip(fd: FormData) {
   const pt = (tr?.child as unknown as { passenger_type?: PassengerType } | null)?.passenger_type ?? "child";
   if (pt === "child" && !(dr && childOk(dr))) throw new Error("Šis vairuotojas neturi patikrinto neteistumo QR kodo ar vaikiškų kėdučių.");
   const { data: t } = await supabaseAdmin().from("trips").update({ driver_id: driverId }).eq("id", id).select("pickup_at, to_label").single();
+  await reshareTrip(id, driverId);
   if (t) await notifyProfiles([driverId], "Jums priskirta kelionė", `${whenLt(t.pickup_at)} į ${t.to_label}.`, "/vairuotojas");
   revalidatePath("/savininkas"); revalidatePath("/vairuotojas");
 }
@@ -298,6 +299,15 @@ export async function setClientActive(fd: FormData) {
   revalidatePath("/savininkas/klientai");
 }
 
+// Kliento kredito planas (v7). Pakeitus planą, kredito grandinė skaičiuojama nuo šio mėnesio.
+export async function setClientPlan(fd: FormData) {
+  await requireOwner();
+  const plan = String(fd.get("plan_id") ?? "");
+  const plan_id = ["basic", "family", "premium"].includes(plan) ? plan : null;
+  await supabaseAdmin().from("profiles").update({ plan_id, plan_since: plan_id ? `${vilniusToday().slice(0, 7)}-01` : null }).eq("id", String(fd.get("id"))).eq("role", "client");
+  revalidatePath("/savininkas", "layout");
+}
+
 export async function addChild(fd: FormData) {
   await requireOwner();
   const db = supabaseAdmin();
@@ -341,6 +351,7 @@ export async function saveSettings(fd: FormData) {
       const v = String(fd.get(k));
       if (typeof def === "number") { const n = parseFloat(v.replace(",", ".")); if (!isNaN(n)) next[k] = n; }
       else if (/^\d{2}:\d{2}$/.test(v)) next[k] = v;
+      else if (k.endsWith("_windows") && (v.trim() === "" || WINDOWS_RE.test(v))) next[k] = v.trim();
     }
   }
   if (toMin(String(next.morning_start)) >= toMin(String(next.morning_end))) throw new Error("Rytinio maršruto pradžia turi būti anksčiau nei pabaiga.");
@@ -435,6 +446,7 @@ export async function respondOffer(fd: FormData) {
   await db.from("trip_offers").update({ status: accept ? "accepted" : "declined", answered_at: new Date().toISOString() }).eq("id", id);
   if (accept) {
     await db.from("trips").update({ driver_id: me.id, status_note: `Kelionę atliks kitas vairuotojas: ${me.full_name}` }).eq("id", o.trip_id);
+    await reshareTrip(o.trip_id, me.id);
     await notifyGuardians(trip.child_id, "Pasikeitė vairuotojas", `${trip.child.first_name} kelionę ${whenLt(trip.pickup_at)} atliks ${me.full_name}.`);
     await notifyOwner("Pakaita priimta", `${me.full_name} perėmė kelionę ${whenLt(trip.pickup_at)}.`, "/savininkas/pakaitos");
   } else {

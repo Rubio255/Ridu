@@ -1,4 +1,4 @@
-import { handoverFor, type PassengerType } from "./pricing";
+import { standardTripValue, type PassengerType } from "./pricing";
 import type { Settings } from "./settings";
 import { vilniusToday } from "./time";
 
@@ -14,7 +14,7 @@ export function quickCalc(s: Settings, i: CalcInput) {
   const km = Math.min(40, Math.max(1, i.km)), perWeek = Math.min(20, Math.max(1, Math.round(i.perWeek))), hv = Math.min(200, Math.max(0, i.hourValue));
   const perKm = Math.min(2, Math.max(0, i.costPerKm ?? 0.3)), park = Math.min(20, Math.max(0, i.parking ?? 1));
   const n = perWeek * 52 / 12, drive = Math.round(km * 2.75), extra = 6;
-  const trip = (s.minute_rate * (drive + handoverFor(s, i.passenger) + s.deadhead_min + s.gap_min) + s.km_rate * (km + s.empty_km)) * (1 - s.commit3_pct / 100);
+  const trip = standardTripValue(s, drive, km, i.passenger) * (1 - s.commit3_pct / 100);
   const sub = Math.round(trip * n + s.platform_fee);
   // Vežiodamas pats tėvas nuvažiuoja iki paėmimo vietos, nuveža keleivį ir grįžta atgal: 2 × atstumas + privažiavimas
   const selfKm = km * 2 + extra;

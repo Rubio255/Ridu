@@ -18,8 +18,8 @@ export default async function Page() {
       </div>
       <section className="card">
         <div className="flex justify-between"><span>Galiojančios sutartys</span><b>{r.subs}</b></div>
-        <div className="flex justify-between"><span>Vienos dienos kelionės</span><b>{r.trips}</b></div>
-        <div className="flex justify-between"><span>Jūsų dalis</span><b>{r.pct} % kainos be PVM</b></div>
+        <div className="flex justify-between"><span>Kelionės šį mėnesį</span><b>{r.trips}</b></div>
+        <div className="flex justify-between"><span>Jūsų dalis</span><b>{r.pct} % standartinės kelionės vertės be PVM</b></div>
         <div className="flex justify-between"><span>Nuvažiuosite apie</span><b>{Math.round(r.km)} km</b></div>
         <p className="text-sm muted">Pagal individualios veiklos pažymą gyventojų pajamų mokestį ir Sodros įmokas mokate patys. Mėnesio pabaigoje išrašykite MB sąskaitą šiai sumai.</p>
       </section>

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { quickCalc, isVerified } from "../src/lib/welcome";
 import { DEFAULT_SETTINGS as S } from "../src/lib/settings";
 
-test("skaičiuoklė kaip kainų puslapyje: 8 km, 2 k./sav., vaikas – 300 €", () => {
-  assert.equal(quickCalc(S, { km: 8, perWeek: 2, passenger: "child", hourValue: 15 }).sub, 300);
-  assert.equal(quickCalc(S, { km: 8, perWeek: 2, passenger: "adult", hourValue: 15 }).sub, 263);
+test("skaičiuoklė kaip kainų puslapyje (v7): 8 km, 2 k./sav., 3 mėn., vaikas – 200 €", () => {
+  assert.equal(quickCalc(S, { km: 8, perWeek: 2, passenger: "child", hourValue: 15 }).sub, 200);
+  assert.equal(quickCalc(S, { km: 8, perWeek: 2, passenger: "adult", hourValue: 15 }).sub, 175);
 });
 
 test("jūsų laikas kainuoja: valandos vertė didina vežiojimo patiems kainą", () => {
