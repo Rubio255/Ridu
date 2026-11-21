@@ -14,6 +14,15 @@ export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers:
         <h1 className="text-balance text-3xl font-bold leading-tight">{greeting ?? "Pavežimas, kuriuo galite pasitikėti"}</h1>
         <p className="muted text-lg">{guest ? "Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Pirmiausia susipažinkite su vairuotoju." : mine ? "Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį." : "Susipažinkite su vairuotoju, kuris jus veš."}</p>
         <h2 className="sr-only">{mine ? "Jūsų vairuotojas" : "Vairuotojai"}</h2>
+        {drivers.length === 0 && (
+          <div className="grid gap-3 rounded-2xl border-2 border-dashed border-[var(--line)] p-5">
+            <div className="flex items-center gap-4">
+              <div aria-hidden="true" className="grid h-20 w-20 flex-none place-items-center rounded-full bg-[var(--surface-2)] text-3xl">🚗</div>
+              <div className="grid gap-1"><h3 className="text-xl font-bold">Jūsų vairuotojas</h3><p className="muted">Su vairuotoju susipažinsite asmeniškai dar prieš pirmą kelionę.</p></div>
+            </div>
+            <a href="#pokalbis" className="btn btn-primary py-3 text-center text-base">Susitikti su vairuotoju</a>
+          </div>
+        )}
         <div className="grid gap-3 md:grid-cols-2">
           {drivers.map((d) => (
             <article key={d.profile_id} className="grid gap-4 rounded-2xl border-2 border-[var(--line)] p-5">

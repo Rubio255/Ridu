@@ -63,6 +63,18 @@ export default async function Page() {
         </section>
       )}
 
+      {!focus && (
+        <section className="card gap-4 border-2 border-dashed border-[var(--line)]" aria-labelledby="pavyzdys">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="pavyzdys" className="text-xl font-bold">Taip matysite savo kelionę</h2>
+            <span className="pill p-info">Pavyzdys</span>
+          </div>
+          <div className="text-lg"><b>Ema</b> · Mokykla → Baseinas</div>
+          <TripSteps t={{ status: "picked_up", pickup_at: new Date(now.getTime() - 6 * 6e4).toISOString(), picked_up_at: new Date(now.getTime() - 6 * 6e4).toISOString(), from_label: "Mokykla", to_label: "Baseinas" }} />
+          <p className="text-sm muted">Kai užsakysite kelionę, čia matysite, kada keleivis paimtas ir nuvežtas. Pranešimą gausite į telefoną.</p>
+        </section>
+      )}
+
       <Link href="/tevai/uzsakyti" className="btn btn-primary py-4 text-center text-lg">+ Nauja kelionė</Link>
 
 

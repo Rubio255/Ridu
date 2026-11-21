@@ -6,15 +6,17 @@ export const VISIT_HOW = { home: "Vairuotojas atvyksta pas jus", institution: "S
 export const VISIT_WHO = { child: "Vaikui", self: "Sau", relative: "Artimajam (pvz., tėvams)" } as const;
 export const VISIT_STATUS: Record<string, [string, string]> = { new: ["Laukia patvirtinimo", "p-warn"], confirmed: ["Patvirtinta", "p-ok"], done: ["Įvyko", "p-info"], declined: ["Atšaukta", "p-bad"] };
 
-// „Ar apsimoka?“: vežiojant patiems mokate už kelionę (0,30 €/km, 1 € parkavimas) ir savo laiku (valandos vertę nurodo klientas).
+// „Ar apsimoka?“: vežiojant patiems mokate už kelionę ten ir atgal (0,30 €/km, 1 € parkavimas) ir savo laiku (valandos vertę nurodo klientas).
 // Prielaidos kaip kainų puslapyje: 2,75 min/km, papildomi 6 km, 15 min palyda + 5 min laukimas. Abonementas – 3 mėn. sutartis su platformos mokesčiu.
 export function quickCalc(s: Settings, i: { km: number; perWeek: number; passenger: PassengerType; hourValue: number }) {
   const km = Math.min(40, Math.max(1, i.km)), perWeek = Math.min(14, Math.max(1, Math.round(i.perWeek))), hv = Math.min(200, Math.max(0, i.hourValue));
   const n = perWeek * 52 / 12, drive = Math.round(km * 2.75), extra = 6;
   const trip = (s.minute_rate * (drive + handoverFor(s, i.passenger) + s.deadhead_min + s.gap_min) + s.km_rate * (km + s.empty_km)) * (1 - s.commit3_pct / 100);
   const sub = Math.round(trip * n + s.platform_fee);
-  const hours = Math.round(((km + extra) * 2.75 + 15 + 5) * n / 60 * 10) / 10;
-  const car = Math.round((km + extra) * n * 0.3 + n), time = Math.round(hours * hv);
+  // Vežiodamas pats tėvas nuvažiuoja iki paėmimo vietos, nuveža keleivį ir grįžta atgal: 2 × atstumas + privažiavimas
+  const selfKm = km * 2 + extra;
+  const hours = Math.round((selfKm * 2.75 + 15 + 5) * n / 60 * 10) / 10;
+  const car = Math.round(selfKm * n * 0.3 + n), time = Math.round(hours * hv);
   return { sub, car, time, self: car + time, hours };
 }
 
