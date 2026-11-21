@@ -11,7 +11,7 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   `connect-src 'self' ${supabase} ${supabase.replace("https://", "wss://")} https://challenges.cloudflare.com`,
-  "frame-src https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com https://maps.google.com https://www.google.com",
   "worker-src 'self'",
   "manifest-src 'self'",
   "object-src 'none'",
