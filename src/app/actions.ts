@@ -102,7 +102,7 @@ export async function addPlace(fd: FormData) {
   const me = await requireProfile();
   const address = String(fd.get("address") ?? "").trim(), label = String(fd.get("label") ?? "").trim();
   if (!address || !label) return;
-  const loc = await geocode(address.includes("Vilnius") ? address : `${address}, Vilnius`);
+  const loc = await geocode(/lietuva/i.test(address) ? address : `${address}, Lietuva`);
   await supabaseAdmin().from("places").insert({ profile_id: me.id, label, kind: String(fd.get("kind") ?? "other"), address, lat: loc?.lat ?? null, lng: loc?.lng ?? null });
   revalidatePath("/tevai/vaikai");
 }

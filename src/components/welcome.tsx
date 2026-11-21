@@ -42,7 +42,7 @@ export function Welcome({ guest, greeting }: { guest: boolean; greeting?: string
         <div className="relative -mt-24 grid gap-4 px-4 pb-6">
           {greeting && <p className="font-semibold opacity-90">{greeting}</p>}
           <h1 className="text-balance text-3xl font-bold leading-tight">Saugus ir patogus keleivių vežimas</h1>
-          <p className="text-lg opacity-90">Jūsų šeimai. Jūsų kasdienybei. Vilniuje, pastoviu savaitės grafiku.</p>
+          <p className="text-lg opacity-90">Jūsų šeimai. Jūsų kasdienybei. Pastoviu savaitės grafiku.</p>
           <ul className="grid grid-cols-3 gap-2 text-center text-sm font-semibold">
             {[["🛡️", "Saugios kelionės", L.safety], ["🗓️", "Lankstus abonementas", L.sub], ["👨‍👩‍👧", "Šeimos sprendimai", L.family]].map(([i, t, h]) => (
               <li key={t}><Link href={h} className="grid h-full justify-items-center gap-1 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur"><span aria-hidden="true" className="text-2xl">{i}</span>{t}</Link></li>

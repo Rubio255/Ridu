@@ -114,7 +114,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
             <label className="grid gap-1 text-sm font-semibold muted">Pavadinimas<input name="label" required className="input" placeholder="Pvz. Šokių studija" /></label>
             <label className="grid gap-1 text-sm font-semibold muted">Tipas<select name="kind" className="input">{Object.entries(KIND).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           </div>
-          <label className="grid gap-1 text-sm font-semibold muted">Adresas<input name="address" required className="input" placeholder="Gatvė, namas, Vilnius" /></label>
+          <label className="grid gap-1 text-sm font-semibold muted">Adresas<input name="address" required className="input" placeholder="Gatvė, namas, miestas" /></label>
           <button className="btn btn-primary">Pridėti adresą</button>
         </form>
       </section>

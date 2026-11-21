@@ -45,7 +45,7 @@ export function SubForm({ kids, places, hours, planName }: {
         {from && to && from.id !== to.id
           ? <iframe title={`Maršrutas: ${from.label} → ${to.label}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               src={`https://maps.google.com/maps?saddr=${encodeURIComponent(from.address)}&daddr=${encodeURIComponent(to.address)}&output=embed`} className="h-full w-full border-0" />
-          : <iframe title="Vilnius" loading="lazy" src="https://maps.google.com/maps?q=Vilnius&z=12&output=embed" className="h-full w-full border-0" />}
+          : <iframe title="Žemėlapis" loading="lazy" src="https://maps.google.com/maps?q=Lietuva&z=7&output=embed" className="h-full w-full border-0" />}
         <a href="/tevai" aria-label="Atgal" className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-[var(--surface)] text-lg shadow">←</a>
       </div>
       <div className="card -mt-10 gap-3">

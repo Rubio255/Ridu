@@ -7,7 +7,7 @@ export const FULL_TERMS_URL = "https://claude.ai/artifact/V8ui7gE6T1xJBCcA3MBoPs
 export const TERMS: [string, string][] = [
   [
     "Paslauga",
-    "Pavežame jus, jūsų vaiką ar artimąjį (pvz. vyresnio amžiaus tėvus) sutartu maršrutu Vilniuje. Vaikus perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."
+    "Pavežame jus, jūsų vaiką ar artimąjį (pvz. vyresnio amžiaus tėvus) sutartu maršrutu. Vaikus perduodame tik jūsų patvirtintiems asmenims arba į įstaigą. Keliones vykdo mūsų patikrinti vairuotojai; priskirtą vairuotoją ir automobilį matysite aplikacijoje, o už paslaugą atsakome mes."
   ],
   [
     "Laikas",
