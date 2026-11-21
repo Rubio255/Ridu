@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { calcAction } from "@/app/actions";
+import { Stepper } from "./stepper";
 
 const e0 = (n: number) => Math.round(n).toLocaleString("lt-LT") + " €";
 type R = Awaited<ReturnType<typeof calcAction>>;
@@ -26,14 +27,15 @@ export function SavingsCalc({ moreHref }: { moreHref?: string }) {
       {/* Etiketė, laukelis ir paaiškinimas sulygiuoti eilutėmis (subgrid), kad laukeliai būtų viename aukštyje */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 md:grid-cols-4">
         {([
-          ["Atstumas, km", <input key="km" id="calc-km" className="input" type="number" min={1} max={40} step={0.5} value={f.km} onChange={(e) => setF({ ...f, km: Number(e.target.value) })} />, "Į vieną pusę, pvz. nuo mokyklos iki būrelio"],
-          ["Kelionių per savaitę", <input key="pw" id="calc-pw" className="input" type="number" min={1} max={14} value={f.perWeek} onChange={(e) => setF({ ...f, perWeek: Number(e.target.value) })} />, "Ten ir atgal skaičiuokite kaip 2"],
+          ["Atstumas, km", <Stepper key="km" label="Atstumas, km" min={1} max={40} value={f.km} onChange={(n) => setF({ ...f, km: n })} />, "Į vieną pusę, pvz. nuo mokyklos iki būrelio"],
+          ["Kelionių per savaitę", <Stepper key="pw" label="Kelionių per savaitę" min={1} max={14} value={f.perWeek} onChange={(n) => setF({ ...f, perWeek: n })} />, "Ten ir atgal skaičiuokite kaip 2"],
           ["Keleivis", <select key="px" id="calc-px" className="input" value={f.passenger} onChange={(e) => setF({ ...f, passenger: e.target.value as typeof f.passenger })}><option value="child">Vaikas</option><option value="adult">Suaugęs</option><option value="senior">Senjoras su palyda</option></select>, ""],
           ["Valandos vertė, €", <input key="hv" id="calc-hv" className="input" type="number" min={0} max={200} value={f.hourValue} onChange={(e) => setF({ ...f, hourValue: Number(e.target.value) })} />, "Kiek uždirbate per valandą"],
         ] as [string, React.ReactNode, string][]).map(([label, field, hint]) => (
-          <label key={label} className="row-span-3 grid grid-rows-subgrid gap-1 pb-2 text-sm font-semibold muted">
-            <span className="self-end">{label}</span>{field}<span className="text-xs font-normal">{hint}</span>
-          </label>
+          // Stepper turi savo mygtukus, todėl apgaubiama ne <label>, o <div> (kitaip paspaudus etiketę suveiktų „−“)
+          <div key={label} className="row-span-3 grid grid-rows-subgrid gap-1 pb-2 text-sm font-semibold muted">
+            <label htmlFor={label === "Keleivis" ? "calc-px" : label.startsWith("Valandos") ? "calc-hv" : undefined} className="self-end">{label}</label>{field}<span className="text-xs font-normal">{hint}</span>
+          </div>
         ))}
       </div>
       {r && (

@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { addPlace, saveCodeWord, addRelative, removeRelative } from "@/app/actions";
 import { PassengerForm } from "./pax-form";
+import { BackHeader } from "@/components/client-ui";
 import { PASSENGER_LT, type PassengerType } from "@/lib/pricing";
 
 const NO_SPECIAL = "Važiuojame įprastais automobiliais, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų. Sulankstomą vaikštynę ar vežimėlį vežame bagažinėje. Tai ne medicininis pervežimas.";
@@ -25,6 +26,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
   const childKids = (kids ?? []).filter((c) => c.passenger_type === "child" && mine(c.id)), adults = (kids ?? []).filter((c) => c.passenger_type !== "child" && mine(c.id));
   return (
     <div className="grid gap-4">
+    <BackHeader href="/tevai/profilis" title="Šeimos nariai" />
     {childKids.length > 0 && (
       <section id="slaptas-zodis" className="card scroll-mt-20">
         <h2 className="text-lg font-bold">Slaptas žodis vaikui</h2>

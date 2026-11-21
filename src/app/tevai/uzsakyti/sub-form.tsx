@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { quoteAction, createSubscription } from "@/app/actions";
 import { mapsLink } from "@/lib/maps";
+import { Stepper } from "@/components/stepper";
 
 const DAYS = ["Pr", "An", "Tr", "Kt", "Pn"];
 const eur = (n: number) => n.toLocaleString("lt-LT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -25,8 +26,8 @@ export function SubForm({ kids, places, hours }: {
     return () => clearTimeout(t);
   }, [f]);
 
-  if (!kids.length) return <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje „Keleiviai ir adresai“. Vaikus įrašo MB pagal sutartį.</div>;
-  if (places.length < 2) return <div className="card">Pirmiausia pridėkite bent du adresus skiltyje „Keleiviai ir adresai“ (pvz. namus ir mokyklą ar darbą).</div>;
+  if (!kids.length) return <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą suaugusįjį skiltyje <a className="underline" href="/tevai/vaikai">„Šeimos nariai ir adresai“</a>. Vaikus įrašo MB pagal sutartį.</div>;
+  if (places.length < 2) return <div className="card">Pirmiausia pridėkite bent du adresus skiltyje <a className="underline" href="/tevai/vaikai">„Šeimos nariai ir adresai“</a> (pvz. namus ir mokyklą ar darbą).</div>;
 
   const set = (patch: Partial<typeof f>) => setF((x) => ({ ...x, ...patch }));
   const from = places.find((p) => p.id === f.from_place_id), to = places.find((p) => p.id === f.to_place_id);
@@ -41,13 +42,12 @@ export function SubForm({ kids, places, hours }: {
   return (
     <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
       <div className="card">
-        <h1 className="text-xl font-bold">Abonementas</h1>
+        <h1 className="text-xl font-bold">Naujas abonementas</h1>
         <p className="text-sm muted">Pastovus savaitės grafikas už fiksuotą mėnesio kainą.</p>
         <label className="grid gap-1 text-sm font-semibold muted">Keleivis
           <select className="input" value={f.child_id} onChange={(e) => set({ child_id: e.target.value })}>{kids.map((k) => <option key={k.id} value={k.id}>{k.first_name}</option>)}</select></label>
-        <label className="grid gap-1 text-sm font-semibold muted">Kiek keleivių važiuos kartu
-          <select className="input text-base" value={f.extra_kids} onChange={(e) => set({ extra_kids: Number(e.target.value) })}>
-            {[1, 2, 3, 4].map((n) => <option key={n} value={n - 1}>{n === 1 ? "1 keleivis" : `${n} keleiviai`}</option>)}</select></label>
+        <div className="grid gap-1 text-sm font-semibold muted"><span>Kiek keleivių važiuos kartu</span>
+          <Stepper label="Keleivių skaičius" value={f.extra_kids + 1} min={1} max={4} onChange={(n) => set({ extra_kids: n - 1 })} unit={(n) => n === 1 ? "1 keleivis" : `${n} keleiviai`} /></div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold muted">Iš kur paimti
             <select className="input" value={f.from_place_id} onChange={(e) => set({ from_place_id: e.target.value })}>{places.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
