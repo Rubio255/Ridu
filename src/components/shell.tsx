@@ -1,8 +1,30 @@
 import { Logo } from "./logo";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
+import { BottomNav } from "./bottom-nav";
 
-export function Shell({ title, name, tabs, children }: { title: string; name: string; tabs: [string, string][]; children: React.ReactNode }) {
+// Klientams: apatinė navigacija (kaip pasirinktame dizaine). MB ir vairuotojams paliekamos skiltys viršuje.
+export const CLIENT_NAV = [
+  { href: "/tevai", label: "Pagrindinis", icon: "home" },
+  { href: "/tevai/grafikas", label: "Grafikas", icon: "cal", match: ["/tevai/istorija"] },
+  { href: "/tevai/abonementas", label: "Abonementas", icon: "card", match: ["/tevai/uzsakyti", "/tevai/sutartys"] },
+  { href: "/tevai/profilis", label: "Profilis", icon: "user", match: ["/tevai/vaikai", "/tevai/salygos", "/tevai/pradzia", "/tevai/vairuotojas"] },
+];
+
+export function Shell({ title, name, tabs, children, client = false }: { title: string; name: string; tabs: [string, string][]; children: React.ReactNode; client?: boolean }) {
+  if (client) return (
+    <>
+      <header className="sticky-safe sticky z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-2.5">
+          <Link href="/tevai" className="flex items-center gap-2 font-bold"><Logo size={30} />Ridu</Link>
+          <Link href="/tevai/profilis" className="text-sm opacity-90">{name}</Link>
+        </div>
+      </header>
+      {/* apačioje paliekama vietos navigacijai, kad turinys nelįstų po ja */}
+      <main className="mx-auto grid max-w-xl gap-4 px-4 py-5 pb-28">{children}</main>
+      {tabs.length > 0 && <BottomNav items={CLIENT_NAV} />}
+    </>
+  );
   return (
     <>
       <header className="sticky-safe sticky z-10 bg-[var(--brand)] text-[var(--brand-fg)]">

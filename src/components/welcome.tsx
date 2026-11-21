@@ -1,52 +1,40 @@
+import Link from "next/link";
+import { Logo } from "./logo";
 import { SavingsCalc } from "./savings-calc";
 import { VisitForm } from "./visit-form";
-import { isVerified, SAFETY } from "@/lib/welcome";
-import { childOk, type DriverRow } from "@/lib/drivers";
+import { SAFETY } from "@/lib/welcome";
 import { addDays, vilniusToday } from "@/lib/time";
 
-const initials = (n: string) => n.split(/\s+/).map((x) => x[0] ?? "").join("").slice(0, 2).toUpperCase();
-
-// Pirmas ekranas: trumpai ir aiškiai – kas veš, ar apsimoka, ir pažintinis pokalbis
-export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers: DriverRow[]; guest: boolean; mine: boolean; greeting?: string; moreHref?: string }) {
+// Pirmas ekranas: be konkretaus vairuotojo. Šeimos nuotrauka (pasirinko MB), kvietimas susipažinti ir „Ar man apsimoka?“
+export function Welcome({ guest, greeting, moreHref }: { guest: boolean; greeting?: string; moreHref?: string }) {
   return (
     <>
-      <section className="card gap-5">
-        <h1 className="text-balance text-3xl font-bold leading-tight">{greeting ?? "Pavežimas, kuriuo galite pasitikėti"}</h1>
-        <p className="muted text-lg">{guest ? "Vežame vaikus, suaugusius ir senjorus Vilniuje pastoviu savaitės grafiku. Pirmiausia susipažinkite su vairuotoju." : mine ? "Čia matote savo vairuotoją. Jei norite aptarti naują maršrutą, užsakykite pokalbį." : "Susipažinkite su vairuotoju, kuris jus veš."}</p>
-        <h2 className="sr-only">{mine ? "Jūsų vairuotojas" : "Vairuotojai"}</h2>
-        {drivers.length === 0 && (
-          <div className="grid gap-3 rounded-2xl border-2 border-dashed border-[var(--line)] p-5">
-            <div className="flex items-center gap-4">
-              <div aria-hidden="true" className="grid h-20 w-20 flex-none place-items-center rounded-full bg-[var(--surface-2)] text-3xl">🚗</div>
-              <div className="grid gap-1"><h3 className="text-xl font-bold">Jūsų vairuotojas</h3><p className="muted">Su vairuotoju susipažinsite asmeniškai dar prieš pirmą kelionę.</p></div>
-            </div>
-            <a href="#pokalbis" className="btn btn-primary py-3 text-center text-base">Susitikti su vairuotoju</a>
-          </div>
-        )}
-        <div className="grid gap-3 md:grid-cols-2">
-          {drivers.map((d) => (
-            <article key={d.profile_id} className="grid gap-4 rounded-2xl border-2 border-[var(--line)] p-5">
-              <div className="flex items-center gap-4">
-                <div aria-hidden="true" className="grid h-20 w-20 flex-none place-items-center rounded-full bg-[var(--brand)] text-2xl font-bold text-[var(--brand-fg)]">{initials(d.profile.full_name || "?")}</div>
-                <div className="grid min-w-0 gap-1">
-                  <h3 className="text-xl font-bold">{d.profile.full_name}</h3>
-                  <div className="muted">{d.since_year ? `Vairuoja ${new Date().getFullYear() - d.since_year} m. · ` : ""}{d.car ?? ""}</div>
-                </div>
-              </div>
-              {isVerified(d) && <a href="#saugumas" className="pill p-ok justify-self-start text-sm normal-case no-underline">✓ Patikimas ir patikrintas vairuotojas</a>}
-              {d.bio && <p className="text-lg italic">„{d.bio}“</p>}
-              <div className="text-sm muted">{childOk(d) ? "Veža vaikus, suaugusius ir senjorus" : "Veža suaugusius ir senjorus"}</div>
-              <a href="#pokalbis" className="btn btn-primary py-3 text-center text-base">Susitikti su vairuotoju</a>
-            </article>
-          ))}
+      <section className="relative -mx-4 first:-mt-5 grid overflow-hidden bg-[#0d2a26] text-white md:mx-0 md:first:mt-0 md:rounded-[18px]">
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element -- paprastas paveikslėlis veikia ir iOS programėlėje be optimizatoriaus */}
+          <img src="/promo.jpg" alt="Mama su dukra prie automobilio prieš kelionę" width={900} height={786} fetchPriority="high" className="h-auto w-full" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent via-45% to-[#0d2a26]" />
         </div>
-        <a href="#skaiciuokle" className="btn justify-self-start px-5 py-3 text-base">Ar man apsimoka?</a>
-        <ul className="grid gap-2 sm:grid-cols-3">
-          {[["Patikrinti vairuotojai", "Dokumentus tikriname ir stebime jų galiojimą"], ["Fiksuota mėnesio kaina", "Be registracijos mokesčio"], ["Be ilgų įsipareigojimų", "Sutartį galite nutraukti įspėję prieš 30 d."]].map(([b, t]) => (
-            <li key={b} className="grid rounded-lg bg-[var(--surface-2)] p-3"><b>{b}</b><span className="text-sm muted">{t}</span></li>
-          ))}
-        </ul>
+        <div className="absolute inset-x-0 top-0 flex items-center gap-2 p-4 text-lg font-bold"><Logo size={34} />Ridu</div>
+        <div className="relative -mt-24 grid gap-4 px-4 pb-6">
+          {greeting && <p className="font-semibold opacity-90">{greeting}</p>}
+          <h1 className="text-balance text-3xl font-bold leading-tight">Saugus ir patogus keleivių vežimas</h1>
+          <p className="text-lg opacity-90">Jūsų šeimai. Jūsų kasdienybei. Vilniuje, pastoviu savaitės grafiku.</p>
+          <ul className="grid grid-cols-3 gap-2 text-center text-sm font-semibold">
+            {[["🛡️", "Saugios kelionės", "#saugumas"], ["🗓️", "Lankstus abonementas", "#skaiciuokle"], ["👨‍👩‍👧", "Šeimos sprendimai", "#pokalbis"]].map(([i, t, h]) => (
+              <li key={t}><a href={h} className="grid h-full justify-items-center gap-1 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur"><span aria-hidden="true" className="text-2xl">{i}</span>{t}</a></li>
+            ))}
+          </ul>
+          <a href="#pokalbis" className="btn btn-primary btn-lg rounded-full text-lg">Susipažinti su vairuotoju →</a>
+          <a href="#skaiciuokle" className="btn btn-lg rounded-full" style={{ background: "rgb(255 255 255 / .12)", borderColor: "rgb(255 255 255 / .3)", color: "#fff" }}>Ar man apsimoka? Kiek laiko sutaupysiu</a>
+          {guest && <Link href="/prisijungti" className="justify-self-center font-semibold underline">Prisijungti</Link>}
+        </div>
       </section>
+      <ul className="grid gap-2 sm:grid-cols-3">
+        {[["Patikrinti vairuotojai", "Dokumentus tikriname ir stebime jų galiojimą"], ["Fiksuota mėnesio kaina", "Be registracijos mokesčio"], ["Be ilgų įsipareigojimų", "Sutartį galite nutraukti įspėję prieš 30 d."]].map(([b, t]) => (
+          <li key={b} className="card gap-0.5 p-3"><b>{b}</b><span className="text-sm muted">{t}</span></li>
+        ))}
+      </ul>
       <section id="saugumas" className="card scroll-mt-20">
         <h2 className="text-xl font-bold">Jūsų saugumas</h2>
         <div className="grid gap-4 md:grid-cols-3">
@@ -57,7 +45,7 @@ export function Welcome({ drivers, guest, mine, greeting, moreHref }: { drivers:
         </div>
       </section>
       <SavingsCalc moreHref={moreHref} />
-      <VisitForm guest={guest} drivers={drivers.map((d) => ({ id: d.profile_id, name: d.profile.full_name }))} minDate={addDays(vilniusToday(), 1)} />
+      <VisitForm guest={guest} drivers={[]} minDate={addDays(vilniusToday(), 1)} />
     </>
   );
 }
