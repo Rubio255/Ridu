@@ -1,3 +1,6 @@
+// Kaina imama iš nustatymų duomenų bazėje, todėl puslapis neprerenderinamas kūrimo metu
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { loadSettings } from "@/lib/auth";
 import { eur } from "@/lib/time";
