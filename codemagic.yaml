@@ -1,0 +1,42 @@
+# Ridu iOS programėlės surinkimas debesyje (Mac kompiuterio nereikia).
+# Codemagic: Teams → Integrations → App Store Connect, raktą pavadinkite "Ridu ASC".
+workflows:
+  ios-testflight:
+    name: Ridu iOS → TestFlight
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Ridu ASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: lt.ridu.app
+      vars:
+        APP_STORE_APPLE_ID: "0" # App Store Connect → Ridu → App Information → Apple ID (įrašyti sukūrus programėlę)
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 22
+      xcode: latest
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: "ios-*"
+    scripts:
+      - name: Priklausomybės
+        script: npm ci
+      - name: Capacitor sync
+        script: npx cap sync ios
+      - name: Pasirašymo nustatymai
+        script: xcode-project use-profiles
+      - name: Versijos numeris
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App && agvtool new-version -all $((LATEST + 1))
+      - name: Surinkti .ipa
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

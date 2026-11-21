@@ -1,3 +1,4 @@
+import { NativeBridge } from "@/components/native-bridge";
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "./globals.css";
@@ -11,7 +12,7 @@ export const viewport: Viewport = { themeColor: "#0f4c45", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="lt">
-      <body className={`${display.variable} ${body.variable} antialiased`}>{children}</body>
+      <body className={`${display.variable} ${body.variable} antialiased`}><NativeBridge />{children}</body>
     </html>
   );
 }

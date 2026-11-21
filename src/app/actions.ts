@@ -351,6 +351,13 @@ export async function savePushSubscription(sub: { endpoint: string; p256dh: stri
   await supabaseAdmin().from("push_subscriptions").upsert({ profile_id: me.id, ...sub }, { onConflict: "endpoint" });
 }
 
+// iOS programėlės pranešimų raktas (APNs). Tas pats įrenginys gali pereiti kitam naudotojui, todėl upsert pagal raktą.
+export async function saveNativePush(deviceToken: string) {
+  const me = await requireProfile();
+  if (!/^[0-9a-fA-F]{32,200}$/.test(deviceToken)) return;
+  await supabaseAdmin().from("push_subscriptions").upsert({ profile_id: me.id, endpoint: `apns:${deviceToken}`, p256dh: "apns", auth: "apns" }, { onConflict: "endpoint" });
+}
+
 // Klientas keičia abonemento laiką: grąžinama savininkui patvirtinti
 export async function requestSubscriptionChange(fd: FormData) {
   const me = await requireProfile();

@@ -1,6 +1,10 @@
 import "server-only";
 import * as webpush from "web-push";
 import { supabaseAdmin } from "./supabase/server";
+import { sendApns } from "./apns";
+
+// Programėlės (iOS) įrenginiai saugomi toje pačioje lentelėje: endpoint = "apns:<raktas>"
+export const APNS_PREFIX = "apns:";
 
 let ready = false;
 function init() {
@@ -13,11 +17,18 @@ function init() {
 }
 
 async function sendTo(ids: string[], title: string, body: string, url: string) {
-  if (!ids.length || !init()) return;
+  if (!ids.length) return;
+  const web = init();
   const db = supabaseAdmin();
   const { data: subs } = await db.from("push_subscriptions").select("*").in("profile_id", ids);
   const payload = JSON.stringify({ title, body, url, tag: `${Date.now()}` });
   await Promise.all((subs ?? []).map(async (s) => {
+    if (s.endpoint.startsWith(APNS_PREFIX)) {
+      const r = await sendApns(s.endpoint.slice(APNS_PREFIX.length), title, body, url);
+      if (r === "gone") await db.from("push_subscriptions").delete().eq("id", s.id);
+      return;
+    }
+    if (!web) return;
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { urgency: "high", TTL: 3600 });
     } catch (e) {
