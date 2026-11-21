@@ -46,3 +46,6 @@ grant execute on function public.auth_profile(uuid) to service_role;
 
 -- 5. Apsauga nuo pažintinių pokalbių užklausų šlamšto (skaičiuojama serveryje)
 create index if not exists visit_requests_created_idx on public.visit_requests (created_at);
+
+-- 6. Savo profilį naudotojas mato ir prieš antrą žingsnį (reikia nukreipimui į MFA puslapį)
+alter policy mfa_required on public.profiles using ((select private.mfa_ok()) or id = (select auth.uid())) with check ((select private.mfa_ok()));

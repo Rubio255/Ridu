@@ -15,9 +15,19 @@ const authState = cache(async (): Promise<AuthState | null> => {
   const { data } = await sb.auth.getClaims();
   const c = data?.claims;
   if (!c?.sub) return null;
-  const { data: row } = await supabaseAdmin().rpc("auth_profile", { uid: c.sub });
-  if (!row) return null;
-  const { has_mfa, ...profile } = row as Profile & { has_mfa: boolean };
+  let row = null as (Profile & { has_mfa: boolean }) | null;
+  const r = await supabaseAdmin().rpc("auth_profile", { uid: c.sub });
+  if (r.error) console.error("auth_profile", r.error.code, r.error.message);
+  else row = r.data;
+  if (!row) {
+    // Atsarginis kelias: savo profilį naudotojas mato ir be antro žingsnio; MFA būsena iš Supabase Auth serverio
+    const { data: p, error } = await sb.from("profiles").select("*").eq("id", c.sub).maybeSingle();
+    if (error) console.error("profile", error.code, error.message);
+    if (!p) return null;
+    const hasMfa = c.aal === "aal2" || !!(await sb.auth.getUser()).data.user?.factors?.some((f) => f.status === "verified");
+    row = { ...(p as Profile), has_mfa: hasMfa };
+  }
+  const { has_mfa, ...profile } = row;
   return { profile, hasMfa: !!has_mfa, mfa: mfaNeed({ role: profile.role, aal: c.aal as string | undefined, amr: c.amr as Amr, hasMfa: !!has_mfa }) };
 });
 
