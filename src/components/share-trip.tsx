@@ -16,7 +16,7 @@ export function ShareTrip({ tripId, title }: { tripId: string; title: string }) 
   });
   return (
     <div className="grid gap-1">
-      <button type="button" onClick={go} disabled={busy} className="btn btn-lg">↗ Dalintis kelione</button>
+      <button type="button" onClick={go} disabled={busy} className="btn btn-lg shadow-sm">Dalintis kelione</button>
       {msg && <p className="text-sm muted break-all" role="status">{msg}</p>}
     </div>
   );

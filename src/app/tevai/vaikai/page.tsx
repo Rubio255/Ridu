@@ -2,7 +2,8 @@ import { requireProfile } from "@/lib/auth";
 import { supabaseServer, supabaseAdmin } from "@/lib/supabase/server";
 import { addPlace, saveCodeWord, addRelative, removeRelative } from "@/app/actions";
 import { PassengerForm } from "./pax-form";
-import { BackHeader } from "@/components/client-ui";
+import { Avatar, BackHeader } from "@/components/client-ui";
+import { initials } from "@/lib/client-view";
 
 const NO_SPECIAL = "Važiuojame įprastais automobiliais, todėl negalime vežti keleivių, kurie turi keliauti sėdėdami vežimėlyje ar ant neštuvų. Sulankstomą vaikštynę ar vežimėlį vežame bagažinėje. Tai ne medicininis pervežimas.";
 
@@ -26,6 +27,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
   return (
     <div className="grid gap-4">
     <BackHeader href="/tevai/profilis" title="Šeimos nariai" />
+    {/* Šeimos narių kortelės kaip makete */}
+    <div className="grid gap-2">
+      {(kids ?? []).map((c) => (
+        <div key={c.id} className="card grid-cols-[auto_1fr] items-center gap-3 py-3">
+          <Avatar text={initials(c.first_name)} size={52} />
+          <div className="grid min-w-0"><b className="truncate text-lg">{c.first_name}</b>
+            <span className="truncate text-sm muted">{[c.birth_year ? `${new Date().getFullYear() - c.birth_year} m.` : null, c.passenger_type === "child" ? "Vaikas" : c.passenger_type === "senior" ? "Vyresnio amžiaus" : "Suaugęs", who(c.id).length > 1 ? `${who(c.id).length} gauna pranešimus` : null].filter(Boolean).join(" · ")}</span></div>
+        </div>
+      ))}
+      <a href="#prideti" className="btn btn-lg bg-[var(--surface-2)]">+ Pridėti keleivį</a>
+      <div className="card grid-cols-[auto_1fr] items-center gap-3 bg-[var(--ok-bg)]">
+        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--ok)] text-xl text-white">✓</span>
+        <div className="grid"><b>Saugumas pirmoje vietoje</b><span className="text-sm">Vairuotojai patikrinti, o kelionę matote gyvai.</span></div>
+      </div>
+    </div>
     {childKids.length > 0 && (
       <section id="slaptas-zodis" className="card scroll-mt-20">
         <h2 className="text-lg font-bold">Slaptas žodis vaikui</h2>
@@ -85,7 +101,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
           </div>
         ))}
         <p className="text-sm muted">Galite užsakyti sau, savo vaikui ar kitam žmogui, pavyzdžiui, tėvams. Vaikus ir jų globėjus įrašo MB pagal sutartį. {NO_SPECIAL}</p>
-        <PassengerForm myName={me.full_name ?? ""} />
+        <div id="prideti" className="scroll-mt-6"><PassengerForm myName={me.full_name ?? ""} /></div>
       </section>
       <section className="card">
         <h2 className="font-bold">Mano adresai</h2>

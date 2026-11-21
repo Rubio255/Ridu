@@ -28,10 +28,10 @@ export default async function Page() {
   return (
     <>
       <div className="grid grid-cols-[40px_1fr_40px] items-center">
-        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg">←</Link>
+        <Link href="/tevai/abonementas" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm">←</Link>
         <h1 className="text-center text-lg font-bold">Mokėjimai</h1>
       </div>
-      <section className="grid gap-1 rounded-[18px] bg-[var(--brand)] p-5 text-[var(--brand-fg)]">
+      <section className="grid gap-1 rounded-[20px] bg-[#1d2742] p-5 text-white shadow-lg">
         <span className="text-sm opacity-80">Mokėjimo būdas</span>
         <b className="text-lg">Bankinis pavedimas pagal sąskaitą</b>
         <span className="text-sm opacity-85">Mokėjimas kortele bus įjungtas netrukus.</span>

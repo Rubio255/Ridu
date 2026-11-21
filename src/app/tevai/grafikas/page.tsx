@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
-import { addDays, fmtDay, vilniusToDate, vilniusToday, dayKey } from "@/lib/time";
-import { TripRow, type TripLite } from "@/components/client-ui";
+import { addDays, fmtDay, fmtTime, vilniusToDate, vilniusToday, dayKey } from "@/lib/time";
+import { StatusPill, type TripLite } from "@/components/client-ui";
 
 const TABS = [["siandien", "Šiandien"], ["rytoj", "Rytoj"], ["savaite", "Savaitė"]] as const;
 
@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Kelionės</h1>
+        <h1 className="text-2xl font-bold">Mano grafikas</h1>
         <Link href="/tevai/istorija" className="text-sm font-semibold text-[var(--brand)]">Istorija</Link>
       </div>
       <nav className="seg" aria-label="Laikotarpis">
@@ -36,11 +36,23 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
         </div>
       )}
       {[...byDay.entries()].map(([k, list]) => (
-        <section key={k} className="card" aria-label={fmtDay(list[0].pickup_at)}>
-          <h2 className="text-sm font-bold capitalize muted">{fmtDay(list[0].pickup_at)}</h2>
-          {list.map((t) => <TripRow key={t.id} t={t} />)}
+        <section key={k} className="card gap-0" aria-label={fmtDay(list[0].pickup_at)}>
+          {tab === "savaite" && <h2 className="pb-2 text-sm font-bold capitalize muted">{fmtDay(list[0].pickup_at)}</h2>}
+          <ol className="grid">
+            {list.map((t, i) => (
+              <li key={t.id}>
+                <Link href={`/tevai/kelione/${t.id}`} className="grid grid-cols-[16px_52px_1fr_auto] items-start gap-3 py-2">
+                  <span className="grid h-full justify-items-center"><span className="timeline-dot mt-1.5" style={t.status === "delivered" ? { background: "var(--ok)", boxShadow: "0 0 0 4px var(--ok-bg)" } : undefined} />{i < list.length - 1 && <span className="mt-1 w-0.5 flex-1 bg-[var(--line)]" />}</span>
+                  <b className="num text-lg">{fmtTime(t.pickup_at)}</b>
+                  <span className="grid min-w-0"><b className="truncate">{t.from_label} → {t.to_label}</b><span className="text-sm muted">Keleivis: {t.child?.first_name ?? "–"}</span></span>
+                  {t.status !== "scheduled" && <StatusPill s={t.status} />}
+                </Link>
+              </li>
+            ))}
+          </ol>
         </section>
       ))}
+      {trips.length > 0 && <Link href="/tevai/uzsakyti" className="btn btn-lg bg-[var(--surface-2)]">+ Pridėti kelionę</Link>}
     </>
   );
 }

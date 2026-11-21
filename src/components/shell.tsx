@@ -12,18 +12,12 @@ export const CLIENT_NAV = [
 ];
 
 export function Shell({ title, name, tabs, children, client = false }: { title: string; name: string; tabs: [string, string][]; children: React.ReactNode; client?: boolean }) {
+  // Klientams be viršutinės juostos (kaip makete): kiekvienas ekranas turi savo antraštę, apačioje – meniu
   if (client) return (
-    <>
-      <header className="sticky-safe sticky z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-2.5">
-          <Link href="/tevai" className="flex items-center gap-2 font-bold"><Logo size={30} />Ridu</Link>
-          <Link href="/tevai/profilis" className="text-sm opacity-90">{name}</Link>
-        </div>
-      </header>
-      {/* apačioje paliekama vietos navigacijai, kad turinys nelįstų po ja */}
+    <div className="client-app">
       <main className="mx-auto grid max-w-xl gap-4 px-4 py-5 pb-28">{children}</main>
       {tabs.length > 0 && <BottomNav items={CLIENT_NAV} />}
-    </>
+    </div>
   );
   return (
     <>

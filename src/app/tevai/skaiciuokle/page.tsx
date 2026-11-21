@@ -6,9 +6,9 @@ export default function Page() {
   return (
     <>
       <BackHeader href="/tevai" title="Abonemento skaičiuoklė" />
-      <p className="muted">Pakeiskite parametrus ir pažiūrėkite, ar abonementas jums apsimoka.</p>
+      <p className="muted">Sužinokite, ar abonementas jums apsimoka.</p>
       <SavingsCalc />
-      <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">Užsakyti abonementą</Link>
+      <Link href="/tevai/uzsakyti" className="btn btn-lg">Užsakyti abonementą be plano</Link>
     </>
   );
 }

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f5f7f6; --surface: #ffffff; --surface-2: #ebf0ee; --fg: #14211f; --muted: #5b6b68; --line: #e1e8e5;
+  --bg: #f3f5f9; --surface: #ffffff; --surface-2: #eef1f6; --fg: #14211f; --muted: #5b6b68; --line: #e1e8e5;
   --brand: #0f4c45; --brand-fg: #ffffff; --accent: #f2b705; --accent-fg: #1e1a00;
   --accent-soft: #fff5d4; --brand-soft: #e3efec;
   --ok: #1f7a4d; --ok-bg: #dcf2e6; --warn: #9a6300; --warn-bg: #fdf0cf; --bad: #b3261e; --bad-bg: #fbe1de; --info: #1d5b9a; --info-bg: #dde9f7;
@@ -17,16 +17,20 @@
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body), system-ui, sans-serif; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 /* iPhone būsenos juosta (laikrodis, baterija): fiksuota spalvota juosta, po kuria turinys nelenda */
 body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top); background: var(--brand); z-index: 50; pointer-events: none; }
+/* Klientų programėlė: šviesi būsenos juosta, kaip makete */
+:root:has(.client-app) body::before { background: var(--bg); }
 .sticky-safe { top: env(safe-area-inset-top); }
 h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; text-wrap: balance; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; display: grid; gap: 12px; min-width: 0; box-shadow: 0 1px 2px rgb(15 76 69 / .04); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: grid; gap: 12px; min-width: 0; box-shadow: 0 2px 10px rgb(20 33 31 / .05); }
+.client-app .card { border-color: transparent; box-shadow: 0 2px 12px rgb(23 35 60 / .07); }
 .input { font: inherit; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 100%; font-weight: 400; }
 .btn { font-weight: 700; font-size: .92rem; border-radius: 14px; padding: 10px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; text-align: center; }
 .btn:disabled { opacity: .6; }
 /* Pagrindinis veiksmas: geltonas mygtukas (kaip pasirinktame dizaine) */
-.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 800; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 800; box-shadow: 0 6px 16px rgb(242 183 5 / .35); }
 .btn-brand { background: var(--brand); border-color: var(--brand); color: var(--brand-fg); }
-.btn-lg { padding: 14px 16px; font-size: 1rem; }
+.btn-lg { padding: 15px 18px; font-size: 1.02rem; }
+.client-app .btn-lg { border-radius: 999px; }
 .btn-ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .btn-bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
 .pill { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
@@ -43,9 +47,14 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color:
 /* Klientų programėlė: apatinė navigacija ir greiti veiksmai */
 .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); }
 .bottom-nav a { display: grid; justify-items: center; gap: 2px; padding: 4px 2px; font-size: .7rem; font-weight: 600; color: var(--muted); border-radius: 12px; }
-.bottom-nav a[aria-current="page"] { color: var(--brand); font-weight: 800; }
+.bottom-nav a[aria-current="page"] { color: var(--fg); font-weight: 800; }
 .bottom-nav svg { width: 22px; height: 22px; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 14px; padding: 4px; gap: 4px; }
 .seg a { text-align: center; padding: 8px; border-radius: 10px; font-weight: 700; font-size: .85rem; color: var(--muted); }
 .seg a[aria-current="page"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / .08); }
 .avatar { display: grid; place-items: center; border-radius: 999px; background: linear-gradient(135deg, #8fc3b9, #0f4c45); color: #fff; font-weight: 800; flex: none; }
+
+/* Plano kortelė: pasirinkta – geltonas rėmelis */
+.plan-card { border: 2px solid var(--line) !important; }
+.plan-card:has(input:checked) { border-color: var(--accent) !important; background: var(--accent-soft); }
+.timeline-dot { width: 12px; height: 12px; border-radius: 999px; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }

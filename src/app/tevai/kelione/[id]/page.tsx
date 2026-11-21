@@ -9,7 +9,7 @@ import { eur, fmtDay, fmtTime } from "@/lib/time";
 import { TripSteps } from "@/components/trip-steps";
 import { mapsLink } from "@/lib/maps";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { Avatar, StatusPill } from "@/components/client-ui";
+import { Avatar, CarArt, StatusPill } from "@/components/client-ui";
 import { LiveMap } from "@/components/live-map";
 import { ShareTrip } from "@/components/share-trip";
 import { isLive } from "@/lib/live";
@@ -41,26 +41,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <>
       {t.status === "picked_up" || (t.status === "scheduled" && Math.abs(hours) < 3) ? <AutoRefresh /> : null}
-      <section className="-mx-4 first:-mt-5 grid gap-3 bg-[var(--brand)] px-4 pb-6 pt-4 text-[var(--brand-fg)]">
-        <div className="grid grid-cols-[40px_1fr_40px] items-center">
-          <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-lg">←</Link>
-          <h1 className="text-center text-lg font-bold">{head[0]}</h1>
-        </div>
-        <div className="grid justify-items-center gap-1 text-center">
-          <span className="text-3xl font-bold">{head[1]}</span>
-          <span className="opacity-85">{fmtDay(t.pickup_at)}</span>
-        </div>
-      </section>
-
-      {isLive(t) && <div className="-mt-8"><LiveMap src={`/api/vieta/${t.id}`} /></div>}
-
-      <section className={`card ${isLive(t) ? "" : "-mt-8"}`} aria-label="Kelionės eiga">
-        <div className="flex items-center justify-between gap-2"><b className="text-lg">{t.child.first_name}</b><StatusPill s={t.status} /></div>
-        <TripSteps t={t} />
-        {t.status_note && <p className="rounded-xl bg-[var(--surface-2)] p-3 text-sm font-semibold">{t.status_note}</p>}
-        <div className="flex justify-between border-t border-[var(--line)] pt-3 text-sm"><span className="muted">Kaina</span><b className="num">{eur(t.price_eur)}</b></div>
-        <a href={mapsLink(t.from_address, t.to_address)} target="_blank" rel="noopener" className="btn">🗺️ Maršrutas žemėlapyje</a>
-      </section>
+      <div className="grid grid-cols-[44px_1fr_44px] items-center">
+        <Link href="/tevai" aria-label="Atgal" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-lg shadow-sm">←</Link>
+        <h1 className="text-center text-lg font-bold">Kelionės eiga</h1>
+        {tel ? <a href={`tel:${tel}`} aria-label="Skambinti vairuotojui" className="grid h-10 w-10 place-items-center justify-self-end rounded-full bg-[var(--surface)] shadow-sm">📞</a> : <span />}
+      </div>
+      <div className="grid justify-items-center text-center"><b className="text-xl">{head[1]}</b><span className="text-sm muted capitalize">{fmtDay(t.pickup_at)}</span></div>
 
       {d ? (
         <section className="card" aria-labelledby="vairuotojas">
@@ -72,16 +58,27 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <span className="truncate text-sm muted">{[d.car, d.plate].filter(Boolean).join(" · ") || "Automobilis bus nurodytas"}</span>
               {d.verified && <span className="text-sm font-semibold text-[var(--ok)]">✓ Patikimas ir patikrintas vairuotojas</span>}
             </div>
-            <span aria-hidden="true" className="muted">›</span>
+            <CarArt className="w-24 flex-none" />
           </Link>
           {tel ? (
             <div className="grid grid-cols-2 gap-3">
-              <a href={`tel:${tel}`} className="btn btn-brand btn-lg">📞 Skambinti</a>
+              <a href={`tel:${tel}`} className="btn btn-primary btn-lg">📞 Skambinti</a>
               <a href={`sms:${tel}`} className="btn btn-lg">💬 Žinutė</a>
             </div>
           ) : <p className="text-sm muted">Vairuotojo telefonas dar nenurodytas. Susisiekite su MB.</p>}
         </section>
       ) : <div className="card muted">Vairuotojas bus priskirtas prieš kelionę.</div>}
+
+      {isLive(t) && <LiveMap src={`/api/vieta/${t.id}`} />}
+
+      <section className="card" aria-label="Kelionės eiga">
+        <div className="flex items-center justify-between gap-2"><b className="text-lg">{t.child.first_name}</b><StatusPill s={t.status} /></div>
+        <TripSteps t={t} />
+        {t.status_note && <p className="rounded-xl bg-[var(--surface-2)] p-3 text-sm font-semibold">{t.status_note}</p>}
+        <div className="flex justify-between border-t border-[var(--line)] pt-3 text-sm"><span className="muted">Kaina</span><b className="num">{eur(t.price_eur)}</b></div>
+        <a href={mapsLink(t.from_address, t.to_address)} target="_blank" rel="noopener" className="btn">🗺️ Maršrutas žemėlapyje</a>
+      </section>
+
 
       {t.child.passenger_type === "child" && t.status === "scheduled" && (
         <section className="card bg-[var(--accent-soft)]">

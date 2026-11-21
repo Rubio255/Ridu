@@ -13,7 +13,7 @@ const km = (a: P, b: P) => {
 const pin = (emoji: string, bg: string) => `<div style="display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:${bg};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:20px">${emoji}</div>`;
 
 // Gyvas vairuotojo vietos žemėlapis (OpenStreetMap). src – API adresas, atnaujinama kas 5 s.
-export function LiveMap({ src }: { src: string }) {
+export function LiveMap({ src, tall = false, bare = false }: { src?: string; tall?: boolean; bare?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<LMap | null>(null), car = useRef<Marker | null>(null), fitted = useRef(false);
   const [d, setD] = useState<Live | null>(null);
@@ -21,6 +21,7 @@ export function LiveMap({ src }: { src: string }) {
 
   useEffect(() => {
     let stop = false;
+    if (!src) { setD({ live: false, status: "none", car: null, from: null, to: null }); return; }
     const load = async () => {
       if (document.visibilityState !== "visible") return;
       try { const r = await fetch(src, { cache: "no-store" }); if (r.ok && !stop) setD(await r.json()); } catch { /* bandoma vėl */ }
@@ -65,9 +66,16 @@ export function LiveMap({ src }: { src: string }) {
   const ago = d?.car ? Math.round((Date.now() - new Date(d.car.at).getTime()) / 1000) : null;
   const stale = ago != null && ago > 120;
 
+  const mapBox = <div ref={box} className={`${tall ? "h-80" : "h-64"} w-full bg-[var(--surface-2)]`} style={{ zIndex: 0 }} />;
+  if (bare) return (
+    <div className="relative overflow-hidden rounded-[20px]" aria-label="Žemėlapis">
+      {mapBox}
+      {d?.car && <span className="absolute left-3 top-3 z-[500] rounded-xl bg-[var(--surface)] px-3 py-1.5 text-sm font-bold shadow">{stale ? "Vieta neatnaujinama" : eta ? `Atvyksta po ${eta} min` : "Vairuotojas kelyje"}</span>}
+    </div>
+  );
   return (
     <section className="card gap-2 overflow-hidden p-0" aria-label="Vairuotojo vieta žemėlapyje">
-      <div ref={box} className="h-64 w-full bg-[var(--surface-2)]" style={{ zIndex: 0 }} />
+      {mapBox}
       <div className="grid gap-0.5 px-4 pb-4 text-sm">
         {!d ? <span className="muted">Įkeliamas žemėlapis…</span>
           : !d.car ? <span className="muted">Vairuotojo vieta atsiras, kai jis pradės kelionę.</span>

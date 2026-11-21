@@ -21,10 +21,10 @@ export default async function Page() {
   const me = await requireProfile();
   return (
     <>
-      <section className="card justify-items-center gap-2 py-6 text-center">
-        <Avatar text={initials(me.full_name || me.email || "?")} size={76} />
-        <h1 className="text-xl font-bold">{me.full_name || "Jūsų profilis"}</h1>
-        <span className="text-sm muted">{me.email}</span>
+      <h1 className="text-center text-xl font-bold">Profilis</h1>
+      <section className="card grid-cols-[auto_1fr] items-center gap-4">
+        <Avatar text={initials(me.full_name || me.email || "?")} size={68} />
+        <div className="grid min-w-0"><b className="truncate text-xl">{me.full_name || "Jūsų profilis"}</b><span className="truncate text-sm muted">{me.email}</span></div>
       </section>
       <nav className="card gap-0 p-2" aria-label="Profilio meniu">
         {MENU.map(([href, icon, label]) => (

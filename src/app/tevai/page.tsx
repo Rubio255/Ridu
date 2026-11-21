@@ -6,8 +6,7 @@ import { dayKey, fmtDay, fmtTime } from "@/lib/time";
 import { TripSteps } from "@/components/trip-steps";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { LiveMap } from "@/components/live-map";
-import { isLive } from "@/lib/live";
-import { Avatar, QuickLink, StatusPill, TripRow, type TripLite } from "@/components/client-ui";
+import { Avatar, CarArt, QuickLink, StatusPill, TripRow, type TripLite } from "@/components/client-ui";
 
 // Pagrindinis: abonementas, greiti veiksmai, svarbiausia kelionė ir artimiausios kelionės
 export default async function Page() {
@@ -36,26 +35,15 @@ export default async function Page() {
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="grid gap-0.5">
-          <p className="muted">Sveiki,</p>
-          <h1 className="text-2xl font-bold">{firstName(me.full_name) || "Sveiki"} 👋</h1>
+          <h1 className="text-2xl font-bold">Sveiki, {firstName(me.full_name) || "sveiki"} 👋</h1>
+          <p className="muted">Jūsų šeimos kelionės</p>
         </div>
         <Link href="/tevai/pranesimai" aria-label="Pranešimai" className="grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-xl">🔔</Link>
       </div>
 
       {/* Abonemento juosta */}
-      <Link href="/tevai/abonementas" className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-[18px] bg-[var(--brand)] p-4 text-[var(--brand-fg)]">
-        <div className="grid gap-0.5">
-          <span className="text-sm opacity-80">{active.length ? "Abonementas galioja" : (subs ?? []).length ? "Abonementas laukia patvirtinimo" : "Abonemento dar nėra"}</span>
-          <b className="text-lg">{active.length ? `${perWeek} kelionės per savaitę` : (subs ?? []).length ? "Vairuotojas netrukus patvirtins" : "Užsisakykite pastovų grafiką"}</b>
-        </div>
-        <span className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm font-bold text-[var(--accent-fg)]">{active.length ? "Peržiūrėti" : "Plačiau"}</span>
-      </Link>
-
-      <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-3">
-        <QuickLink href="/tevai/grafikas?d=savaite" label="Tvarkaraštis" icon="🗓️" />
-        <QuickLink href="/tevai/skaiciuokle" label="Skaičiuoklė" icon="🧮" />
-        <QuickLink href="/tevai/saugumas" label="Saugumas" icon="🛡️" />
-      </nav>
+      {/* Žemėlapis kaip makete: vykstančios ar artimiausios kelionės maršrutas, vairuotojo vieta */}
+      <LiveMap src={focus && focus.status !== "delivered" ? `/api/vieta/${focus.id}` : undefined} tall bare />
 
       {!kids?.length && <div className="card muted">Dar nėra keleivių. Pridėkite save ar kitą žmogų skiltyje <Link href="/tevai/vaikai" className="underline">„Šeimos nariai“</Link>. Vaikus įrašo MB pagal sutartį.</div>}
 
@@ -66,9 +54,13 @@ export default async function Page() {
             <h2 id="dabar" className="text-lg font-bold">{focus.status === "picked_up" ? "Kelionė vyksta" : focus.status === "delivered" ? "Šiandien nuvežta" : "Artimiausia kelionė"}</h2>
             <StatusPill s={focus.status} />
           </div>
-          <div className="text-sm muted">{fmtDay(focus.pickup_at)} · {fmtTime(focus.pickup_at)}</div>
-          <div className="text-lg"><b>{child?.first_name}</b> · {focus.from_label} → {focus.to_label}</div>
-          {isLive(focus) && <LiveMap src={`/api/vieta/${focus.id}`} />}
+          <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+            <div className="grid">
+              <b className="text-lg">{child?.first_name}: {focus.from_label} → {focus.to_label}</b>
+              <span className="muted">{fmtDay(focus.pickup_at)} · {fmtTime(focus.pickup_at)}</span>
+            </div>
+            <CarArt className="w-24" />
+          </div>
           <TripSteps t={focus} />
           {d && (
             <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3">
@@ -78,7 +70,7 @@ export default async function Page() {
           )}
           {child?.passenger_type === "child" && focus.status === "scheduled" && !child.code_word && (
             <Link href="/tevai/vaikai#slaptas-zodis" className="rounded-xl bg-[var(--accent-soft)] p-3 text-sm font-semibold">Sukurkite slaptą žodį vaikui →</Link>)}
-          <Link href={`/tevai/kelione/${focus.id}`} className="btn btn-brand btn-lg">Atidaryti kelionę</Link>
+          <Link href={`/tevai/kelione/${focus.id}`} className="btn btn-primary btn-lg">Atidaryti kelionę</Link>
         </section>
       ) : (
         <section className="card gap-4 border-2 border-dashed" aria-labelledby="pavyzdys">
@@ -91,6 +83,20 @@ export default async function Page() {
           <p className="text-sm muted">Kai keleivis bus paimtas ir nuvežtas, gausite pranešimą į telefoną.</p>
         </section>
       )}
+
+      <Link href="/tevai/abonementas" className="card grid-cols-[1fr_auto] items-center gap-3">
+        <div className="grid gap-0.5">
+          <span className="text-sm muted">{active.length ? "Abonementas galioja" : (subs ?? []).length ? "Abonementas laukia patvirtinimo" : "Abonemento dar nėra"}</span>
+          <b className="text-lg">{active.length ? `${perWeek} kelionės per savaitę` : (subs ?? []).length ? "Vairuotojas netrukus patvirtins" : "Užsisakykite pastovų grafiką"}</b>
+        </div>
+        <span className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm font-bold text-[var(--accent-fg)]">{active.length ? "Peržiūrėti" : "Plačiau"}</span>
+      </Link>
+
+      <nav aria-label="Greiti veiksmai" className="grid grid-cols-3 gap-3">
+        <QuickLink href="/tevai/grafikas?d=savaite" label="Tvarkaraštis" icon="🗓️" />
+        <QuickLink href="/tevai/skaiciuokle" label="Skaičiuoklė" icon="🧮" />
+        <QuickLink href="/tevai/saugumas" label="Saugumas" icon="🛡️" />
+      </nav>
 
       <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Nauja kelionė</Link>
 

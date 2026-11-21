@@ -40,45 +40,57 @@ export default async function Page() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Mano abonementas</h1>
-      <section className="grid gap-3 rounded-[18px] bg-[var(--brand)] p-5 text-[var(--brand-fg)]">
-        <span className="text-sm opacity-80">Šį mėnesį mokate</span>
-        <b className="num text-4xl">{eur(due)}</b>
-        {plan ? <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
-          <div className="flex justify-between"><span className="opacity-85">Planas „{plan.p.name}“</span><span className="num">{eur(plan.p.price)}</span></div>
-          <div className="flex justify-between"><span className="opacity-85">Panaudota kredito</span><span className="num">{eur(plan.bill.used)} iš {eur(plan.p.credit)}</span></div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/25" role="progressbar" aria-label="Panaudotas kreditas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, plan.bill.used / plan.p.credit) * 100)}>
-            <i className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, plan.bill.used / plan.p.credit * 100)}%` }} /></div>
-          <div className="flex justify-between"><span className="opacity-85">Kreditas galioja iki</span><span>{monthEnd(month)}{plan.bill.carryOut > 0 ? `, likutis iki ${monthEnd(month, 1)}` : ""}</span></div>
-          {plan.bill.over > 0 && <div className="flex justify-between"><span className="opacity-85">Virš plano</span><span className="num">{eur(plan.bill.over)}</span></div>}
-          {plan.bill.carryOut > 0 && <div className="flex justify-between"><span className="opacity-85">Nepanaudota, pereis į kitą mėnesį</span><span className="num">{eur(plan.bill.carryOut)}</span></div>}
-        </div> : <div className="grid gap-1 border-t border-white/20 pt-3 text-sm">
-          <div className="flex justify-between"><span className="opacity-85">Kelionės pagal grafiką</span><span className="num">{eur(trips)}</span></div>
-          <div className="flex justify-between"><span className="opacity-85">Platformos mokestis šeimai</span><span className="num">{fee ? eur(fee) : "–"}</span></div>
-        </div>}
-      </section>
-      {plan ? <p className="text-sm muted">Plano kaina jau apima platformos mokestį. Registracijos mokesčio nėra.</p> : <p className="text-sm muted">Platformos mokestis ({eur(s.platform_fee)} / mėn.) apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą. Registracijos mokesčio nėra.</p>}
-
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/tevai/planas" className="btn btn-lg">{plan ? "Keisti planą" : "Rinktis planą"}</Link>
-        <Link href="/tevai/mokejimai" className="btn btn-lg">Mokėjimai</Link>
-      </div>
+      <h1 className="text-center text-xl font-bold">Mano abonementas</h1>
+      {plan ? (
+        <section className="card gap-3" aria-label="Planas">
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-[var(--accent-soft)] px-3 py-2.5">
+            <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-sm font-bold text-[var(--accent-fg)]">{plan.p.name} planas</span>
+            <span className="rounded-full bg-[var(--ok-bg)] px-3 py-1 text-sm font-bold text-[var(--ok)]">Aktyvus</span>
+          </div>
+          <div className="flex items-end justify-between gap-2">
+            <div className="grid"><span className="text-sm muted">Liko kredito</span><b className="num text-2xl">{eur(Math.max(0, plan.p.credit - plan.bill.used))} iš {eur(plan.p.credit)}</b></div>
+            <div className="grid text-right"><span className="text-sm muted">Galioja iki</span><b>{monthEnd(month)}</b></div>
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-2)]" role="progressbar" aria-label="Likęs kreditas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.max(0, 1 - plan.bill.used / plan.p.credit) * 100)}>
+            <i className="block h-full rounded-full bg-[var(--ok)]" style={{ width: `${Math.max(0, 100 - plan.bill.used / plan.p.credit * 100)}%` }} /></div>
+          <div className="grid gap-1 text-sm">
+            <div className="flex justify-between"><span className="muted">Šį mėnesį mokate</span><b className="num">{eur(due)}</b></div>
+            {plan.bill.over > 0 && <div className="flex justify-between"><span className="muted">Iš jų virš plano</span><span className="num">{eur(plan.bill.over)}</span></div>}
+            {plan.bill.carryOut > 0 && <div className="flex justify-between"><span className="muted">Nepanaudota pereis iki {monthEnd(month, 1)}</span><span className="num">{eur(plan.bill.carryOut)}</span></div>}
+          </div>
+          <Link href="/tevai/planas" className="btn btn-lg">Keisti planą</Link>
+        </section>
+      ) : (
+        <section className="card gap-3" aria-label="Šio mėnesio kaina">
+          <span className="text-sm muted">Šį mėnesį mokate</span>
+          <b className="num text-4xl">{eur(due)}</b>
+          <div className="grid gap-1 border-t border-[var(--line)] pt-3 text-sm">
+            <div className="flex justify-between"><span className="muted">Kelionės pagal grafiką</span><span className="num">{eur(trips)}</span></div>
+            <div className="flex justify-between"><span className="muted">Platformos mokestis šeimai</span><span className="num">{fee ? eur(fee) : "–"}</span></div>
+          </div>
+          <Link href="/tevai/planas" className="btn btn-primary btn-lg">Rinktis planą</Link>
+        </section>
+      )}
 
       {cmp && (
         <section className="card gap-2" aria-label="Mėnesio sutaupymas">
-          <h2 className="font-bold">Mėnesio sutaupymas</h2>
+          <span className="text-sm muted">Mėnesio sutaupymas</span>
           <div className="flex items-end justify-between gap-3">
             <div className="grid">
-              <b className="num text-3xl text-[var(--ok)]">{cmp.hours.toLocaleString("lt-LT")} val.</b>
-              <span className="text-sm muted">{cmp.self > due ? `ir apie ${eur(cmp.self - due)} pigiau nei vežioti patiems` : "laiko, kurio nereikia vairuoti ir laukti"}</span>
+              {cmp.self > due
+                ? <><b className="num text-4xl text-[var(--ok)]">{eur(cmp.self - due)}</b><span className="text-sm muted">(≈ {Math.round((cmp.self - due) / cmp.self * 100)} %) ir {cmp.hours.toLocaleString("lt-LT")} val. laiko</span></>
+                : <><b className="num text-4xl text-[var(--ok)]">{cmp.hours.toLocaleString("lt-LT")} val.</b><span className="text-sm muted">laiko, kurio nereikia vairuoti ir laukti</span></>}
             </div>
-            <div className="flex h-16 items-end gap-1" aria-label="Sutaupytos valandos per paskutinius 6 mėnesius">
-              {hoursBy.map((h, i) => <i key={months[i]} title={`${months[i]}: ${h} val.`} className="block w-3 rounded-t bg-[var(--ok)]" style={{ height: `${Math.max(6, h / maxH * 100)}%`, opacity: h ? 1 : 0.25 }} />)}
+            <div className="flex h-20 items-end gap-1.5" aria-label="Sutaupytos valandos per paskutinius 6 mėnesius">
+              {hoursBy.map((h, i) => <i key={months[i]} title={`${months[i]}: ${h} val.`} className="block w-4 rounded-t-md bg-[var(--ok)]" style={{ height: `${Math.max(8, h / maxH * 100)}%`, opacity: h ? 0.45 + 0.55 * (h / maxH) : 0.2 }} />)}
             </div>
           </div>
-          <p className="text-xs muted">Palyginta su vežiojimu patiems: 0,30 €/km, 1 € parkavimas ir 15 €/val. jūsų laiko. Stulpeliai rodo įvykusių kelionių sutaupytas valandas.</p>
+          <p className="text-xs muted">Palyginta su vežiojimu patiems: 0,30 €/km, 1 € parkavimas ir 15 €/val. jūsų laiko. Stulpeliai: sutaupytos valandos per 6 mėn.</p>
+          <Link href="/tevai/mokejimai" className="text-center text-sm font-semibold text-[var(--brand)]">Mokėjimai ir sąskaitos →</Link>
         </section>
       )}
+      {!cmp && <Link href="/tevai/mokejimai" className="btn btn-lg">Mokėjimai ir sąskaitos</Link>}
+      <p className="text-xs muted">{plan ? "Plano kaina jau apima platformos mokestį." : `Platformos mokestis (${eur(s.platform_fee)} / mėn.) apima aplikaciją, planavimą, pranešimus, vairuotojų patikrą ir aptarnavimą.`} Registracijos mokesčio nėra.</p>
 
       <Link href="/tevai/uzsakyti" className="btn btn-primary btn-lg">+ Naujas abonementas</Link>
 

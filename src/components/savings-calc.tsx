@@ -48,25 +48,25 @@ export function SavingsCalc({ planHref = "/tevai/planas" }: { planHref?: string 
       </section>
 
       {r && (
-        <section className="card gap-3" aria-live="polite" aria-label="Rezultatas">
-          <div className="grid gap-2 rounded-xl bg-[var(--surface-2)] p-4 num">
-            <div className="flex justify-between"><span className="muted">Kelionių per mėnesį</span><b>{r.tripsPerMonth}</b></div>
-            <div className="flex justify-between"><span className="muted">Automobilis ir parkavimas</span><b>{e0(r.car)}</b></div>
-            <div className="flex justify-between"><span className="muted">Jūsų laikas ({h} val.)</span><b className="whitespace-nowrap">{e0(r.time)}</b></div>
-            <div className="flex justify-between border-t border-[var(--line)] pt-2"><span>Iš viso vežiojant patiems</span><b>{e0(r.self)}</b></div>
-            <div className="flex justify-between"><span>Su Ridu abonementu</span><b className="text-[var(--brand)]">{e0(r.sub)}</b></div>
+        <section className="card gap-3 bg-[var(--info-bg)]" aria-live="polite" aria-label="Rezultatas">
+          <div className="grid"><b>Rezultatas</b><span className="text-sm">Kelionių per mėnesį: {r.tripsPerMonth}</span></div>
+          <div className="grid grid-cols-2 divide-x divide-[var(--line)] rounded-2xl bg-[var(--surface)] p-3 num">
+            <div className="grid pr-3"><span className="text-sm muted">Vežiojant patiems</span><b className="text-3xl">{e0(r.self)}</b><span className="text-xs muted">automobilis {e0(r.car)} + laikas {e0(r.time)}</span></div>
+            <div className="grid pl-3"><span className="text-sm muted">Su Ridu</span><b className="text-3xl">{e0(r.sub)}</b><span className="text-xs muted">3 mėn. abonementas</span></div>
           </div>
-          <p className={`flex items-center gap-3 rounded-xl p-4 font-semibold ${r.sub <= r.self ? "bg-[var(--ok-bg)]" : "bg-[var(--warn-bg)]"}`}>
-            <span aria-hidden="true" className="text-2xl">{r.sub <= r.self ? "✅" : "⏰"}</span>
-            {r.sub <= r.self ? `Abonementas apsimoka: sutaupote ${e0(r.self - r.sub)} (${pct}%) ir ${h} val. per mėnesį.` : `Su Ridu mokate ${e0(r.sub - r.self)} daugiau, bet atgaunate ${h} val. per mėnesį.`}
+          <p className={`flex items-center justify-between gap-2 rounded-full px-4 py-2 text-sm font-bold ${r.sub <= r.self ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>
+            {r.sub <= r.self ? <><span>Sutaupote {e0(r.self - r.sub)} / mėn.</span><span>≈ {pct} %</span></> : <span>Primokate {e0(r.sub - r.self)}, atgaunate {h} val.</span>}
           </p>
-          <div className="grid gap-2 rounded-xl border-2 border-[var(--accent)] p-4">
-            <span className="text-sm muted">Arba kredito planas</span>
-            <b className="text-lg">{r.plan.name}: {e0(r.plan.due)} / mėn.</b>
-            <span className="text-sm">Plane {e0(r.plan.credit)} kredito kelionėms{r.plan.due > r.plan.price ? `, viršijus mokama ${e0(r.plan.due - r.plan.price)} daugiau` : ""}. Platformos mokestis įskaičiuotas.</span>
-            <a href={planHref} className="btn btn-primary">Rinktis planą</a>
-          </div>
-          <p className="text-xs muted">Su Ridu kaina apima 3 mėn. abonementą ir platformos mokestį. Tikslią kainą pamatysite užsakydami.</p>
+          <p className="text-sm">Laiko, kurio nereikės vairuoti ir laukti: <b>{h} val. per mėnesį</b>.</p>
+        </section>
+      )}
+      {r && (
+        <section className="card gap-2" aria-label="Tinkamiausias planas">
+          <span className="text-sm muted">Tinkamiausias kredito planas</span>
+          <b className="text-lg">{r.plan.name}: {e0(r.plan.due)} / mėn.</b>
+          <span className="text-sm">{e0(r.plan.credit)} kredito kelionėms{r.plan.due > r.plan.price ? `, viršijus mokama ${e0(r.plan.due - r.plan.price)} daugiau` : ""}. Platformos mokestis įskaičiuotas.</span>
+          <a href={planHref} className="btn btn-primary btn-lg">Rinktis planą</a>
+          <p className="text-xs muted">Tikslią kainą pamatysite užsakydami. Palyginimui naudojama {f.hourValue} €/val. jūsų laiko vertė.</p>
         </section>
       )}
     </div>
