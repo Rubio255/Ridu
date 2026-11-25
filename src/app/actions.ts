@@ -17,6 +17,7 @@ import { CONSENTS, TERMS_VERSION, isRequired } from "@/lib/terms";
 import { loadConsents, clientHasKids } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
 import { DAYS } from "@/lib/time";
+import { cancelPaidPlan } from "@/lib/billing-server";
 
 export async function signOut() {
   const sb = await supabaseServer();
@@ -583,6 +584,8 @@ export async function deleteAccount(fd: FormData) {
   const db = supabaseAdmin();
   const now = new Date().toISOString();
   const who = me.full_name || me.email || "Naudotojas";
+  // Mokamas planas baigiamas iš karto, kad Stripe nebeimtų mokesčio
+  await cancelPaidPlan(me.id);
 
   if (me.role === "driver") {
     await db.from("drivers").update({ active: false, bio: null, plate: null }).eq("profile_id", me.id);

@@ -1543,10 +1543,12 @@ function planLegal(r){
   const paid = S.plan[r] !== 'free', ending = paid && LG.cancelled[r] === S.plan[r];
   return `<div class="card"><p class="small">Prenumerata pratęsiama kas mėnesį. Atšaukti galite bet kada, planas veiks iki apmokėto laikotarpio pabaigos.${r==='client' ? ' Per 14 d. nuo užsakymo galite atsisakyti sutarties ir atgauti pinigus už nepanaudotą laiką.' : ''}</p>
     ${ending ? `<span class="tag warn" style="justify-self:start">${ic('clock')} Baigsis apmokėto laikotarpio pabaigoje</span>` : ''}
+    ${paid ? `<button class="btn ghost" data-portal>${ic('card')} Kortelė ir sąskaitos</button>` : ''}
     ${paid ? `<div class="two">${ending ? `<button class="btn ghost" data-resume>Tęsti prenumeratą</button>` : `<button class="btn ghost" data-cancel>Atšaukti prenumeratą</button>`}${r==='client' ? `<button class="btn ghost" data-withdraw>Atsisakyti sutarties</button>` : ''}</div>` : ''}
-    <p class="muted small">Kainos yra pasiūlymas. Prototipe planas įsijungia iškart, be mokėjimo.</p></div>`;
+    <p class="muted small">Kainos yra pasiūlymas. Mokama kortele per Stripe. Nepavykus nuskaityti, Stripe bandys dar kelis kartus ir apie tai praneš.</p></div>`;
 }
 function bindPlanLegal(r){
+  view.querySelector('[data-portal]')?.addEventListener('click', () => toast('Atsidaro Stripe: kortelės keitimas ir visos sąskaitos'));
   view.querySelector('[data-cancel]')?.addEventListener('click', () => { LG.cancelled[r]=S.plan[r]; toast('Prenumerata atšaukta. Planas veiks iki laikotarpio pabaigos'); render(); });
   view.querySelector('[data-resume]')?.addEventListener('click', () => { LG.cancelled[r]=null; toast('Prenumerata vėl pratęsiama kas mėnesį'); render(); });
   view.querySelector('[data-withdraw]')?.addEventListener('click', () => { S.plan[r]='free'; LG.cancelled[r]=null; toast('Sutarties atsisakyta. Pinigus grąžinsime per 14 d.'); render(); });
@@ -1651,8 +1653,32 @@ function renderPlans(){
   bindPlanLegal(r); bindEngage(r);
   view.querySelectorAll('[data-plan]').forEach(b => b.addEventListener('click', () => {
     if(b.dataset.plan!=='free' && !consent('base', () => b.click(), 'Prieš įsigyjant planą')) return;
-    S.plan[r] = b.dataset.plan; if(b.dataset.plan!=='free') burst(); toast(`Įjungtas planas ${PLANS[b.dataset.plan].n}`); render();
+    if(b.dataset.plan!=='free') return checkout(r, b.dataset.plan);
+    S.plan[r] = 'free'; toast(`Įjungtas planas ${PLANS.free.n}`); render();
   }));
+}
+/* Apmokėjimas per Stripe Checkout (prototipe – imitacija, tikroje programėlėje atsidaro Stripe puslapis) */
+function checkout(r, k){
+  ovReturn = () => render();
+  const P = PLANS[k];
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="co-t"><div class="card" style="text-align:left;justify-items:stretch">
+    <div class="row">${ic('lock')}<h2 id="co-t">Apmokėjimas</h2></div>
+    <div class="row between"><span>Ridu ${P.n}</span><b>${eur(P.price[r])}<span class="muted small"> / mėn.</span></b></div>
+    <label class="small muted" for="co-card">Kortelė</label>
+    <div class="row" style="gap:8px">${ic('card')}<input id="co-card" inputmode="numeric" autocomplete="off" placeholder="Kortelės numeris" style="flex:1;min-width:0"></div>
+    ${r==='client' ? `<label class="chk"><input type="checkbox" id="co-now"><span>Prašau, kad planas veiktų iš karto. Atsisakius per 14 d. grąžinama už nepanaudotą laiką.</span></label>` : `<p class="muted small">Sąskaitoje galite nurodyti įmonės ar PVM kodą.</p>`}
+    <p class="err small" id="co-err" hidden>Pažymėkite, kad planas veiktų iš karto.</p>
+    <div class="two"><button class="btn ghost" id="co-x">Atšaukti</button><button class="btn" id="co-go">Mokėti ${eur(P.price[r])}</button></div>
+    <p class="muted small">Mokėjimus apdoroja Stripe. Kortelės duomenų nesaugome. Sąskaitą gausite el. paštu. Prototipe niekas nenuskaitoma.</p>
+  </div></div>`;
+  ovl.querySelector('#co-card').focus();
+  ovl.querySelector('#co-x').addEventListener('click', closeOv);
+  ovl.querySelector('#co-go').addEventListener('click', () => {
+    const now = ovl.querySelector('#co-now');
+    if(now && !now.checked){ ovl.querySelector('#co-err').hidden = false; now.focus(); return; }
+    S.plan[r] = k; LG.cancelled[r] = null; S.paidAt = S.paidAt || {}; S.paidAt[r] = Date.now();
+    ovReturn = null; ovl.innerHTML = ''; burst(); toast(`Apmokėta. Įjungtas planas ${P.n}`); render();
+  });
 }
 function paywall(lvl, why){
   ovReturn = () => render();
@@ -2099,7 +2125,16 @@ const EN = {
 "Tęsti prenumeratą": "Resume subscription",
 "Atšaukti prenumeratą": "Cancel subscription",
 "Atsisakyti sutarties": "Withdraw from contract",
-"Kainos yra pasiūlymas. Prototipe planas įsijungia iškart, be mokėjimo.": "Prices are a proposal. In the prototype a plan switches on immediately, without payment.",
+"Kainos yra pasiūlymas. Mokama kortele per Stripe. Nepavykus nuskaityti, Stripe bandys dar kelis kartus ir apie tai praneš.": "Prices are a proposal. Paid by card via Stripe. If a charge fails, Stripe retries a few times and lets you know.",
+"Apmokėjimas": "Payment",
+"Kortelė": "Card",
+"Kortelės numeris": "Card number",
+"Prašau, kad planas veiktų iš karto. Atsisakius per 14 d. grąžinama už nepanaudotą laiką.": "Please start the plan immediately. If I withdraw within 14 days, the unused time is refunded.",
+"Sąskaitoje galite nurodyti įmonės ar PVM kodą.": "You can add a company or VAT code to the invoice.",
+"Pažymėkite, kad planas veiktų iš karto.": "Tick the box to start the plan immediately.",
+"Mokėjimus apdoroja Stripe. Kortelės duomenų nesaugome. Sąskaitą gausite el. paštu. Prototipe niekas nenuskaitoma.": "Payments are processed by Stripe. We don't store card details. You'll get the invoice by email. Nothing is charged in the prototype.",
+"Kortelė ir sąskaitos": "Card and invoices",
+"Atsidaro Stripe: kortelės keitimas ir visos sąskaitos": "Opens Stripe: change card and see all invoices",
 "Prenumerata atšaukta. Planas veiks iki laikotarpio pabaigos": "Subscription cancelled. The plan stays active until the end of the period",
 "Prenumerata vėl pratęsiama kas mėnesį": "Subscription renews monthly again",
 "Sutarties atsisakyta. Pinigus grąžinsime per 14 d.": "Contract withdrawn. We'll refund you within 14 days.",
@@ -2307,6 +2342,8 @@ const EN = {
 "Klientas ": "Client"
 };
 const EN_RX = [
+  [/^Apmokėta\. Įjungtas planas (\w+)$/, 'Paid. $1 plan activated'],
+  [/^Mokėti (.+)$/, 'Pay $1'],
   [/^Liko (\d+) iš (\d+)$/, '$1 of $2 left'],
   [/^(\d+) iš (\d+) patvirtinta$/, '$1 of $2 approved'],
   [/^Pasiūlymai \((\d+)\)$/, 'Offers ($1)'],
