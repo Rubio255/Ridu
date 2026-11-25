@@ -1,0 +1,88 @@
+# Ridu Privacy Policy
+
+Version 2026-11-25. English translation; the Lithuanian version prevails. Draft: to be reviewed by a Lithuanian lawyer before publication.
+
+## 1. Who processes your data
+
+Data controller: MB „Įmonių veiklos analizė“, company code 307404233, registered office Giedraičių g. 39, R53, LT-09302 Vilnius, Lithuania, phone +370 649 94125, email info@ridu.lt. For questions about your data, write to info@ridu.lt.
+
+## 2. What data we collect
+
+From all users:
+- name, email, phone number, login and security data (such as login time, device type, IP address);
+- messages, offers and agreements in chats;
+- reports of violations and complaints;
+- plan and plan payment information (we do not store card details; the payment service provider handles them).
+
+From clients:
+- ride addresses, from which we derive the postal code, time and days;
+- number and type of passengers (child, adult, senior), the child’s age or height if a seat is needed, and notes for the driver.
+
+From drivers:
+- name, surname, business certificate number, LTSA permit number, vehicle registration number and the result of the check;
+- photos of themselves and the vehicle.
+
+We do not collect health data or copies of documents. Please write no more in notes than the ride needs.
+
+## 3. Why and on what basis we use it
+
+| Purpose | Legal basis |
+| --- | --- |
+| Account, requests, offers, chats | Performance of a contract (GDPR Art. 6(1)(b)) |
+| Checking drivers’ LTSA permits and photos | Legitimate interest in safety and fraud prevention (Art. 6(1)(f)) |
+| Preventing fraud and violations, handling reports | Legitimate interest (f) and legal obligation under the Digital Services Act (c) |
+| Paid plans, invoices, accounting | Performance of a contract and legal obligation (b and c) |
+| Responding to authorities (e.g. law enforcement, tax authority) | Legal obligation (c) |
+| News by email | Your consent (a), which you may withdraw at any time |
+
+We do not make automated decisions with legal effects on you. A person always reviews account restrictions.
+
+## 4. Who sees your data
+
+- Other users see only what is needed to agree. Until the client agrees to be contacted, the driver sees only the postal code, time and number of passengers. The driver sees the exact address only when the client shares it in the chat.
+- Clients see the driver’s first name, approved photos and the verification badge. We do not show the permit number to clients.
+- Service providers who help us: data storage and servers (Supabase, Vercel), email delivery, plan payments. They process data only on our instructions under contracts.
+- Authorities, where the law requires (e.g. law enforcement, LTSA, the tax authority).
+
+We store data in the European Union. If a service provider transfers data outside the EU, safeguards approved by the European Commission apply (e.g. standard contractual clauses).
+
+## 5. How long we keep it
+
+- Account data: for as long as you have an account.
+- Requests and chats: 12 months after the last message, so that disputes can be resolved.
+- Exact addresses: while the request is active; afterwards only the postal code remains.
+- Data on violations, blocked accounts and fraud: 3 years.
+- Accounting documents: 10 years, as the law requires.
+- After you delete your account, data is deleted within 30 days, except data we must keep longer.
+
+## 6. Children’s data
+
+Children do not create accounts. A child’s data is provided by parents or other legal guardians, and only as much as a safe ride needs: age or height for the seat, first name for the handover. A child’s data is shown to the driver only after the client agrees to be contacted.
+
+## 7. Your rights
+
+You may:
+- get a copy of your data;
+- correct inaccurate data;
+- delete data or your account;
+- restrict or object to processing;
+- receive data in a portable format;
+- withdraw consent.
+
+Write to info@ridu.lt. We reply within 1 month. If you think we have breached your rights, you may complain to the State Data Protection Inspectorate of Lithuania (vdai.lrv.lt).
+
+## 8. Security
+
+We use encrypted connections, access restrictions in the database, and two-factor login for drivers and administration. Staff see only what their work requires.
+
+## 9. Cookies
+
+We use only cookies necessary for login and security. We would use statistics or advertising cookies only with your consent.
+
+## 10. Changes
+
+We will announce material changes to this policy in the app.
+
+## 11. Language
+
+This policy is available in Lithuanian and English. If the versions differ, the Lithuanian version prevails.

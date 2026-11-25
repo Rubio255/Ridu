@@ -4,7 +4,7 @@ Versija 2026-11-25. Projektas: prieš paskelbiant turi peržiūrėti Lietuvos te
 
 ## 1. Kas tvarko jūsų duomenis
 
-Duomenų valdytojas: MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas [el. paštas]. Klausimais apie duomenis rašykite [el. paštas].
+Duomenų valdytojas: MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas info@ridu.lt. Klausimais apie duomenis rašykite info@ridu.lt.
 
 ## 2. Kokius duomenis renkame
 
@@ -69,7 +69,7 @@ Jūs galite:
 - gauti duomenis perkeliamu formatu;
 - atšaukti sutikimą.
 
-Rašykite [el. paštas]. Atsakome per 1 mėnesį. Jei manote, kad pažeidėme jūsų teises, galite kreiptis į Valstybinę duomenų apsaugos inspekciją (vdai.lrv.lt).
+Rašykite info@ridu.lt. Atsakome per 1 mėnesį. Jei manote, kad pažeidėme jūsų teises, galite kreiptis į Valstybinę duomenų apsaugos inspekciją (vdai.lrv.lt).
 
 ## 8. Saugumas
 
@@ -82,3 +82,7 @@ Naudojame tik būtinus slapukus prisijungimui ir saugumui. Statistikos ar reklam
 ## 10. Pakeitimai
 
 Apie esminius šios politikos pakeitimus pranešime programėlėje.
+
+## 11. Kalba
+
+Politika pateikiama lietuvių ir anglų kalbomis. Jei tarp jų yra skirtumų, vadovaujamasi lietuviška versija.

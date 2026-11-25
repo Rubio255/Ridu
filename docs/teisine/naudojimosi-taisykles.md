@@ -6,7 +6,7 @@ Versija 2026-11-25. Projektas: prieš paskelbiant turi peržiūrėti Lietuvos te
 
 Ridu yra internetinė paieškos platforma. Ji padeda žmonėms, kuriems reikia nuvežti save, vaiką ar artimąjį (klientams), rasti vairuotojus, turinčius LTSA pavėžėjimo leidimą (vairuotojus), ir susitarti tarpusavyje.
 
-Platformą valdo MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas [el. paštas] (toliau – Ridu, mes).
+Platformą valdo MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas info@ridu.lt (toliau – Ridu, mes).
 
 Ridu neveža keleivių, nenustato kainų, nepriima mokėjimų už keliones ir neskiria vairuotojų. Pavėžėjimo sutartį sudaro klientas ir vairuotojas tiesiogiai. Ridu nėra šios sutarties šalis ir už jos vykdymą neatsako.
 
@@ -93,7 +93,7 @@ Daugiau patarimų rasite skiltyje „Saugumas ir draudžiamas elgesys“.
 
 ## 10. Pranešimai apie pažeidimus
 
-Apie neteisėtą turinį ar elgesį praneškite mygtuku „Pranešti“ pokalbyje ar profilyje arba el. paštu [el. paštas]. Nurodykite, kas ir kodėl yra pažeidimas, ir kur jį rasti.
+Apie neteisėtą turinį ar elgesį praneškite mygtuku „Pranešti“ pokalbyje ar profilyje arba el. paštu info@ridu.lt. Nurodykite, kas ir kodėl yra pažeidimas, ir kur jį rasti.
 
 Pranešimus peržiūrime nedelsdami, o skubius (susijusius su vaikų ar žmonių saugumu) – pirmiausia. Pranešusiam asmeniui pranešame, ką nusprendėme.
 
@@ -146,7 +146,7 @@ Jei trečiasis asmuo ar institucija pareiškia Ridu reikalavimą dėl to, kad va
 
 ## 16. Skundai ir ginčai
 
-- Skundą dėl Ridu sprendimo ar paslaugos galite pateikti per 6 mėnesius mygtuku „Pateikti skundą“ arba el. paštu [el. paštas]. Atsakome per 14 dienų.
+- Skundą dėl Ridu sprendimo ar paslaugos galite pateikti per 6 mėnesius mygtuku „Pateikti skundą“ arba el. paštu info@ridu.lt. Atsakome per 14 dienų.
 - Klientas vartotojas, jei nesutariame, gali kreiptis į Valstybinę vartotojų teisių apsaugos tarnybą (vvtat.lrv.lt).
 - Ginčus su vairuotoju dėl kelionės sprendžiate tiesiogiai su juo. Ridu gali padėti susisiekti ir pateikti pokalbio istoriją, jei to prašo institucija ar teismas.
 - Taikoma Lietuvos Respublikos teisė. Ginčai sprendžiami Lietuvos teismuose. Vartotojai išsaugo visas savo gyvenamosios šalies įstatymų suteiktas apsaugas.
@@ -158,3 +158,7 @@ Apie pakeitimus pranešame programėlėje ir el. paštu ne vėliau kaip prieš 1
 ## 18. Paskyros ištrynimas
 
 Paskyrą galite ištrinti bet kada nustatymuose. Kai kuriuos duomenis saugome ilgiau, jei to reikia pagal įstatymą ar ginčui spręsti (žr. Privatumo politiką).
+
+## 19. Kalba
+
+Taisyklės pateikiamos lietuvių ir anglų kalbomis. Jei tarp jų yra skirtumų, vadovaujamasi lietuviška versija.

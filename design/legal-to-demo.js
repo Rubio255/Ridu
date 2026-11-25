@@ -4,7 +4,11 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const DOCS = { terms: 'naudojimosi-taisykles.md', privacy: 'privatumo-politika.md', safety: 'saugumas-ir-draudziamas-elgesys.md' };
+// Lietuviška versija pagrindinė; angliška yra vertimas (docs/teisine/en)
+const DOCS = {
+  lt: { terms: 'naudojimosi-taisykles.md', privacy: 'privatumo-politika.md', safety: 'saugumas-ir-draudziamas-elgesys.md' },
+  en: { terms: 'en/terms-of-use.md', privacy: 'en/privacy-policy.md', safety: 'en/safety-and-prohibited-conduct.md' }
+};
 const HTML = path.join(ROOT, 'demo', 'platforma.html');
 
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -53,16 +57,16 @@ function parse(file) {
     (cur ? cur.lines : intro).push(line);
   }
   // Įžangoje paliekame tik versiją; pastaba apie teisininko peržiūrą naudotojams nerodoma
-  const ver = intro.join(' ').match(/Versija (\d{4}-\d{2}-\d{2})/);
+  const ver = intro.join(' ').match(/(?:Versija|Version) (\d{4}-\d{2}-\d{2})/);
   doc.v = ver ? ver[1] : '';
   doc.sections = doc.sections.map(s => ({ h: s.h, html: toHtml(s.lines) }));
   return doc;
 }
 
-const data = Object.fromEntries(Object.entries(DOCS).map(([k, f]) => [k, parse(f)]));
+const data = Object.fromEntries(Object.entries(DOCS).map(([lang, files]) => [lang, Object.fromEntries(Object.entries(files).map(([k, f]) => [k, parse(f)]))]));
 const block = `/* LEGAL:START – generuojama iš docs/teisine/*.md (node design/legal-to-demo.js), ranka nekeisti */\nconst LEGAL = ${JSON.stringify(data)};\n/* LEGAL:END */`;
 const html = fs.readFileSync(HTML, 'utf8');
 const re = /\/\* LEGAL:START[\s\S]*?\/\* LEGAL:END \*\//;
 if (!re.test(html)) { console.error('Nerasta LEGAL:START/LEGAL:END žymų demo/platforma.html'); process.exit(1); }
 fs.writeFileSync(HTML, html.replace(re, () => block));
-console.log('Įdėta:', Object.values(data).map(d => `${d.t} (${d.sections.length} sk.)`).join(', '));
+for (const [lang, docs] of Object.entries(data)) console.log(lang + ':', Object.values(docs).map(d => `${d.t} (${d.sections.length} sk.)`).join(', '));
