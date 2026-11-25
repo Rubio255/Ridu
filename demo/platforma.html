@@ -38,6 +38,10 @@ header .wrap{display:flex;gap:10px;align-items:center;justify-content:space-betw
 .logo{display:flex;gap:10px;align-items:center}
 .logo svg{width:32px;height:32px;display:block}
 .logo h1{font-size:1.15rem}
+.langbtn{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;border-radius:10px;padding:5px 8px;font-size:.78rem;font-weight:700;letter-spacing:.04em;flex:none;transition:transform .2s var(--spring,ease)}
+.langbtn.dark{border-color:var(--line);background:var(--surface-2);color:var(--fg)}
+.langbtn:active{transform:scale(.92)}
+header .wrap > .seg{margin-left:auto}
 .seg{display:flex;background:rgba(255,255,255,.14);border-radius:10px;padding:3px;gap:2px}
 .seg button{border:0;background:none;color:inherit;padding:5px 9px;border-radius:8px;font-size:.82rem;font-weight:600;opacity:.85}
 .seg button[aria-pressed="true"]{background:var(--brand-fg);color:var(--brand);opacity:1}
@@ -333,6 +337,7 @@ button.ph:hover{transform:scale(1.04)}
       <button id="r-client" aria-pressed="true" data-role="client">Klientas</button>
       <button id="r-driver" aria-pressed="false" data-role="driver">Vairuotojas</button>
     </div>
+    <button class="langbtn" id="lang" type="button" data-noi18n aria-label="English" title="English">EN</button>
   </div>
 </header>
 <div class="note"><div class="wrap">Prototipas: visi žmonės ir duomenys pavyzdiniai, niekas nesaugoma.</div></div>
@@ -370,12 +375,14 @@ const I = {
 };
 const ic = (n, cls='') => `<span class="ico ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24">${I[n]}</svg></span>`;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ---------- Kalba: LT (numatytoji) / EN ---------- */
+let LANG = 'lt'; try { LANG = localStorage.getItem('ridu-lang') === 'en' ? 'en' : 'lt'; } catch(e) {}
 const DAYS = ['Pr','An','Tr','Kt','Pn','Št','Sk'];
 const PTYPE = {child:'Vaikas', adult:'Suaugęs', senior:'Senjoras'};
 const GRAD = ['#0f4c45,#2a8f7f','#1d5b9a,#3f8fd6','#7a4a12,#c98a2b','#5b3a7a,#9a6bc4','#1f6a3a,#43a36a','#7a2a2a,#c4574f'];
 const grad = i => `linear-gradient(135deg,${GRAD[i % GRAD.length]})`;
-const daysTxt = d => d.length===5 && d.every(x=>x<5) ? 'Pr–Pn' : d.map(i=>DAYS[i]).join(', ');
-const eur = n => (Math.round(n*100)/100).toFixed(2).replace('.', ',') + ' €';
+const daysTxt = d => d.length===5 && d.every(x=>x<5) ? DAYS[0]+'–'+DAYS[4] : d.map(i=>DAYS[i]).join(', ');
+const eur = n => LANG==='en' ? '€' + (Math.round(n*100)/100).toFixed(2) : (Math.round(n*100)/100).toFixed(2).replace('.', ',') + ' €';
 /* Demonstraciniai adresai. Tikroje versijoje pašto kodas gaunamas iš adresų paieškos (Registrų centro adresų registras / žemėlapių API). */
 const ADDR = {'Antakalnio g. 40, Vilnius':'LT-10223','Žirmūnų g. 70, Vilnius':'LT-09124','Gedimino pr. 9, Vilnius':'LT-01103','Kalvarijų g. 125, Vilnius':'LT-08221',
   'Ozo g. 25, Vilnius':'LT-08105','Laisvės al. 53, Kaunas':'LT-44309','Savanorių pr. 255, Kaunas':'LT-50185','Taikos pr. 61, Klaipėda':'LT-91182'};
@@ -419,8 +426,10 @@ function holidays(y){ // Lietuvos valstybinės šventės ir poilsio dienos (Darb
   fx(5,24,'Rasos ir Joninių diena'); fx(6,6,'Valstybės (Karaliaus Mindaugo karūnavimo) diena'); fx(7,15,'Žolinė');
   fx(10,1,'Visų šventųjų diena'); fx(10,2,'Mirusiųjų atminimo (Vėlinių) diena'); fx(11,24,'Kūčios'); fx(11,25,'Kalėdos'); fx(11,26,'Antroji Kalėdų diena');
   return HOL_CACHE[y] = H; }
-const holOf = v => v ? holidays(+v.slice(0,4))[v] : null;
-const dateTxt = (v, long) => { const d=pIso(v); return `${long?d.getUTCFullYear()+' m. ':''}${MON_G[d.getUTCMonth()]} ${d.getUTCDate()} d.${long?', '+WDAY[d.getUTCDay()]:''}`; };
+const holOf = v => v ? L(holidays(+v.slice(0,4))[v]) : null;
+const dateTxt = (v, long) => { const d=pIso(v);
+  if(LANG==='en') return `${long?WDAY[d.getUTCDay()]+', ':''}${d.getUTCDate()} ${MON_G[d.getUTCMonth()]}${long?' '+d.getUTCFullYear():''}`;
+  return `${long?d.getUTCFullYear()+' m. ':''}${MON_G[d.getUTCMonth()]} ${d.getUTCDate()} d.${long?', '+WDAY[d.getUTCDay()]:''}`; };
 /* Kalendoriaus valdiklis: savaitė nuo pirmadienio, šventės pažymėtos, praeities dienos neaktyvios */
 function calendar(host, input, onPick){
   let sel = input.value, cur = pIso(sel || TODAY); cur.setUTCDate(1);
@@ -428,13 +437,13 @@ function calendar(host, input, onPick){
     const y=cur.getUTCFullYear(), m=cur.getUTCMonth(), lead=(cur.getUTCDay()+6)%7, n=new Date(Date.UTC(y,m+1,0)).getUTCDate(), H=holidays(y);
     const minMonth = TODAY.slice(0,7) >= iso(y,m,1).slice(0,7);
     let cells = '<span></span>'.repeat(lead);
-    for(let d=1; d<=n; d++){ const v=iso(y,m,d), h=H[v], we=((lead+d-1)%7)>4;
+    for(let d=1; d<=n; d++){ const v=iso(y,m,d), h=L(H[v]), we=((lead+d-1)%7)>4;
       cells += `<button type="button" class="cd${h?' hol':''}${we?' we':''}${v===TODAY?' today':''}" data-d="${v}" aria-pressed="${v===sel}" ${v<TODAY?'disabled':''} aria-label="${dateTxt(v,true)}${h?', '+h:''}"${h?` title="${h}"`:''}>${d}</button>`; }
     const monthHol = Object.entries(H).filter(([k])=>k.slice(5,7)===String(m+1).padStart(2,'0')).sort();
     host.innerHTML = `<div class="cal-h"><button type="button" class="round sm" data-nav="-1" aria-label="Ankstesnis mėnuo" ${minMonth?'disabled':''}>${ic('back')}</button>
-      <b aria-live="polite">${y} m. ${MON_N[m].toLowerCase()}</b><button type="button" class="round sm flip" data-nav="1" aria-label="Kitas mėnuo">${ic('back')}</button></div>
+      <b aria-live="polite">${LANG==='en' ? MON_N[m]+' '+y : y+' m. '+MON_N[m].toLowerCase()}</b><button type="button" class="round sm flip" data-nav="1" aria-label="Kitas mėnuo">${ic('back')}</button></div>
       <div class="cal-g" role="group" aria-label="${MON_N[m]}">${DAYS.map((x,i)=>`<span class="cw${i>4?' we':''}">${x}</span>`).join('')}${cells}</div>
-      ${monthHol.length?`<ul class="cal-l">${monthHol.map(([k,h])=>`<li><span class="hd"></span>${MON_G[m]} ${+k.slice(8)} d. – ${h}</li>`).join('')}</ul>`:''}
+      ${monthHol.length?`<ul class="cal-l">${monthHol.map(([k,h])=>`<li><span class="hd"></span>${dateTxt(k)} – ${L(h)}</li>`).join('')}</ul>`:''}
       <p class="small cal-s">${sel?`${ic('cal')} <b>${dateTxt(sel,true)}</b>${holOf(sel)?` <span class="tag warn">${holOf(sel)}</span>`:''}`:''}</p>`;
   };
   host.addEventListener('click', e => { const b=e.target.closest('button'); if(!b||b.disabled) return;
@@ -451,11 +460,13 @@ function tripDates(q, horizon){ // grąžina {trips:[], skipped:[[data,šventė]
     if(q.days.includes((d.getUTCDay()+6)%7)){ const h=holOf(v); if(h && q.skipHol) out.skipped.push([v,h]); else out.trips.push(v); }
     d.setUTCDate(d.getUTCDate()+1); }
   return out; }
-const periodTxt = q => q.repeat && q.start ? `nuo ${dateTxt(q.start)} ${q.end ? 'iki ' + dateTxt(q.end) : 'neterminuotai'}${q.skipHol?', šventėmis nevažiuojama':''}` : '';
-const kel = n => { const t=n%10, h=n%100; return n + ' ' + (t===1&&h!==11 ? 'kelionė' : t>=2&&t<=9&&!(h>=12&&h<=19) ? 'kelionės' : 'kelionių'); };
+const periodTxt = q => !(q.repeat && q.start) ? '' : LANG==='en'
+  ? `from ${dateTxt(q.start)} ${q.end ? 'until ' + dateTxt(q.end) : 'with no end date'}${q.skipHol?', no trips on public holidays':''}`
+  : `nuo ${dateTxt(q.start)} ${q.end ? 'iki ' + dateTxt(q.end) : 'neterminuotai'}${q.skipHol?', šventėmis nevažiuojama':''}`;
+const kel = n => { if(LANG==='en') return n + (n===1 ? ' trip' : ' trips'); const t=n%10, h=n%100; return n + ' ' + (t===1&&h!==11 ? 'kelionė' : t>=2&&t<=9&&!(h>=12&&h<=19) ? 'kelionės' : 'kelionių'); };
 const mpc = pc => pc.slice(0,6) + 'xx';
 const when = q => q.repeat ? `${daysTxt(q.days)}, ${q.time}` : `${dateTxt(q.date)}, ${q.time}`;
-const paxTxt = q => `${q.pax} × ${PTYPE[q.type].toLowerCase()}${q.seat?' · reikia kėdutės':''}`;
+const paxTxt = q => `${q.pax} × ${PTYPE[q.type].toLowerCase()}${q.seat?' · '+L('reikia kėdutės'):''}`;
 
 /* ---------- pavyzdiniai duomenys ---------- */
 const drivers = {
@@ -668,7 +679,8 @@ function renderReqForm(){
   const period = () => { const st=view.querySelector('#rf-date').value; return {start:st, end: f.dur==='open' ? null : f.dur==='summer' ? summerEnd(st) : addM(st, Number(f.dur)), skipHol:view.querySelector('#rf-hol').checked}; };
   const sum = () => { const o=view.querySelector('#rf-sum'); if(!f.repeat || !f.days.length){ o.innerHTML=''; return; }
     const pq = {...period(), days:f.days}, r = tripDates(pq);
-    o.innerHTML = `${ic('cal')} <span><b>${kel(r.trips.length)}</b> ${pq.end?`iki ${dateTxt(pq.end)}`:'per artimiausius 3 mėn.'}${r.skipped.length?` Praleidžiamos šventės: ${r.skipped.map(([v,h])=>`${dateTxt(v)} (${h})`).join(', ')}.`:''}</span>`; };
+    const en = LANG==='en', sk = r.skipped.map(([v,h])=>`${dateTxt(v)} (${L(h)})`).join(', ');
+    o.innerHTML = `${ic('cal')} <span data-noi18n><b>${kel(r.trips.length)}</b> ${pq.end ? (en?'until ':'iki ')+dateTxt(pq.end) : (en?'over the next 3 months':'per artimiausius 3 mėn.')}.${r.skipped.length ? (en?' Skipped holidays: ':' Praleidžiamos šventės: ')+sk+'.' : ''}</span>`; };
   calendar(view.querySelector('#rf-cal'), view.querySelector('#rf-date'), sum);
   view.querySelector('#rf-hol').addEventListener('change', sum);
   view.querySelector('[data-many]').addEventListener('click', ()=>setTimeout(sum));
@@ -711,7 +723,7 @@ function renderReq(id){
     <button class="btn ghost" id="back" style="justify-self:start">${ic('back')} Atgal</button>
     <div class="card"><h2><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h2>
       <p class="muted">${when(q)} · ${paxTxt(q)}${q.note?` · ${esc(q.note)}`:''}</p>
-      ${q.repeat && q.start ? `<p class="small row" style="flex-wrap:nowrap;align-items:flex-start">${ic('cal')}<span>Pastovus vežimas ${periodTxt(q)}. ${kel(tripDates(q).trips.length)}${q.end?'':' per 3 mėn.'}</span></p>` : ''}
+      ${q.repeat && q.start ? `<p class="small row" style="flex-wrap:nowrap;align-items:flex-start">${ic('cal')}<span data-noi18n>${L('Pastovus vežimas')} ${periodTxt(q)}. ${kel(tripDates(q).trips.length)}${q.end?'':(LANG==='en'?' over 3 months':' per 3 mėn.')}</span></p>` : ''}
       ${q.addr ? `<p class="small row" style="flex-wrap:nowrap;align-items:flex-start">${ic('lock')}<span>${esc(q.addr.from)} → ${esc(q.addr.to)}<br><span class="muted">Adresą matote tik jūs.</span></span></p>` : ''}</div>
     <h3>Pasiūlymai (${offs.length})</h3>
     ${offs.length ? offs.slice(0, has('plus')?99:FREE_OFFERS_SEEN).map(o=>offerCard(o,true)).join('') + (!has('plus') && offs.length>FREE_OFFERS_SEEN ? `<button class="card locked" id="unlock"><div class="row">${offs.slice(FREE_OFFERS_SEEN).map(o=>`<span class="blur">${avD(o.driver)}</span>`).join('')}<div style="flex:1;text-align:left"><b>Dar ${offs.length-FREE_OFFERS_SEEN} ${offs.length-FREE_OFFERS_SEEN===1?'pasiūlymas':'pasiūlymai'}</b><p class="muted small">Atrakinkite su Plus</p></div>${ic('lock')}</div></button>` : '') : `<div class="empty" style="height:auto">${ic('clock')}<h3>Laukiame pasiūlymų</h3><p class="muted">Vairuotojai paprastai atsiliepia per kelias valandas.</p></div>`}
@@ -771,7 +783,7 @@ function renderConv(id){
     <div class="card">
       <div class="row">${av(other.name[0], other.g)}<div style="min-width:0"><h2>${esc(other.name)}</h2><p class="muted small">${esc(other.sub)}</p></div></div>
       <p class="small"><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)} · ${paxTxt(q)}</p>
-      ${q.repeat && q.start ? `<p class="small muted">Pastovus vežimas ${periodTxt(q)}</p>` : ''}
+      ${q.repeat && q.start ? `<p class="small muted" data-noi18n>${L('Pastovus vežimas')} ${periodTxt(q)}</p>` : ''}
       <p class="small row">${ic('phone')} ${me==='client' ? '+370 612 345 67' : '+370 698 765 43'}</p>
       <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><p class="small muted" style="flex:1;min-width:0">${me==='client' ? 'Vairuotojas veikia kaip verslininkas. Sutartį sudarote su juo, ne su Ridu.' : 'Klientui pateikite savo rekvizitus ir sąlygas.'}</p><button class="btn ghost" data-report-conv>${ic('flag')} Pranešti</button></div>
       ${me==='client' && q.addr ? (cv.addrShared ? `<p class="small row muted">${ic('check')} Adresu pasidalinote</p>` : `<button class="btn ghost" id="share-addr">${ic('pin')} Pasidalinti adresu</button>`) : ''}
@@ -1056,7 +1068,7 @@ const FAQ = {
       'Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse. Ridu neima mokesčio už keliones ir niekada neprašo kodų ar banko duomenų.',
       'Patikrinkite, ar vairuotojas ir automobilis atitinka nuotraukas. Įtartiną elgesį praneškite mygtuku „Pranešti“ pokalbyje.']],
     ['Ką daryti, jei vairuotojas netinka?', [
-      'Galite bet kada ieškoti kito vairuotojo. Pagal sutartį ją galima nutraukti įspėjus prieš 30 d., o dėl esminio pažeidimo – iš karto. Apie netinkamą elgesį parašykite mums, peržiūrėsime vairuotojo profilį.']]
+      'Galite bet kada ieškoti kito vairuotojo. Pagal sutartį ją galima nutraukti įspėjus prieš 30 d., o dėl esminio pažeidimo – iš karto. Apie netinkamą elgesį parašykite mums info@ridu.lt, peržiūrėsime vairuotojo profilį.']]
   ],
   driver:[
     ['Ko reikia, kad galėčiau registruotis?', [
@@ -1133,7 +1145,7 @@ function legalGate(){
   if(r==='owner' || LG.ok[r] || ovl.innerHTML || S.open?.kind==='legal') return;
   ovReturn = null;
   ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="lg-t"><form class="card" id="lg" novalidate style="text-align:left;justify-items:stretch">
-    <h2 id="lg-t">Prieš pradedant</h2>
+    <div class="row between" style="flex-wrap:nowrap"><h2 id="lg-t">Prieš pradedant</h2><button type="button" class="langbtn dark" data-setlang data-noi18n>${LANG==='en'?'LT':'EN'}</button></div>
     <p class="muted small">${r==='client' ? 'Ridu padeda rasti vairuotoją. Sutartį ir mokėjimą su juo tvarkote patys.' : 'Ridu padeda rasti klientų. Vežate savo vardu kaip savarankiškas vežėjas.'}</p>
     ${GATE[r].map(([k,t]) => `<label class="chk"><input type="checkbox" data-g="${k}"><span>${t}</span></label>`).join('')}
     <label class="chk"><input type="checkbox" id="lg-news"><span>Noriu gauti naujienas el. paštu (nebūtina).</span></label>
@@ -1141,6 +1153,7 @@ function legalGate(){
     <button class="btn">${ic('check')} Tęsti</button>
   </form></div>`;
   ovl.querySelectorAll('[data-doc]').forEach(b => b.addEventListener('click', () => openDoc(b.dataset.doc)));
+  ovl.querySelector('[data-setlang]').addEventListener('click', () => { ovl.innerHTML=''; setLang(LANG==='en'?'lt':'en'); render(); });
   ovl.querySelector('#lg').addEventListener('submit', e => {
     e.preventDefault();
     if([...ovl.querySelectorAll('[data-g]')].some(c => !c.checked)){ ovl.querySelector('#lg-err').hidden = false; return; }
@@ -1298,7 +1311,26 @@ function paywall(lvl, why){
 }
 function contract(o){
   const q = reqOf(o.req), cv = convOf(o.id), d = drivers[o.driver], a = cv.agreed || {price:o.price, time:o.time, days:q.days};
-  const txt = `PAVĖŽĖJIMO SUTARTIS
+  const ch = q.type==='child';
+  const txt = LANG==='en' ? `PASSENGER TRANSPORT AGREEMENT
+Date: ${dateTxt(TODAY, true)}
+
+Carrier: ${d.name}, business certificate No. __________,
+LTSA passenger transport permit No. __________, vehicle __________
+Carrier's liability insurance: __________
+Customer: ${q.client}
+
+1. Route: ${cv.addrShared && q.addr ? q.addr.from + ' → ' + q.addr.to : q.from + ' → ' + q.to + '. Exact addresses: __________'}.
+2. Time: ${q.repeat ? daysTxt(a.days) + ', ' + a.time + (q.start ? ', ' + periodTxt(q) : '') : dateTxt(q.date, true) + ', ' + a.time}${!q.repeat && holOf(q.date) ? ' (' + holOf(q.date) + ')' : ''}.
+3. Passengers: ${paxTxt(q)}.
+4. Price: ${eur(a.price)} per trip. Payment terms: __________.
+5. Waiting: up to 10 min at no extra charge.${ch ? `
+6. Handover of the child: only to the named adult __________. The child travels in a suitable car seat.` : ''}
+${ch?7:6}. Either party may end the agreement with 30 days' notice, or immediately for a material breach.
+${ch?8:7}. The carrier is responsible for passenger safety and for damage caused during the trip, and holds valid insurance.
+${ch?9:8}. Ridu is a search platform, is not a party to this agreement and is not responsible for its performance.
+
+Carrier: __________          Customer: __________` : `PAVĖŽĖJIMO SUTARTIS
 Data: ${dateTxt(TODAY, true)}
 
 Vežėjas: ${d.name}, veiklos pažymos Nr. __________,
@@ -1331,6 +1363,458 @@ Vežėjas: __________          Užsakovas: __________`;
   });
 }
 
+/* ---------- i18n: LT -> EN ----------
+   EN: tikslus lietuviškas tekstas -> anglų. EN_RX: dinaminiai tekstai.
+   DOM vertėjas verčia tekstinius mazgus ir placeholder/aria-label/title po kiekvieno piešimo.
+   Elementai su [data-noi18n] (pvz. teisinių dokumentų turinys) praleidžiami. */
+const LT_ARR = {DAYS:[...DAYS], MON_N:[...MON_N], MON_G:[...MON_G], WDAY:[...WDAY], PTYPE:{...PTYPE}};
+const EN_ARR = {DAYS:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  MON_N:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  WDAY:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], PTYPE:{child:'Child', adult:'Adult', senior:'Senior'}};
+EN_ARR.MON_G = EN_ARR.MON_N;
+const I18N_ATTR = ['placeholder','aria-label','title'];
+const MISS = new Set();
+function trText(s){
+  const k = s.replace(/\s+/g,' ').trim(); if(!k || !/[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]/.test(k)) return null;
+  let v = EN[k];
+  if(v === undefined) for(const [re, f] of EN_RX){ if(re.test(k)){ v = k.replace(re, f); break; } }
+  if(v === undefined && k.includes(' · ')){ let any=false; v = k.split(' · ').map(x => { const t=trText(x); if(t!==null){ any=true; return t; } return x; }).join(' · '); if(!any) v = undefined; }
+  if(v === undefined){ MISS.add(k); return null; }
+  return s.replace(/^(\s*)[\s\S]*?(\s*)$/, (m,a,b) => a + v + b);
+}
+const L = s => (LANG==='en' && s) ? (trText(s) ?? s) : s;
+const skipNode = el => !el || el.closest('[data-noi18n],script,style,textarea');
+function translate(root){
+  if(LANG!=='en' || !root) return;
+  const els = root.nodeType===1 ? [root, ...root.querySelectorAll('*')] : [];
+  if(root.nodeType===3){ const p=root.parentElement; if(!skipNode(p)){ const v=trText(root.data); if(v!==null){ root.__lt ??= root.data; root.data=v; } } return; }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for(let n=w.nextNode(); n; n=w.nextNode()){ if(skipNode(n.parentElement)) continue; const v=trText(n.data); if(v!==null){ n.__lt ??= n.data; n.data=v; } }
+  els.forEach(el => { if(skipNode(el)) return; I18N_ATTR.forEach(a => { const o=el.getAttribute(a); if(!o) return; const v=trText(o); if(v!==null){ if(!el.hasAttribute('data-lt-'+a)) el.setAttribute('data-lt-'+a, o); el.setAttribute(a, v); } }); });
+}
+function untranslate(){
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for(let n=w.nextNode(); n; n=w.nextNode()) if(n.__lt !== undefined){ n.data = n.__lt; delete n.__lt; }
+  document.querySelectorAll('*').forEach(el => I18N_ATTR.forEach(a => { const o=el.getAttribute('data-lt-'+a); if(o!==null){ el.setAttribute(a,o); el.removeAttribute('data-lt-'+a); } }));
+}
+const obs = new MutationObserver(ms => { if(LANG!=='en') return; obs.disconnect();
+  ms.forEach(m => { if(m.type==='characterData') translate(m.target); else m.addedNodes.forEach(translate); });
+  obs.observe(document.body, {childList:true, subtree:true, characterData:true}); });
+function setLang(l, save=true){
+  LANG = l; if(save) try { localStorage.setItem('ridu-lang', l); } catch(e) {}
+  const A = l==='en' ? EN_ARR : LT_ARR;
+  DAYS.splice(0,7,...A.DAYS); MON_N.splice(0,12,...A.MON_N); MON_G.splice(0,12,...A.MON_G); WDAY.splice(0,7,...A.WDAY); Object.assign(PTYPE, A.PTYPE);
+  document.documentElement.lang = l;
+  const b = document.getElementById('lang'); b.textContent = l==='en' ? 'LT' : 'EN'; b.setAttribute('aria-label', l==='en' ? 'Lietuvių' : 'English'); b.title = b.getAttribute('aria-label');
+  untranslate(); obs.disconnect();
+  if(l==='en'){ translate(document.body); obs.observe(document.body, {childList:true, subtree:true, characterData:true}); }
+}
+document.getElementById('lang').addEventListener('click', () => { setLang(LANG==='en' ? 'lt' : 'en'); render(); });
+const EN = {
+"Prototipas: visi žmonės ir duomenys pavyzdiniai, niekas nesaugoma.": "Prototype: all people and data are examples, nothing is saved.",
+"Kieno akimis žiūrėti": "View as",
+"Klientas": "Client",
+"Vairuotojas": "Driver",
+"Užklausos": "Requests",
+"Pokalbiai": "Chats",
+"Planai": "Plans",
+"DUK": "FAQ",
+"Pasiūlymai": "Offers",
+"Patikra": "Verification",
+"Atgal": "Back",
+"Uždaryti": "Close",
+"Atšaukti": "Cancel",
+"Siųsti": "Send",
+"Tęsti": "Continue",
+"Kita": "Other",
+"Data": "Date",
+"Laikas": "Time",
+"Dienos": "Days",
+"Pradžia": "Start",
+"Laikotarpis": "Period",
+"Neterminuotai": "No end date",
+"1 mėn.": "1 month",
+"3 mėn.": "3 months",
+"Iki birželio 30 d.": "Until 30 June",
+"Švenčių dienomis nevažiuoti": "No trips on public holidays",
+"Ankstesnis mėnuo": "Previous month",
+"Kitas mėnuo": "Next month",
+"Naujieji metai": "New Year's Day",
+"Lietuvos valstybės atkūrimo diena": "Restoration of the State Day",
+"Lietuvos nepriklausomybės atkūrimo diena": "Restoration of Independence Day",
+"Velykos": "Easter Sunday",
+"Antroji Velykų diena": "Easter Monday",
+"Tarptautinė darbo diena": "International Workers' Day",
+"Motinos diena": "Mother's Day",
+"Tėvo diena": "Father's Day",
+"Rasos ir Joninių diena": "St John's Day (Midsummer)",
+"Valstybės (Karaliaus Mindaugo karūnavimo) diena": "Statehood Day (Coronation of King Mindaugas)",
+"Žolinė": "Assumption Day",
+"Visų šventųjų diena": "All Saints' Day",
+"Mirusiųjų atminimo (Vėlinių) diena": "All Souls' Day",
+"Kūčios": "Christmas Eve",
+"Kalėdos": "Christmas Day",
+"Antroji Kalėdų diena": "Second Day of Christmas",
+"Prieš pradedant": "Before you start",
+"Ridu padeda rasti vairuotoją. Sutartį ir mokėjimą su juo tvarkote patys.": "Ridu helps you find a driver. You arrange the agreement and payment with them yourself.",
+"Ridu padeda rasti klientų. Vežate savo vardu kaip savarankiškas vežėjas.": "Ridu helps you find clients. You drive in your own name as an independent carrier.",
+"Man yra 18 metų ar daugiau.": "I am 18 or older.",
+"Sutinku su": "I agree to the",
+"Naudojimosi taisyklėmis": "Terms of Use",
+"Susipažinau su": "I have read the",
+"Privatumo politika": "Privacy Policy",
+"Turiu galiojantį LTSA pavėžėjimo leidimą ir vešiu tik jame nurodytu automobiliu.": "I hold a valid LTSA passenger transport permit and will drive only the vehicle listed on it.",
+"Turiu galiojantį draudimą, tinkamą keleivių vežimui už atlygį.": "I have valid insurance that covers carrying passengers for payment.",
+"Veikiu kaip verslininkas: turiu įregistruotą veiklą, pats moku mokesčius ir klientams pateiksiu savo rekvizitus.": "I act as a trader: my business is registered, I pay my own taxes and I will give clients my business details.",
+"Noriu gauti naujienas el. paštu (nebūtina).": "I'd like to receive news by email (optional).",
+"Pažymėkite visus privalomus punktus.": "Please tick all required boxes.",
+"Ačiū. Taisykles rasite skiltyje DUK": "Thank you. You'll find the terms in the FAQ section",
+"Kur reikia nuvežti?": "Where do you need to go?",
+"Nurodykite adresus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.": "Enter the addresses, time and passengers. Verified drivers will offer a price.",
+"Nauja užklausa": "New request",
+"Vairuotojų pastovūs maršrutai": "Drivers' regular routes",
+"Mano užklausos": "My requests",
+"reikia kėdutės": "car seat needed",
+"Laukiama": "Waiting",
+"Nemokamai galima turėti iki": "Free plan allows up to",
+"užklausų.": "requests.",
+"Iš kur (adresas)": "From (address)",
+"Į kur (adresas)": "To (address)",
+"Gatvė, namas, miestas": "Street, number, city",
+"Kiti matys:": "Others will see:",
+"Adresą matote tik jūs. Vairuotojai mato tik pašto kodą, kol patys nepasidalinsite adresu pokalbyje.": "Only you can see the address. Drivers see only the postcode until you share the address in a chat.",
+"Kaip dažnai": "How often",
+"Pastovus (kas savaitę)": "Regular (weekly)",
+"Vieną kartą": "One-off",
+"Keleivių skaičius": "Passengers",
+"Keleivio tipas": "Passenger type",
+"Reikia vaikiškos kėdutės": "Child car seat needed",
+"Trumpa pastaba (nebūtina)": "Short note (optional)",
+"Pvz. į dailės būrelį": "E.g. to art class",
+"Paskelbti užklausą": "Post request",
+"Adreso neradome. Pasirinkite adresą iš pasiūlymų.": "Address not found. Please choose one from the suggestions.",
+"Pasirinkite bent vieną dieną.": "Choose at least one day.",
+"Pasirinkite datą, ne ankstesnę nei šiandien.": "Choose a date from today onwards.",
+"Pasirinkite pradžios datą.": "Choose a start date.",
+"Užklausa paskelbta. Vairuotojai jau mato ją": "Request posted. Drivers can see it now",
+"Gavote naują pasiūlymą": "You have a new offer",
+"Galiu šiuo laiku.": "I can do this time.",
+"Adresą matote tik jūs.": "Only you can see the address.",
+"Pastovus vežimas": "Regular trips",
+"Laukiame pasiūlymų": "Waiting for offers",
+"Vairuotojai paprastai atsiliepia per kelias valandas.": "Drivers usually respond within a few hours.",
+"Kol nesutiksite kontaktuoti, vairuotojas nemato jūsų vardo ir telefono.": "Until you agree to be contacted, the driver can't see your name or phone number.",
+"Patikimas ir patikrintas vairuotojas": "Trusted and verified driver",
+"Atmesti": "Decline",
+"Sutinku kontaktuoti": "Agree to contact",
+"Atidaryti pokalbį": "Open chat",
+"Atrakinkite su Plus": "Unlock with Plus",
+"Pasiūlymas atmestas": "Offer declined",
+"Matykite visus pasiūlymus ir kas peržiūrėjo jūsų užklausą.": "See every offer and who viewed your request.",
+"Vairuotojas veikia kaip verslininkas. Sutartį sudarote su juo, ne su Ridu.": "The driver acts as a trader. Your agreement is with them, not with Ridu.",
+"Jūsų nuotrauka": "Your photo",
+"Automobilis iš priekio": "Car, front",
+"Automobilis iš šono": "Car, side",
+"Salonas: priekinės sėdynės": "Interior: front seats",
+"Salonas: galinė sėdynė": "Interior: rear seat",
+"Priekis": "Front",
+"Šonas": "Side",
+"Salonas": "Interior",
+"Galinė sėdynė": "Rear seat",
+"Vairuotojas ": "Driver",
+"Ramus ir punktualus. Visada palaukiu, kol vaikas įeina pro duris.": "Calm and punctual. I always wait until the child is through the door.",
+"8 metai be eismo įvykių, dvi vaikiškos kėdutės.": "8 years without an accident, two child seats.",
+"Elektrinis automobilis, galiu ir šeštadieniais.": "Electric car, Saturdays are fine too.",
+"Vežu šiuo maršrutu kasdien.": "I drive this route every day.",
+"Pirmadieniais galiu ir 14:30.": "On Mondays I can also do 14:30.",
+"2 klasė, į krepšinį": "2nd grade, to basketball",
+"Muzikos mokykla": "Music school",
+"Į polikliniką, reikės pagalbos su lazda": "To the clinic, will need help with a walking stick",
+"Plaukimas": "Swimming",
+"Kasdien važiuoju į Žirmūnus, galiu paimti 2 vaikus.": "I drive to Žirmūnai every day and can take 2 children.",
+"Po pamokų, su kėdute.": "After school, with a car seat.",
+"Pagal vairuotojo maršrutą": "Based on the driver's route",
+"Sveiki, domina jūsų pastovus maršrutas.": "Hello, I'm interested in your regular route.",
+"Reikia Plus": "Plus required",
+"Reikia Pro": "Pro required",
+"Ne dabar": "Not now",
+"Nemokamas": "Free",
+"Jūsų planas": "Your plan",
+"Įjungtas planas": "Plan activated",
+"Rinktis Plus": "Choose Plus",
+"Rinktis Pro": "Choose Pro",
+"Grįžti į nemokamą": "Back to Free",
+"Ridu uždirba tik iš planų. Komisinio nuo kelionių nėra.": "Ridu earns only from plans. There is no commission on trips.",
+"Iki 3 užklausų": "Up to 3 requests",
+"Matote 2 pasiūlymus kiekvienai užklausai": "See 2 offers per request",
+"Pokalbis su vairuotoju": "Chat with the driver",
+"Neribotos užklausos": "Unlimited requests",
+"Matote visus pasiūlymus": "See all offers",
+"Matote, kas peržiūrėjo užklausą": "See who viewed your request",
+"Grąžinti atmestą pasiūlymą": "Restore a declined offer",
+"Viskas iš Plus": "Everything in Plus",
+"Sutarčių šablonai": "Agreement templates",
+"Užklausa vairuotojams rodoma pirmoji": "Your request is shown to drivers first",
+"5 pasisiūlymai per dieną": "5 offers per day",
+"Pokalbis su klientu": "Chat with the client",
+"Neriboti pasisiūlymai": "Unlimited offers",
+"Grąžinti praleistą užklausą": "Restore a skipped request",
+"Išplėsti filtrai: keleivis, atstumas": "Extra filters: passenger, distance",
+"Paryškinti pasiūlymai": "Highlighted offers",
+"Profilio iškėlimas kartą per savaitę": "Profile boost once a week",
+"Paruoštas pavėžėjimo sutarties šablonas su jūsų susitarimo duomenimis.": "A ready transport agreement template filled in with what you agreed.",
+"Šiandien nemokami pasisiūlymai baigėsi. Su Plus siūlykitės be ribų.": "Today's free offers are used up. With Plus you can make unlimited offers.",
+"Grąžinkite praleistą užklausą su Plus.": "Restore a skipped request with Plus.",
+"Prenumerata pratęsiama kas mėnesį. Atšaukti galite bet kada, planas veiks iki apmokėto laikotarpio pabaigos. Per 14 d. nuo užsakymo galite atsisakyti sutarties ir atgauti pinigus už nepanaudotą laiką.": "The subscription renews every month. You can cancel at any time and the plan stays active until the end of the paid period. Within 14 days of ordering you can withdraw and get a refund for the unused time.",
+"Prenumerata pratęsiama kas mėnesį. Atšaukti galite bet kada, planas veiks iki apmokėto laikotarpio pabaigos.": "The subscription renews every month. You can cancel at any time and the plan stays active until the end of the paid period.",
+"Per 14 d. nuo užsakymo galite atsisakyti sutarties ir atgauti pinigus už nepanaudotą laiką.": "Within 14 days of ordering you can withdraw and get a refund for the unused time.",
+"Baigsis apmokėto laikotarpio pabaigoje": "Ends at the end of the paid period",
+"Tęsti prenumeratą": "Resume subscription",
+"Atšaukti prenumeratą": "Cancel subscription",
+"Atsisakyti sutarties": "Withdraw from contract",
+"Kainos yra pasiūlymas. Prototipe planas įsijungia iškart, be mokėjimo.": "Prices are a proposal. In the prototype a plan switches on immediately, without payment.",
+"Prenumerata atšaukta. Planas veiks iki laikotarpio pabaigos": "Subscription cancelled. The plan stays active until the end of the period",
+"Prenumerata vėl pratęsiama kas mėnesį": "Subscription renews monthly again",
+"Sutarties atsisakyta. Pinigus grąžinsime per 14 d.": "Contract withdrawn. We'll refund you within 14 days.",
+"Pasiūlymas": "Offer",
+"Sutarta": "Agreed",
+"už kelionę": "per trip",
+"Kitas variantas": "Counter-offer",
+"Sutinku": "Accept",
+"Laukiama atsakymo": "Waiting for a reply",
+"Laukiama atsakymo (perjunkite viršuje, kad atsakytumėte kitos pusės vardu)": "Waiting for a reply (switch at the top to answer as the other side)",
+"Jūsų variantas": "Your counter-offer",
+"Kaina už kelionę, €": "Price per trip, €",
+"Siūlyti": "Propose",
+"Siūlyti savo variantą": "Propose your own terms",
+"Rašykite žinutę": "Write a message",
+"Žinutė": "Message",
+"Dėl kainos, mokėjimo ir sąlygų susitariate patys. Nemokėkite iš anksto prieš pirmą susitikimą.": "You agree the price, payment and terms yourselves. Don't pay in advance before your first meeting.",
+"Dėl kainos, mokėjimo ir sąlygų susitariate patys.": "You agree the price, payment and terms yourselves.",
+"Pasidalinti adresu": "Share address",
+"Adresu pasidalinote": "Address shared",
+"Adresas išsiųstas tik šiam vairuotojui": "Address sent to this driver only",
+"Rašo": "Typing",
+"Gal susitinkame per vidurį?": "Shall we meet in the middle?",
+"Tinka, sutinku.": "That works, I agree.",
+"Sutinku su šiuo variantu.": "I accept these terms.",
+"Susitarta": "Agreed",
+"Pažintinis susitikimas": "Intro meeting",
+"Būtinas prieš pirmą vaiko kelionę.": "Required before a child's first trip.",
+"Susitikimas įvyko": "Meeting done",
+"Sutartis": "Agreement",
+"Sutartį sudarote patys. Ridu nėra sutarties šalis.": "You make the agreement yourselves. Ridu is not a party to it.",
+"Sutarties šablonas (Pro)": "Agreement template (Pro)",
+"Sutarties šablonas": "Agreement template",
+"Įveskite kainą, laiką ir dienas": "Enter price, time and days",
+"Pranešti": "Report",
+"Pokalbis atvertas": "Chat opened",
+"Atsakykite": "Your turn",
+"Derinama": "In progress",
+"Pokalbių dar nėra": "No chats yet",
+"Pokalbis atsiveria, kai sutinkate kontaktuoti su vairuotoju.": "A chat opens when you agree to contact a driver.",
+"Pokalbis atsiveria, kai klientas sutinka su jumis kontaktuoti.": "A chat opens when a client agrees to contact you.",
+"Užpildyta pagal jūsų pokalbį. Patikrinkite ir papildykite tuščias vietas. Šablonas yra pavyzdys, ne teisinė konsultacija.": "Filled in from your chat. Check it and complete the blanks. The template is an example, not legal advice.",
+"Kopijuoti": "Copy",
+"Nukopijuota": "Copied",
+"Pažymėta, nukopijuokite": "Selected, please copy",
+"Domina": "Interested",
+"Tikslų adresą pasakysite pokalbyje, kai patys norėsite.": "You'll share the exact address in the chat when you choose.",
+"veža vaikus": "drives children",
+"Mano pastovūs maršrutai": "My regular routes",
+"Paskelbkite, kur ir kada važiuojate kas savaitę. Klientai jus ras patys.": "Post where and when you drive each week. Clients will find you.",
+"Skelbti pastovų maršrutą": "Post a regular route",
+"Mano pasiūlymai": "My offers",
+"Pastovus maršrutas": "Regular route",
+"Iš (pašto kodas)": "From (postcode)",
+"Į (pašto kodas)": "To (postcode)",
+"Klientai matys tik apytikslę vietą, pvz. LT-102xx.": "Clients will see only the approximate area, e.g. LT-102xx.",
+"Laisvos vietos": "Free seats",
+"Kaina už kelionę, € (nebūtina)": "Price per trip, € (optional)",
+"Susitarsime": "To be agreed",
+"Trumpai apie maršrutą (nebūtina)": "About the route (optional)",
+"Pvz. galiu paimti 2 vaikus": "E.g. I can take 2 children",
+"Švenčių dienomis maršrutas nerodomas.": "The route is hidden on public holidays.",
+"Skelbti": "Post",
+"Pašto kodas turi būti 5 skaitmenys, pvz. LT-10223.": "A postcode has 5 digits, e.g. LT-10223.",
+"Maršrutas paskelbtas. Klientai jį jau mato": "Route posted. Clients can see it now",
+"Maršrutas pašalintas": "Route removed",
+"Pašalinti maršrutą": "Remove route",
+"Pirmiausia užbaikite patikrą": "Finish verification first",
+"Laukia kliento": "Waiting for client",
+"Pokalbis atvertas ": "Chat opened",
+"Klientas pasirinko kitą": "Client chose someone else",
+"Dar nesiūlėte": "No offers yet",
+"Peržiūrėkite užklausas ir pasisiūlykite.": "Browse requests and make an offer.",
+"Užklausos jūsų zonoje": "Requests in your area",
+"Pastovus": "Regular",
+"Vienkartinė": "One-off",
+"SIŪLAUSI": "OFFER",
+"PRALEISTI": "SKIP",
+"Praleisti": "Skip",
+"Siūlytis": "Make an offer",
+"Kliento vardą ir adresą matysite, kai klientas sutiks kontaktuoti.": "You'll see the client's name and address once they agree to contact you.",
+"Grąžinti paskutinę": "Undo last",
+"Neribota": "Unlimited",
+"Braukite į dešinę, kad pasisiūlytumėte, į kairę, kad praleistumėte.": "Swipe right to make an offer, left to skip.",
+"Naujų užklausų nėra": "No new requests",
+"Pranešime, kai atsiras naujų. Klientas gali paskelbti užklausą ir dabar: perjunkite į „Klientas“.": "We'll let you know when new ones arrive. A client can post a request now: switch to “Client”.",
+"Užbaikite patikrą": "Finish verification",
+"Užklausas matysite, kai patvirtinsime jūsų duomenis.": "You'll see requests once we've confirmed your details.",
+"Į patikrą": "Go to verification",
+"Jūsų pasiūlymas": "Your offer",
+"Žinutė klientui (nebūtina)": "Message to the client (optional)",
+"Pvz. galiu ir 15 min. anksčiau": "E.g. I can also come 15 min earlier",
+"Pasiūlymas išsiųstas. Perjunkite į „Klientas“, kad pamatytumėte": "Offer sent. Switch to “Client” to see it",
+"Pasiūlymas išsiųstas klientui": "Offer sent to the client",
+"Klientui pateikite savo rekvizitus ir sąlygas.": "Give the client your business details and terms.",
+"Profilis matomas klientams": "Profile visible to clients",
+"Profilis paslėptas, kol vyksta patikra": "Profile hidden while verification is in progress",
+"Pakanka galiojančio LTSA pavėžėjimo leidimo. Įveskite jo ir automobilio numerį, o mes patikriname autentiškumą. Saugome tik numerį ir patikros žymą.": "A valid LTSA passenger transport permit is all you need. Enter its number and your car's plate number and we check that it's genuine. We store only the number and the check record.",
+"Nuotraukos": "Photos",
+"Įkelti": "Upload",
+"Patvirtinta": "Approved",
+"Baigiasi": "Expiring",
+"Tikrinama": "Checking",
+"Trūksta": "Missing",
+"Netiko": "Rejected",
+"Atnaujinti": "Update",
+"Įvesti": "Enter",
+"LTSA pavėžėjimo leidimas": "LTSA passenger transport permit",
+"Leidimo numeris ir su juo susieto automobilio valstybinis numeris. LTSA juos skelbia Licencijų informacinėje sistemoje.": "The permit number and the plate number of the car linked to it. LTSA publishes them in the Licence Information System.",
+"LTSA / Licencijų informacinė sistema": "LTSA / Licence Information System",
+"Įveskite numerį": "Enter the number",
+"Išsiųsta patikrai. Paprastai per 1 darbo dieną": "Sent for checking. Usually within 1 working day",
+"Nuotrauka išsiųsta patikrai": "Photo sent for checking",
+"Nepavyko atidaryti failo. Įkelkite JPG arba PNG.": "Couldn't open the file. Upload a JPG or PNG.",
+"Atidarykite patikrą, įveskite kodą ir pažymėkite rezultatą. Pačios pažymos nesaugome.": "Open the check, enter the code and record the result. We don't store the certificate itself.",
+"Dažniausi klausimai": "Frequently asked questions",
+"Kaip veikia Ridu ir kodėl tai saugu.": "How Ridu works and why it's safe.",
+"Ko reikia, kad galėtumėte vežti su Ridu.": "What you need to drive with Ridu.",
+"LTSA svetainė": "LTSA website",
+"Kodėl verta rinktis Ridu?": "Why choose Ridu?",
+"Vairuotojai patikrinti, o jų veidą ir automobilį matote nuotraukose dar prieš susisiekdami.": "Drivers are verified, and you see their face and car in photos before you get in touch.",
+"Kainą siūlo vairuotojai, o jūs pasirenkate. Komisinio nėra: mokate tik vairuotojui tiek, kiek susitarėte.": "Drivers offer a price and you choose. There's no commission: you pay the driver only what you agreed.",
+"Pastoviam vežimui randate vieną žmogų, kuris veža kasdien tuo pačiu laiku.": "For regular trips you find one person who drives at the same time every day.",
+"Kaip tikrinami vairuotojai?": "How are drivers checked?",
+"Kiekvieno vairuotojo pavėžėjimo leidimą ir su juo susietą automobilį tikriname pagal Lietuvos transporto saugos administracijos (LTSA) duomenis.": "We check every driver's passenger transport permit and the car linked to it against Lithuanian Transport Safety Administration (LTSA) data.",
+"Nuotraukas peržiūrime prieš jas parodant klientams. Tik praėję patikrą vairuotojai gauna ženklelį „Patikimas ir patikrintas vairuotojas“.": "We review photos before clients see them. Only drivers who pass the check get the “Trusted and verified driver” badge.",
+"Kas yra LTSA pavėžėjimo leidimas ir kodėl jis svarbus?": "What is an LTSA permit and why does it matter?",
+"Vežti keleivius už atlygį lengvuoju automobiliu galima tik turint LTSA išduotą leidimą. Jame nurodytas ir automobilis.": "Carrying passengers for payment in a car is only allowed with a permit issued by LTSA. The permit also names the car.",
+"Leidimas reiškia, kad vežimas legalus, o vairuotojas ir automobilis žinomi valstybei.": "The permit means the transport is legal and the driver and car are known to the state.",
+"Ar vairuotojas mato mano adresą ir telefoną?": "Can the driver see my address and phone number?",
+"Ne. Vairuotojai mato tik pašto kodą. Vardą ir telefoną mato tik tada, kai sutinkate kontaktuoti, o tikslų adresą, kai juo pasidalinate pokalbyje.": "No. Drivers see only the postcode. They see your name and phone once you agree to be contacted, and the exact address once you share it in the chat.",
+"Kas sudaro sutartį ir kaip mokama?": "Who makes the agreement and how is payment made?",
+"Sutartį sudarote jūs ir vairuotojas. Ridu yra paieškos platforma ir nėra sutarties šalis.": "The agreement is between you and the driver. Ridu is a search platform and is not a party to it.",
+"Už keliones mokate tiesiogiai vairuotojui taip, kaip susitarsite. Pro plane rasite paruoštą sutarties šabloną.": "You pay the driver directly, however you agree. The Pro plan includes a ready agreement template.",
+"Kam reikalingas pažintinis susitikimas?": "Why is there an intro meeting?",
+"Prieš pirmą vaiko kelionę susitinkate su vairuotoju. Vaikas pamato, kas jį veš, o jūs aptariate, kam ir kur vaiką perduoti.": "Before a child's first trip you meet the driver. The child sees who will drive them, and you agree who the child is handed over to and where.",
+"Kaip veikia pastovus vežimas ir šventės?": "How do regular trips and holidays work?",
+"Pasirenkate dienas, laiką ir laikotarpį. Švenčių dienomis kelionės praleidžiamos, jei taip pažymite.": "You choose the days, time and period. Trips on public holidays are skipped if you tick that option.",
+"Kiek kainuoja Ridu?": "How much does Ridu cost?",
+"Kaip apsisaugoti nuo apgaulės?": "How do I protect myself from scams?",
+"Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse. Ridu neima mokesčio už keliones ir niekada neprašo kodų ar banko duomenų.": "Don't pay in advance before the first meeting and don't click payment links in messages. Ridu doesn't charge for trips and never asks for codes or bank details.",
+"Patikrinkite, ar vairuotojas ir automobilis atitinka nuotraukas. Įtartiną elgesį praneškite mygtuku „Pranešti“ pokalbyje.": "Check that the driver and car match the photos. Report anything suspicious with the “Report” button in the chat.",
+"Ką daryti, jei vairuotojas netinka?": "What if the driver isn't right for me?",
+"Galite bet kada ieškoti kito vairuotojo. Pagal sutartį ją galima nutraukti įspėjus prieš 30 d., o dėl esminio pažeidimo – iš karto. Apie netinkamą elgesį parašykite mums info@ridu.lt, peržiūrėsime vairuotojo profilį.": "You can look for another driver at any time. Under the agreement you can end it with 30 days' notice, or immediately for a serious breach. Tell us about inappropriate behaviour at info@ridu.lt and we'll review the driver's profile.",
+"Ko reikia, kad galėčiau registruotis?": "What do I need to register?",
+"Galiojančio LTSA pavėžėjimo leidimo su jame nurodytu automobiliu.": "A valid LTSA passenger transport permit with your car listed on it.",
+"Įregistruotos veiklos, pvz. individualios veiklos pagal pažymą VMI. Mokesčius mokate patys.": "A registered business, e.g. self-employment under a certificate from the State Tax Inspectorate (VMI). You pay your own taxes.",
+"Kaip gauti LTSA pavėžėjimo leidimą?": "How do I get an LTSA permit?",
+"Prašymą pateikite Lietuvos transporto saugos administracijai (ltsa.lrv.lt). Leidime nurodomas automobilis, kuriuo vešite keleivius.": "Apply to the Lithuanian Transport Safety Administration (ltsa.lrv.lt). The permit lists the car you'll carry passengers in.",
+"Gavę leidimą, Ridu įveskite jo ir automobilio numerius. Patikriname paprastai per 1 darbo dieną.": "Once you have it, enter the permit and plate numbers in Ridu. We usually check within 1 working day.",
+"Ką Ridu tikrina ir saugo?": "What does Ridu check and store?",
+"Tikriname tik LTSA leidimo autentiškumą ir su juo susietą automobilį. Saugome tik numerį ir patikros datą, dokumentų kopijų nekeliate.": "We check only that the LTSA permit is genuine and which car is linked to it. We store only the number and the check date; you don't upload document copies.",
+"Kodėl reikia aukštos raiškos nuotraukų?": "Why are high-resolution photos needed?",
+"Klientai renkasi vairuotoją pagal tai, ką mato. Aiški nuotrauka ir švarus salonas kelia pasitikėjimą. Kiekvieną nuotrauką peržiūrime prieš rodydami.": "Clients choose a driver based on what they see. A clear photo and a clean interior build trust. We review every photo before showing it.",
+"Kaip nustatoma kaina?": "How is the price set?",
+"Kainą siūlote jūs. Klientas gali pasiūlyti savo variantą, ir derinatės, kol abu sutinkate. Komisinio nėra: visas uždarbis jūsų.": "You propose the price. The client can counter, and you negotiate until you both agree. There's no commission: you keep everything you earn.",
+"Kuo skiriasi užklausos ir pastovus maršrutas?": "What's the difference between requests and a regular route?",
+"Užklausas skelbia klientai, o jūs pasisiūlote. Pastovų maršrutą skelbiate jūs, ir klientai jus randa patys.": "Clients post requests and you make offers. You post a regular route and clients find you.",
+"Ar galiu vežti vaikus?": "Can I drive children?",
+"Taip, jei turite tinkamas kėdutes. Prieš pirmą vaiko kelionę susitinkate su šeima. Įsitikinkite, kad atitinkate visus teisės aktų reikalavimus vežant vaikus.": "Yes, if you have suitable car seats. Before a child's first trip you meet the family. Make sure you meet all legal requirements for carrying children.",
+"Ar Ridu nurodo, kada ir už kiek dirbti?": "Does Ridu tell me when to work or what to charge?",
+"Ne. Jūs patys renkatės, kurias užklausas priimti, kokią kainą siūlyti ir kada dirbti. Galite dirbti ir per kitas platformas. Už praleistas užklausas niekas nebaudžia.": "No. You choose which requests to take, what price to offer and when to work. You can also work through other platforms. There's no penalty for skipped requests.",
+"Kas nutinka, jei leidimas baigia galioti?": "What happens if my permit expires?",
+"Profilis paslepiamas, kol įvesite naujo leidimo duomenis. Vežti be galiojančio leidimo draudžiama.": "Your profile is hidden until you enter the new permit details. Driving without a valid permit is prohibited.",
+"Kas atsako už kelionę?": "Who is responsible for the trip?",
+"Jūs esate vežėjas ir sutarties šalis. Pasirūpinkite draudimu, automobilio technine būkle ir keleivių saugumu.": "You are the carrier and a party to the agreement. Take care of insurance, the car's roadworthiness and passenger safety.",
+"Taisyklės ir privatumas": "Terms and privacy",
+"Pranešti apie pažeidimą ar pateikti skundą": "Report a violation or make a complaint",
+"Pranešimas ar skundas": "Report or complaint",
+"Pranešti apie pažeidimą": "Report a violation",
+"Kas nutiko?": "What happened?",
+"Prašo mokėti iš anksto ar siunčia mokėjimo nuorodas": "Asks for advance payment or sends payment links",
+"Netikras asmuo, nuotraukos ar dokumentai": "Fake person, photos or documents",
+"Vežimas be leidimo ar kitu automobiliu": "Driving without a permit or in another car",
+"Grasinimai, priekabiavimas ar įžeidinėjimai": "Threats, harassment or insults",
+"Pavojus vaiko ar žmogaus saugumui": "Danger to a child's or person's safety",
+"Skundas dėl Ridu sprendimo": "Complaint about a Ridu decision",
+"Aprašykite trumpai: kas, kada ir kur": "Briefly describe what happened, when and where",
+"Patvirtinu, kad informacija, mano žiniomis, yra teisinga.": "I confirm that, to my knowledge, this information is correct.",
+"Jei gresia pavojus žmogaus gyvybei ar saugumui, skambinkite 112.": "If someone's life or safety is in danger, call 112.",
+"Aprašykite bent keliais žodžiais.": "Please describe it in a few words.",
+"Patvirtinkite, kad informacija teisinga.": "Please confirm the information is correct.",
+"Skubus pranešimas gautas. Esant pavojui skambinkite 112": "Urgent report received. If there is danger, call 112",
+"Pranešimas gautas. Atsakysime el. paštu": "Report received. We'll reply by email",
+"Pranešimai apie pažeidimus": "Violation reports",
+"Skubu": "Urgent",
+"Sprendimo priežastis": "Reason for decision",
+"Įspėti": "Warn",
+"Paslėpti turinį": "Hide content",
+"Sustabdyti paskyrą": "Suspend account",
+"Pažeidimo nėra": "No violation",
+"Naudotojas įspėtas": "User warned",
+"Turinys paslėptas": "Content hidden",
+"Paskyra sustabdyta": "Account suspended",
+"Pažeidimo nerasta": "No violation found",
+"Pranešimų nėra": "No reports",
+"Įrašykite sprendimo priežastį": "Enter the reason for the decision",
+"Sprendimas ir priežastis išsiųsti": "Decision and reason sent",
+"Skubius (saugumas) nagrinėkite pirmiausia. Kiekvienam sprendimui įrašykite priežastį: ji išsiunčiama pranešusiam ir naudotojui, kurio sprendimas liečia, su skundo galimybe. Sukčiavimo ar suklastotų dokumentų atveju paskyrą sustabdykite ir apsvarstykite pranešimą policijai ar LTSA.": "Handle urgent (safety) reports first. Record a reason for every decision: it is sent to the reporter and to the affected user, with the option to appeal. For fraud or forged documents, suspend the account and consider reporting to the police or LTSA.",
+"Prieš susitikimą prašė pervesti 50 € avansą į sąskaitą.": "Asked for a €50 advance bank transfer before meeting.",
+"Ridu administravimas: vairuotojų patikra": "Ridu admin: driver verification",
+"Tikrinamas tik LTSA leidimo autentiškumas: ar leidimas galioja ir ar automobilis su juo susietas. Kol nėra automatinės sąsajos, tikrinama rankiniu būdu pagal nuorodą. Išsaugomas tik numeris ir kas bei kada patikrino.": "Only the authenticity of the LTSA permit is checked: whether it is valid and whether the car is linked to it. Until there is an automatic link, it is checked by hand using the link. Only the number and who checked it and when are stored.",
+"Ar matosi veidas, ar automobilis atitinka valstybinį numerį, ar salonas švarus ir yra kėdutės tvirtinimai.": "Is the face visible, does the car match the plate number, is the interior clean, and are there car seat anchors?",
+"Patvirtinta per": "Confirmed via",
+"Klientas ": "Client"
+};
+const EN_RX = [
+  [/^Liko (\d+) iš (\d+)$/, '$1 of $2 left'],
+  [/^(\d+) iš (\d+) patvirtinta$/, '$1 of $2 approved'],
+  [/^Pasiūlymai \((\d+)\)$/, 'Offers ($1)'],
+  [/^(\d+) nauj(i|as) pasiūlym(ai|as)$/, (m,n) => n + (n==='1' ? ' new offer' : ' new offers')],
+  [/^(\d+) pasiūlym(ai|as)$/, (m,n) => n + (n==='1' ? ' offer' : ' offers')],
+  [/^Dar (\d+) pasiūlym(as|ai)$/, (m,n) => n + (n==='1' ? ' more offer' : ' more offers')],
+  [/^(\d+) viet(a|os)$/, (m,n) => n + (n==='1' ? ' seat' : ' seats')],
+  [/^Laisvos vietos: (\d+)$/, 'Free seats: $1'],
+  [/^Vairuoja nuo (\d{4}) m\.$/, 'Driving since $1'],
+  [/^(\d+) kelion(ė|ės|ių)$/, (m,n) => n + (n==='1' ? ' trip' : ' trips')],
+  [/^Siūlo (\d\d:\d\d)$/, 'Offers $1'],
+  [/^„(.+)“$/, (m,a) => '“' + L(a) + '”'],
+  [/^(.+) \/ mėn\.$/, '$1 / mo'],
+  [/^\/ mėn\.$/, '/ mo'],
+  [/^Susitarta: (.+)$/, 'Agreed: $1'],
+  [/^(Didinti|Įkelti|Netinka|Patvirtinti): (.+)$/, (m,a,b) => ({Didinti:'Enlarge', Įkelti:'Upload', Netinka:'Reject', Patvirtinti:'Approve'})[a] + ': ' + L(b)],
+  [/^Zona: (.+)$/, 'Area: $1'],
+  [/^apie (\d+) km$/, 'about $1 km'],
+  [/^pranešė (.+)$/, (m,a) => 'reported by ' + L(a).toLowerCase()],
+  [/^patikrinta (.+)$/, 'checked $1'],
+  [/^galioja iki (.+)$/, 'valid until $1'],
+  [/^Pastoviai: (.+)$/, 'Regular: $1'],
+  [/^Naudotojas: (.+)$/, 'User: $1'],
+  [/^Paėmimo vieta: (.+)\. Kelionės tikslas: (.+)\.$/, 'Pick-up: $1. Destination: $2.'],
+  [/^Sveiki, aš (.+)\. Ar tikrai tinka (\d\d:\d\d)\?$/, 'Hi, I\'m $1. Does $2 really work for you?'],
+  [/^(.+) sutiko kontaktuoti$/, '$1 agreed to be contacted'],
+  [/^Pradėti galima nemokamai\. Plus \((.+?)\/mėn\.\) leidžia matyti visus pasiūlymus, Pro \((.+?)\/mėn\.\) prideda sutarčių šablonus\.$/, () => `You can start for free. Plus (${eur(PLANS.plus.price.client)}/mo) shows you all offers, and Pro (${eur(PLANS.pro.price.client)}/mo) adds agreement templates.`],
+  [/^Nemokamai galite pasisiūlyti (\d+) kartus per dieną\. Plus \((.+?)\/mėn\.\) be ribų, Pro \((.+?)\/mėn\.\) su sutarčių šablonais ir paryškintais pasiūlymais\.$/, (m,n) => `On the free plan you can make ${n} offers a day. Plus (${eur(PLANS.plus.price.driver)}/mo) has no limit, and Pro (${eur(PLANS.pro.price.driver)}/mo) adds agreement templates and highlighted offers.`],
+  [/^Savo nuotraukos ir automobilio nuotraukų iš išorės ir vidaus \(ne mažiau (\S+) px\)\.$/, 'Your own photo and photos of the car outside and inside (at least $1 px).'],
+  [/^Jūsų veidas ir automobilis iš išorės bei vidaus\. Aukšta raiška: ne mažiau (\S+) px\. Klientai mato jas pasiūlyme\.$/, 'Your face and the car outside and inside. High resolution: at least $1 px. Clients see them in your offer.'],
+  [/^Per maža raiška \((\S+) px\)\. Reikia bent (\S+) px\.$/, 'Resolution too low ($1 px). At least $2 px is needed.'],
+  [/^Nemokamai galima turėti iki (\d+) užklausų\.$/, 'The free plan allows up to $1 requests.'],
+  [/^Užklausą peržiūrėjo (\d+) vairuotojai\.$/, 'Viewed by $1 drivers.'],
+];
+
 /* Administravimas pasiekiamas tik atskiru adresu (#admin), viešame perjungiklyje jo nėra */
 function route(){
   const admin = location.hash === '#admin';
@@ -1340,5 +1824,6 @@ function route(){
   render();
 }
 window.addEventListener('hashchange', route);
+setLang(LANG, false);
 route();
 </script>
