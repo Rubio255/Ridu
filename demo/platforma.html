@@ -277,6 +277,15 @@ button.ph:hover{transform:scale(1.04)}
 .li{min-width:0}.li .tag{flex:none}.li .grow b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sw{background:var(--surface)}
 .sw.back .body,.sw.back .top > *{visibility:hidden}
+.plan.plus{border-color:color-mix(in srgb,var(--accent) 70%,transparent)}
+.plan.pro{background:linear-gradient(140deg,color-mix(in srgb,var(--brand) 22%,var(--glass)),var(--glass));border-color:color-mix(in srgb,var(--brand) 50%,transparent)}
+.plan.cur{outline:2px solid var(--accent);outline-offset:2px}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.feat li{display:flex;gap:8px;align-items:flex-start;font-size:.92rem}
+.feat .ico{width:18px;height:18px;color:var(--ok);margin-top:2px}
+.locked{width:100%;text-align:left;cursor:pointer}
+.blur{filter:blur(5px);display:inline-flex}
+.blur + .blur{margin-left:-18px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -317,6 +326,9 @@ const I = {
   lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
   back:'<path d="m15 18-6-6 6-6"/>',
+  gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
   send:'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
   swap:'<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
   ext:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
@@ -333,7 +345,22 @@ const grad = i => `linear-gradient(135deg,${GRAD[i % GRAD.length]})`;
 const daysTxt = d => d.length===5 && d.every(x=>x<5) ? 'Pr–Pn' : d.map(i=>DAYS[i]).join(', ');
 const eur = n => (Math.round(n*100)/100).toFixed(2).replace('.', ',') + ' €';
 const pcNorm = v => { const m = String(v).trim().toUpperCase().replace(/\s/g,'').match(/^(LT-?)?(\d{5})$/); return m ? 'LT-' + m[2] : null; };
-const COMMISSION = 0.15;
+/* Pajamos: tik mokami planai. Komisinio ir mokėjimų už keliones nėra. */
+const PLANS = {
+  free:{n:'Nemokamas', price:{client:0, driver:0}},
+  plus:{n:'Plus', price:{client:4.99, driver:7.99}},
+  pro:{n:'Pro', price:{client:9.99, driver:14.99}}
+};
+const FEAT = {
+  client:{free:['Iki 3 užklausų','Matote 2 pasiūlymus kiekvienai užklausai','Pokalbis su vairuotoju'],
+          plus:['Neribotos užklausos','Matote visus pasiūlymus','Matote, kas peržiūrėjo užklausą','Grąžinti atmestą pasiūlymą'],
+          pro:['Viskas iš Plus','Sutarčių šablonai','Užklausa vairuotojams rodoma pirmoji']},
+  driver:{free:['5 pasisiūlymai per dieną','Pokalbis su klientu'],
+          plus:['Neriboti pasisiūlymai','Grąžinti praleistą užklausą','Išplėsti filtrai: keleivis, atstumas'],
+          pro:['Viskas iš Plus','Sutarčių šablonai','Paryškinti pasiūlymai','Profilio iškėlimas kartą per savaitę']}
+};
+const FREE_OFFERS_SEEN = 2, FREE_DAILY = 5, FREE_REQS = 3;
+const has = (lvl, role=S.role) => ({free:0,plus:1,pro:2})[S.plan[role]] >= ({plus:1,pro:2})[lvl];
 const TODAY = '2026-11-25';
 const when = q => q.repeat ? `${daysTxt(q.days)}, ${q.time}` : `${q.date.slice(5).replace('-','.')} d., ${q.time}`;
 const paxTxt = q => `${q.pax} × ${PTYPE[q.type].toLowerCase()}${q.seat?' · reikia kėdutės':''}`;
@@ -349,6 +376,8 @@ let seq = 100; const nid = p => p + (++seq);
 
 const S = {
   role:'client',
+  plan:{client:'free', driver:'free'},
+  daily:2,             // vairuotojo nemokami pasisiūlymai, likę šiandien
   tab:{client:'reqs', driver:'pool', owner:'verify'},
   open:null,            // {kind:'req'|'conv', id}
   newReq:false,
@@ -430,8 +459,8 @@ const lastOpen = cv => [...cv.msgs].reverse().find(m => m.kind==='offer' && m.st
 
 /* ---------- navigacija ---------- */
 const TABS = {
-  client:[['reqs','Užklausos','search'],['convs','Pokalbiai','msg']],
-  driver:[['pool','Užklausos','search'],['sent','Pasiūlymai','send'],['convs','Pokalbiai','msg'],['check','Patikra','shield']],
+  client:[['reqs','Užklausos','search'],['convs','Pokalbiai','msg'],['plans','Planai','gem']],
+  driver:[['pool','Užklausos','search'],['sent','Pasiūlymai','send'],['convs','Pokalbiai','msg'],['check','Patikra','shield'],['plans','Planai','gem']],
   owner:[['verify','Patikra','shield']]
 };
 function badge(k){
@@ -458,6 +487,7 @@ function render(){
   if(S.open?.kind==='conv') return renderConv(S.open.id);
   if(S.open?.kind==='req') return renderReq(S.open.id);
   const t = S.tab[S.role];
+  if(t==='plans') return renderPlans();
   if(S.role==='client') return t==='reqs' ? (S.newReq ? renderReqForm() : renderMyReqs()) : renderConvList();
   if(S.role==='driver') return t==='pool' ? renderPool() : t==='sent' ? renderSent() : t==='convs' ? renderConvList() : renderDriverCheck();
   return renderOwner();
@@ -476,7 +506,7 @@ function renderMyReqs(){
       return `<button class="li" data-q="${q.id}">${ic('pin')}<span class="grow"><b><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></b><span>${when(q)} · ${paxTxt(q)}</span></span>
         ${fresh ? `<span class="tag warn">${fresh} nauji pasiūlymai</span>` : offs.length ? `<span class="tag info">${offs.length} pasiūlymai</span>` : `<span class="tag info">${ic('clock')} Laukiama</span>`}</button>`;
     }).join('')}</div>`;
-  view.querySelector('#new').addEventListener('click', ()=>{ S.newReq=true; render(); });
+  view.querySelector('#new').addEventListener('click', ()=>{ if(!has('plus') && S.reqs.filter(q=>q.mine).length>=FREE_REQS) return paywall('plus','Nemokamai galima turėti iki '+FREE_REQS+' užklausų.'); S.newReq=true; render(); });
   view.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click', ()=>{ S.open={kind:'req', id:b.dataset.q}; render(); }));
 }
 function renderReqForm(){
@@ -542,8 +572,10 @@ function renderReq(id){
     <div class="card"><h2><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h2>
       <p class="muted">${when(q)} · ${paxTxt(q)}${q.note?` · ${esc(q.note)}`:''}</p></div>
     <h3>Pasiūlymai (${offs.length})</h3>
-    ${offs.length ? offs.map(o=>offerCard(o,true)).join('') : `<div class="empty" style="height:auto">${ic('clock')}<h3>Laukiame pasiūlymų</h3><p class="muted">Vairuotojai paprastai atsiliepia per kelias valandas.</p></div>`}
+    ${offs.length ? offs.slice(0, has('plus')?99:FREE_OFFERS_SEEN).map(o=>offerCard(o,true)).join('') + (!has('plus') && offs.length>FREE_OFFERS_SEEN ? `<button class="card locked" id="unlock"><div class="row">${offs.slice(FREE_OFFERS_SEEN).map(o=>`<span class="blur">${avD(o.driver)}</span>`).join('')}<div style="flex:1;text-align:left"><b>Dar ${offs.length-FREE_OFFERS_SEEN} ${offs.length-FREE_OFFERS_SEEN===1?'pasiūlymas':'pasiūlymai'}</b><p class="muted small">Atrakinkite su Plus</p></div>${ic('lock')}</div></button>` : '') : `<div class="empty" style="height:auto">${ic('clock')}<h3>Laukiame pasiūlymų</h3><p class="muted">Vairuotojai paprastai atsiliepia per kelias valandas.</p></div>`}
+    ${has('plus') ? `<p class="small">${ic('eye')} Užklausą peržiūrėjo 7 vairuotojai.</p>` : ''}
     <p class="muted small">Kol nesutiksite kontaktuoti, vairuotojas nemato jūsų vardo ir telefono.</p>`;
+  view.querySelector('#unlock')?.addEventListener('click', ()=>paywall('plus','Matykite visus pasiūlymus ir kas peržiūrėjo jūsų užklausą.'));
   view.querySelector('#back').addEventListener('click', ()=>{ S.open=null; render(); });
   view.querySelectorAll('[data-ph]').forEach(b=>b.addEventListener('click', ()=>{ const [dd,k]=b.dataset.ph.split(':'); lightbox(dd,k); }));
   view.querySelectorAll('[data-decline]').forEach(b=>b.addEventListener('click', ()=>{ offOf(b.dataset.decline).status='declined'; toast('Pasiūlymas atmestas'); render(); }));
@@ -567,7 +599,7 @@ function renderConvList(){
       const q=reqOf(o.req), cv=convOf(o.id), d=drivers[o.driver];
       const other = S.role==='client' ? d : {name:q.client, g:q.g};
       const lo = lastOpen(cv), mineSide = S.role==='client'?'client':'driver';
-      const st = cv.confirmed ? `<span class="tag ok">Užsakyta</span>` : cv.agreed ? `<span class="tag ok">${ic('check')} Susitarta</span>` : lo && lo.by!==mineSide ? `<span class="tag warn">Atsakykite</span>` : `<span class="tag info">Derinama</span>`;
+      const st = cv.agreed ? `<span class="tag ok">${ic('check')} Susitarta</span>` : lo && lo.by!==mineSide ? `<span class="tag warn">Atsakykite</span>` : `<span class="tag info">Derinama</span>`;
       return `<button class="li" data-c="${o.id}">${av(other.name[0], other.g)}<span class="grow"><b>${esc(other.name)}</b><span><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)}</span></span>${st}</button>`;
     }).join('')}</div>` : `<div class="empty" style="height:auto">${ic('msg')}<h3>Pokalbių dar nėra</h3><p class="muted">${S.role==='client'?'Pokalbis atsiveria, kai sutinkate kontaktuoti su vairuotoju.':'Pokalbis atsiveria, kai klientas sutinka su jumis kontaktuoti.'}</p></div>`}`;
   view.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click', ()=>{ S.open={kind:'conv', id:b.dataset.c}; render(); }));
@@ -585,7 +617,6 @@ function renderConv(id){
       return `<div class="offer ${mine?'me':''} ${m.state==='accepted'?'done':''} ${m.state==='old'?'old':''}">
         <span class="small muted">${m.state==='accepted'?'Sutarta':'Pasiūlymas'} · ${esc(who)}</span>
         <div class="kv"><span><b>${eur(m.price)}</b> už kelionę</span><span>${ic('clock')} ${m.time}</span>${q.repeat?`<span>${ic('cal')} ${daysTxt(m.days)}</span>`:''}</div>
-        ${me==='driver' ? `<span class="small muted">Jūs gausite ${eur(m.price*(1-COMMISSION))} (Ridu ${Math.round(COMMISSION*100)} %)</span>` : ''}
         ${canAccept ? `<div class="two"><button class="btn ghost" data-counter>${ic('swap')} Kitas variantas</button><button class="btn" data-accept>${ic('check')} Sutinku</button></div>` : ''}
         ${m.state==='open' && mine ? `<span class="small muted">Laukiama atsakymo${persona(o)?' (perjunkite viršuje, kad atsakytumėte kitos pusės vardu)':''}</span>` : ''}
       </div>`;
@@ -598,12 +629,14 @@ function renderConv(id){
     <div class="card">
       <div class="row">${av(other.name[0], other.g)}<div style="min-width:0"><h2>${esc(other.name)}</h2><p class="muted small">${esc(other.sub)}</p></div></div>
       <p class="small"><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)} · ${paxTxt(q)}</p>
+      <p class="small row">${ic('phone')} ${me==='client' ? '+370 612 345 67' : '+370 698 765 43'}</p>
       ${cv.agreed ? `<div class="steps">
         <div class="step done"><span class="dot">${ic('check')}</span><div><b>Susitarta: ${eur(cv.agreed.price)}, ${cv.agreed.time}</b></div></div>
         ${child ? `<div class="step ${cv.meetDone?'done':'now'}"><span class="dot">${cv.meetDone?ic('check'):'2'}</span><div style="display:grid;gap:6px"><b>Pažintinis susitikimas</b><p class="muted small">Būtinas prieš pirmą vaiko kelionę.</p>${!cv.meetDone?`<button class="btn ghost" id="met">${ic('check')} Susitikimas įvyko</button>`:''}</div></div>` : ''}
-        <div class="step ${cv.confirmed?'done':(!child||cv.meetDone)?'now':''}"><span class="dot">${cv.confirmed?ic('check'):(!child||cv.meetDone)?(child?'3':'2'):ic('lock')}</span><div style="display:grid;gap:6px"><b>${q.repeat?'Abonementas':'Užsakymas'}</b>
-          ${cv.confirmed ? `<p class="small">Patvirtinta. Mokėjimas per programėlę.</p>` : me==='client' ? `<button class="btn" id="confirm" ${(!child||cv.meetDone)?'':'disabled'}>${ic('card')} Patvirtinti ir apmokėti</button>` : `<p class="muted small">Patvirtina klientas.</p>`}
-        </div></div>
+        <div class="step ${(!child||cv.meetDone)?'now':''}"><span class="dot">${(!child||cv.meetDone)?(child?'3':'2'):ic('lock')}</span><div style="display:grid;gap:6px"><b>Sutartis</b>
+          <p class="muted small">Sutartį sudarote patys. Ridu nėra sutarties šalis.</p>
+          <button class="btn ${has('pro')?'':'ghost'}" data-contract ${(!child||cv.meetDone)?'':'disabled'}>${ic('file')} Sutarties šablonas${has('pro')?'':' (Pro)'}</button>
+</div></div>
       </div>` : ''}
     </div>
     <div class="card">
@@ -617,7 +650,7 @@ function renderConv(id){
       <div class="row" style="flex-wrap:nowrap"><button class="btn ghost" id="propose" aria-label="Siūlyti savo variantą" title="Siūlyti savo variantą">${ic('swap')}</button>
         <form class="chatform" id="cf" style="flex:1"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form></div>` :
         `<form class="chatform" id="cf"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form>`}
-      <p class="muted small">Telefonai, adresai ir mokėjimai tik per Ridu.</p>
+      <p class="muted small">Dėl kainos, mokėjimo ir sąlygų susitariate patys.</p>
     </div>`;
   view.querySelector('#back').addEventListener('click', ()=>{ S.open=null; render(); });
   view.querySelector('#cf').addEventListener('submit', e => { e.preventDefault(); const v=view.querySelector('#cmsg').value.trim(); if(!v) return; cv.msgs.push({by:me, t:v}); render(); view.querySelector('#cmsg')?.focus(); });
@@ -640,7 +673,7 @@ function renderConv(id){
     cv.msgs.push({by:me, t:'Sutinku su šiuo variantu.'}); toast('Susitarta'); render();
   });
   view.querySelector('#met')?.addEventListener('click', ()=>{ cv.meetDone=true; render(); });
-  view.querySelector('#confirm')?.addEventListener('click', ()=>{ cv.confirmed=true; burst(); toast(q.repeat?'Abonementas patvirtintas':'Kelionė užsakyta'); render(); });
+  view.querySelector('[data-contract]')?.addEventListener('click', ()=> has('pro') ? contract(o) : paywall('pro','Paruoštas pavėžėjimo sutarties šablonas su jūsų susitarimo duomenimis.'));
   const chat = view.querySelector('#chat'); chat.lastElementChild?.scrollIntoView({block:'nearest'});
 }
 /* Kita pusė atsako pati, jei jos nevaldome demonstracijoje */
@@ -694,7 +727,8 @@ function poolCard(q, back){
 function renderPool(){
   if(!driverOk()){ view.innerHTML = `<div class="empty">${ic('lock')}<h3>Užbaikite patikrą</h3><p class="muted">Užklausas matysite, kai patvirtinsime jūsų duomenis.</p><button class="btn" id="goc">Į patikrą</button></div>`; view.querySelector('#goc').addEventListener('click',()=>{S.tab.driver='check'; render();}); return; }
   const items = poolItems();
-  const head = `<div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>`;
+  const head = `<div class="row between"><div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>
+    <span class="tag ${has('plus')?'ok':S.daily?'info':'bad'}">${has('plus')?'Neribota':`Liko ${S.daily} iš ${FREE_DAILY}`}</span></div>`;
   if(!items.length){
     view.innerHTML = head + `<div class="empty">${ic('search')}<h3>Naujų užklausų nėra</h3><p class="muted">Pranešime, kai atsiras naujų. Klientas gali paskelbti užklausą ir dabar: perjunkite į „Klientas“.</p>${S.history.length?`<button class="btn ghost" id="undo">${ic('undo')} Grąžinti paskutinę</button>`:''}</div>`;
     view.querySelector('#undo')?.addEventListener('click', undo); return;
@@ -708,9 +742,9 @@ function renderPool(){
     </div>
     <p class="muted small" style="text-align:center">Braukite į dešinę, kad pasisiūlytumėte, į kairę, kad praleistumėte.</p>`;
   const top = view.querySelector('.sw:not(.back)'), q = items[0];
-  bindSwipe(top, dir => dir>0 ? offerForm(q, top) : skip(q, top));
+  bindSwipe(top, dir => dir>0 ? tryOffer(q, top) : skip(q, top));
   view.querySelector('#no').addEventListener('click', ()=>skip(q, top));
-  view.querySelector('#yes').addEventListener('click', ()=>offerForm(q, top));
+  view.querySelector('#yes').addEventListener('click', ()=>tryOffer(q, top));
   view.querySelector('#undo').addEventListener('click', undo);
 }
 function bindSwipe(el, done){
@@ -730,7 +764,11 @@ document.addEventListener('keydown', e => {
 });
 function fly(el, dir){ el.style.transform=`translateX(${dir*600}px) rotate(${dir*25}deg)`; el.querySelector(dir>0?'.stamp.yes':'.stamp.no').style.opacity=1; }
 function skip(q, el){ fly(el,-1); S.skipped.push(q.id); S.history.push(q.id); setTimeout(render, 230); }
-function undo(){ const id=S.history.pop(); if(!id) return; S.skipped=S.skipped.filter(x=>x!==id); render(); }
+function tryOffer(q, el){
+  if(!has('plus') && S.daily<=0){ el.style.transform=''; el.querySelectorAll('.stamp').forEach(x=>x.style.opacity=0); return paywall('plus','Šiandien nemokami pasisiūlymai baigėsi. Su Plus siūlykitės be ribų.'); }
+  offerForm(q, el);
+}
+function undo(){ if(!has('plus')) return paywall('plus','Grąžinkite praleistą užklausą su Plus.'); const id=S.history.pop(); if(!id) return; S.skipped=S.skipped.filter(x=>x!==id); render(); }
 let ovReturn = null;
 function closeOv(){ ovl.innerHTML=''; if(ovReturn){ const r=ovReturn; ovReturn=null; r(); } }
 function offerForm(q, el){
@@ -741,18 +779,15 @@ function offerForm(q, el){
     <p class="muted small"><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)} · ${paxTxt(q)}</p>
     <div class="two"><label class="f" for="of-price">Kaina už kelionę, €<input id="of-price" type="number" min="3" step="0.1" value="${Math.round((8.5 + q.km*0.25)*2)/2}"></label>
       <label class="f" for="of-time">Laikas<input id="of-time" type="time" value="${q.time}"></label></div>
-    <p class="small muted" id="of-net"></p>
     <label class="f" for="of-note">Žinutė klientui (nebūtina)<input id="of-note" maxlength="100" placeholder="Pvz. galiu ir 15 min. anksčiau"></label>
     <div class="two"><button type="button" class="btn ghost" id="of-x">Atšaukti</button><button class="btn" type="submit">${ic('send')} Siųsti</button></div>
   </form></div>`;
-  const price = ovl.querySelector('#of-price'), net = ovl.querySelector('#of-net');
-  const upd = () => { net.textContent = `Klientas matys ${eur(Number(price.value)||0)}. Jūs gausite ${eur((Number(price.value)||0)*(1-COMMISSION))}.`; };
-  upd(); price.addEventListener('input', upd); price.focus();
+  const price = ovl.querySelector('#of-price'); price.focus();
   ovl.querySelector('#of-x').addEventListener('click', closeOv);
   ovl.querySelector('#of').addEventListener('submit', e => {
     e.preventDefault();
     const o = {id:nid('o'), req:q.id, driver:ME_DRIVER, price:Number(price.value)||9, time:ovl.querySelector('#of-time').value||q.time, note:ovl.querySelector('#of-note').value.trim(), status:'new'};
-    S.offers.push(o); ovReturn=null; ovl.innerHTML='';
+    S.offers.push(o); ovReturn=null; ovl.innerHTML=''; if(!has('plus')) S.daily = Math.max(0, S.daily-1);
     toast(q.mine ? 'Pasiūlymas išsiųstas. Perjunkite į „Klientas“, kad pamatytumėte' : 'Pasiūlymas išsiųstas klientui');
     if(!q.mine) setTimeout(() => { if(o.status!=='new') return; if(q.willContact){ startConv(o); cv_note(o); toast(`${q.client} sutiko kontaktuoti`); } else o.status='declined'; refresh(); }, 3500);
     render();
@@ -845,6 +880,66 @@ function renderOwner(){
     if(Object.values(p.items).every(i=>i.st==='ok')) toast(`${p.driver}: viskas patvirtinta`);
     render();
   }));
+}
+
+/* ---------- Planai, ribos ir sutarties šablonas ---------- */
+function renderPlans(){
+  const r = S.role === 'owner' ? 'client' : S.role;
+  view.innerHTML = `<div><h2>Planai</h2><p class="muted small">Ridu uždirba tik iš planų. Komisinio nuo kelionių nėra.</p></div>
+    ${['free','plus','pro'].map(k => { const P = PLANS[k], cur = S.plan[r]===k;
+      return `<div class="card plan ${k} ${cur?'cur':''}">
+        <div class="row between"><h3>${P.n}</h3><span class="price">${P.price[r] ? eur(P.price[r]) + '<span class="muted small"> / mėn.</span>' : '0 €'}</span></div>
+        <ul class="feat">${FEAT[r][k].map(f=>`<li>${ic('check')}<span>${f}</span></li>`).join('')}</ul>
+        ${cur ? `<span class="tag ok" style="justify-self:start">${ic('check')} Jūsų planas</span>` : `<button class="btn ${k==='free'?'ghost':''}" data-plan="${k}">${k==='free'?'Grįžti į nemokamą':'Rinktis '+P.n}</button>`}
+      </div>`; }).join('')}
+    <p class="muted small">Kainos yra pasiūlymas. Prototipe planas įsijungia iškart, be mokėjimo.</p>`;
+  view.querySelectorAll('[data-plan]').forEach(b => b.addEventListener('click', () => {
+    S.plan[r] = b.dataset.plan; if(b.dataset.plan!=='free') burst(); toast(`Įjungtas planas ${PLANS[b.dataset.plan].n}`); render();
+  }));
+}
+function paywall(lvl, why){
+  ovReturn = () => render();
+  const r = S.role, P = PLANS[lvl];
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="pw-t"><div class="card plan ${lvl}" style="text-align:left;justify-items:stretch">
+    <div class="row">${ic('gem')}<h2 id="pw-t">Reikia ${P.n}</h2></div>
+    <p>${why}</p>
+    <ul class="feat">${FEAT[r][lvl].map(f=>`<li>${ic('check')}<span>${f}</span></li>`).join('')}</ul>
+    <div class="two"><button class="btn ghost" id="pw-x">Ne dabar</button><button class="btn" id="pw-go">${eur(P.price[r])} / mėn.</button></div>
+  </div></div>`;
+  ovl.querySelector('#pw-go').focus();
+  ovl.querySelector('#pw-x').addEventListener('click', closeOv);
+  ovl.querySelector('#pw-go').addEventListener('click', () => { ovReturn=null; ovl.innerHTML=''; S.tab[r]='plans'; S.open=null; render(); });
+}
+function contract(o){
+  const q = reqOf(o.req), cv = convOf(o.id), d = drivers[o.driver], a = cv.agreed || {price:o.price, time:o.time, days:q.days};
+  const txt = `PAVĖŽĖJIMO SUTARTIS
+Data: ${TODAY}
+
+Vežėjas: ${d.name} (LTSA pavėžėjimo leidimas Nr. __________)
+Užsakovas: ${q.client}
+
+1. Maršrutas: ${q.from} → ${q.to}. Tikslūs adresai: __________.
+2. Laikas: ${q.repeat ? daysTxt(a.days) + ', ' + a.time : q.date + ', ' + a.time}.
+3. Keleiviai: ${paxTxt(q)}.
+4. Kaina: ${eur(a.price)} už kelionę. Mokėjimo tvarka: __________.
+5. Laukimas: iki 10 min. be papildomo mokesčio.${q.type==='child' ? `
+6. Vaiko perdavimas: tik nurodytam suaugusiajam __________. Vežama su tinkama kėdute.` : ''}
+${q.type==='child'?7:6}. Sutartį galima nutraukti įspėjus prieš 30 d., o dėl esminio pažeidimo – iš karto.
+${q.type==='child'?8:7}. Ridu yra paieškos platforma ir nėra šios sutarties šalis.
+
+Vežėjas: __________          Užsakovas: __________`;
+  ovReturn = () => render();
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="ct-t"><div class="card" style="text-align:left;justify-items:stretch;max-width:520px">
+    <h2 id="ct-t">Sutarties šablonas</h2>
+    <p class="muted small">Užpildyta pagal jūsų pokalbį. Patikrinkite ir papildykite tuščias vietas.</p>
+    <textarea id="ct-txt" rows="14" style="width:100%;font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface);color:var(--fg)">${esc(txt)}</textarea>
+    <div class="two"><button class="btn ghost" id="ct-x">Uždaryti</button><button class="btn" id="ct-copy">${ic('copy')} Kopijuoti</button></div>
+  </div></div>`;
+  ovl.querySelector('#ct-x').addEventListener('click', closeOv);
+  ovl.querySelector('#ct-copy').addEventListener('click', () => {
+    const t = ovl.querySelector('#ct-txt');
+    navigator.clipboard?.writeText(t.value).then(()=>toast('Nukopijuota'), ()=>{ t.select(); toast('Pažymėta, nukopijuokite'); }) ?? (t.select(), toast('Pažymėta, nukopijuokite'));
+  });
 }
 
 /* Administravimas pasiekiamas tik atskiru adresu (#admin), viešame perjungiklyje jo nėra */
