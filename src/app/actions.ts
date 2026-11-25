@@ -16,6 +16,7 @@ import { isLive } from "@/lib/live";
 import { CONSENTS, TERMS_VERSION, isRequired } from "@/lib/terms";
 import { loadConsents, clientHasKids } from "@/lib/consents";
 import { notifyOwner, notifyGuardians, notifyProfiles, whenLt } from "@/lib/push";
+import { savePlanRequest } from "@/lib/client-plan";
 import { DAYS } from "@/lib/time";
 
 export async function signOut() {
@@ -306,12 +307,7 @@ export async function setClientActive(fd: FormData) {
 // Klientas pasirenka kredito planą; įsigalioja, kai patvirtina savininkas
 export async function requestPlan(fd: FormData) {
   const me = await requireProfile();
-  const plan = String(fd.get("plan_id") ?? "");
-  if (me.role !== "client" || !["basic", "family", "premium"].includes(plan)) return;
-  await supabaseAdmin().from("profiles").update({ plan_request: plan }).eq("id", me.id);
-  const name = { basic: "Bazinis", family: "Šeimos", premium: "Premium" }[plan];
-  await notifyOwner("Klientas pasirinko planą", `${me.full_name || me.email}: ${name}. Patvirtinkite skiltyje „Klientai“.`, "/savininkas/klientai");
-  revalidatePath("/tevai", "layout");
+  if (await savePlanRequest(me.id, String(fd.get("plan_id") ?? ""))) revalidatePath("/tevai", "layout");
 }
 
 // Vairuotojo vieta kelionės metu (iš telefono kas kelias sekundes)

@@ -2,11 +2,14 @@
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { Captcha, useCaptcha } from "./captcha";
+import { requestPlan } from "@/app/actions";
 
 // Prisijungimas 6 skaitmenų kodu iš laiško. Kodas veikia ir programėlėje (nuoroda iš laiško
 // atsidarytų naršyklėje, ne programėlėje). Nuoroda laiške taip pat lieka veikti.
-export function LoginForm() {
+// Su plan: registracija naujam klientui (pasirinkus abonementą); esamas klientas tiesiog prisijungia.
+export function LoginForm({ plan }: { plan?: string } = {}) {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "checking" | "password">("idle");
   const [password, setPassword] = useState("");
@@ -17,10 +20,12 @@ export function LoginForm() {
   async function send(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setState("sending");
-    // shouldCreateUser: false – prisijungti gali tik pakviesti naudotojai
-    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${location.origin}/auth/callback`, captchaToken: captcha.token } });
+    // Be plano prisijungti gali tik esami naudotojai. Su planu sukuriama nauja kliento paskyra (profilis sukuriamas su vaidmeniu client).
+    // Planas įsimenamas slapuke, kad jį išsaugotų ir nuoroda iš laiško (/auth/callback).
+    if (plan) document.cookie = `ridu_plan=${plan}; path=/; max-age=3600; samesite=lax; secure`;
+    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: !!plan, data: plan ? { full_name: name.trim(), plan } : undefined, emailRedirectTo: `${location.origin}/auth/callback`, captchaToken: captcha.token } });
     captcha.reset();
-    if (error) { setError("Šio el. pašto neradome. Patikrinkite adresą arba susisiekite su mumis."); setState("idle"); }
+    if (error) { setError(plan ? "Nepavyko išsiųsti laiško. Patikrinkite adresą ir bandykite dar kartą." : "Šio el. pašto neradome. Patikrinkite adresą arba susisiekite su mumis."); setState("idle"); }
     else setState("sent");
   }
 
@@ -29,6 +34,11 @@ export function LoginForm() {
     setError(""); setState("checking");
     const { error } = await sb().auth.verifyOtp({ email, token: code.trim(), type: "email" });
     if (error) { setError("Kodas neteisingas arba nebegalioja. Patikrinkite arba gaukite naują."); setState("sent"); return; }
+    if (plan) {
+      const fd = new FormData(); fd.set("plan_id", plan);
+      await requestPlan(fd).catch(() => {});
+      document.cookie = "ridu_plan=; path=/; max-age=0";
+    }
     location.href = "/";
   }
 
@@ -71,13 +81,17 @@ export function LoginForm() {
   );
   return (
     <form onSubmit={send} className="grid gap-3">
+      {plan && <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">Vardas ir pavardė
+        <input required value={name} onChange={(e) => setName(e.target.value)} className="input" autoComplete="name" />
+      </label>}
       <label className="grid gap-1 text-sm font-semibold text-[var(--muted)]">El. paštas
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" autoComplete="email" />
       </label>
       <Captcha c={captcha} />
       {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
-      <button className="btn btn-primary" disabled={state === "sending" || !captcha.ready}>{state === "sending" ? "Siunčiama…" : "Gauti prisijungimo kodą"}</button>
-      <button type="button" className="text-sm underline text-[var(--muted)]" onClick={() => { setError(""); setState("password"); }}>Turiu slaptažodį</button>
+      <button className="btn btn-primary" disabled={state === "sending" || !captcha.ready}>{state === "sending" ? "Siunčiama…" : plan ? "Gauti kodą" : "Gauti prisijungimo kodą"}</button>
+      {plan ? <p className="text-center text-xs muted">Jau turite paskyrą? Įveskite tą patį el. paštą.</p>
+        : <button type="button" className="text-sm underline text-[var(--muted)]" onClick={() => { setError(""); setState("password"); }}>Turiu slaptažodį</button>}
     </form>
   );
 }
