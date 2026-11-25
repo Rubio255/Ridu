@@ -167,6 +167,7 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .lv-cam ellipse{fill:none;stroke-width:6}
 .lv-cam .bg{stroke:var(--line)} .lv-cam .fg{stroke:var(--ok);stroke-linecap:round;transition:stroke-dashoffset .2s linear}
 .lv-step{min-height:2.6em;font-weight:700}
+.lv .two,.lv .chk,.lv .err{justify-self:stretch}
 .lv ul{text-align:left;margin:0;padding-left:18px}
 .lvlist{display:grid;gap:6px;margin:0;padding-left:18px}
 .slogan{margin:4px 0 -4px;font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em;
@@ -997,13 +998,19 @@ function openLive(after){
     <h2 id="lv-t">Patvirtinkite, kad tai jūs</h2><p class="muted small">${L(LIVE_WHY[reason])}</p>
     <div class="lv-cam"><span class="face"></span><svg viewBox="0 0 190 240" aria-hidden="true"><ellipse class="bg" cx="95" cy="120" rx="80" ry="108"/><ellipse class="fg" id="lv-ring" cx="95" cy="120" rx="80" ry="108" stroke-dasharray="${P}" stroke-dashoffset="${P}"/></svg></div>
     <p class="lv-step" id="lv-step" aria-live="polite">Pasiruošę? Laikykite telefoną veido aukštyje.</p>
+    ${l.bio?'':`<label class="chk" style="text-align:left"><input type="checkbox" id="lv-bio"><span>Sutinku, kad Didit palygintų mano veido atvaizdą su dokumentu tapatybei patvirtinti.</span></label>`}
+    <p class="err" id="lv-err" hidden>Pažymėkite sutikimą arba rinkitės vaizdo skambutį.</p>
     <div class="two" id="lv-btns"><button class="btn ghost" id="lv-x">Vėliau</button><button class="btn" id="lv-go">Pradėti</button></div>
+    <button class="btn ghost" id="lv-vcall" style="justify-self:stretch">Rinktis vaizdo skambutį</button>
     <p class="muted small">Vaizdą patikrina Didit. Ridu išsaugo tik rezultatą ir laiką, ne vaizdą.</p>
   </div></div>`;
   const ring = ovl.querySelector('#lv-ring'), step = ovl.querySelector('#lv-step'), btns = ovl.querySelector('#lv-btns');
   ovl.querySelector('#lv-go').focus();
   ovl.querySelector('#lv-x').addEventListener('click', closeOv);
+  ovl.querySelector('#lv-vcall').addEventListener('click', () => { videoCall(); closeOv(); });
   ovl.querySelector('#lv-go').addEventListener('click', () => {
+    const bio = ovl.querySelector('#lv-bio'); if(bio && !bio.checked){ ovl.querySelector('#lv-err').hidden = false; return; }
+    l.bio = true; ovl.querySelector('#lv-vcall')?.remove(); bio?.closest('label')?.remove(); ovl.querySelector('#lv-err').hidden = true;
     btns.innerHTML = `<button class="btn ghost" id="lv-fail" style="grid-column:1/-1">Imituoti nesėkmę (demonstracija)</button>`;
     let fail = false; btns.querySelector('#lv-fail').addEventListener('click', ()=>{ fail = true; });
     const T = matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : 4500, t0 = performance.now();
@@ -1659,6 +1666,9 @@ const EN = {
 "Pradėti": "Start",
 "Vaizdą patikrina Didit. Ridu išsaugo tik rezultatą ir laiką, ne vaizdą.": "Didit checks the image. Ridu keeps only the result and time, not the image.",
 "Imituoti nesėkmę (demonstracija)": "Simulate a failure (demo)",
+"Sutinku, kad Didit palygintų mano veido atvaizdą su dokumentu tapatybei patvirtinti.": "I consent to Didit comparing my face with my document to confirm my identity.",
+"Pažymėkite sutikimą arba rinkitės vaizdo skambutį.": "Tick the consent or choose a video call.",
+"Rinktis vaizdo skambutį": "Choose a video call",
 "Tapatybė patvirtinta": "Identity confirmed",
 "Nepavyko patvirtinti": "Could not confirm",
 "Patikrinkite apšvietimą, nusiimkite akinius nuo saulės ir pabandykite dar kartą. Liko 1 bandymas.": "Check the lighting, take off sunglasses and try again. 1 attempt left.",
