@@ -2,7 +2,7 @@ import { Ico } from "@/components/ico";
 import Link from "next/link";
 import { Logo } from "./logo";
 
-// Pradžios ekranas kaip makete: ženklas, šūkis, nuotrauka, geltonas „Pradėti“ ir „Prisijungti“
+// Pradžios ekranas: ženklas, šūkis, nuotrauka. Naujas klientas pirmiausia renkasi abonementą, tik tada registruojasi
 export function Start() {
   return (
     // Fiksuotas per visą ekraną (ir po iPhone būsenos juosta): nuotrauka fone, viršuje ženklas ir šūkis, apačioje mygtukai
@@ -20,9 +20,9 @@ export function Start() {
         </div>
         <div />
         <div className="grid gap-3">
-          <Link href="/susipazinti" className="btn btn-primary btn-lg text-lg" style={{ borderRadius: 999 }}>Pradėti</Link>
+          <Link href="/planas" className="btn btn-primary btn-lg text-lg" style={{ borderRadius: 999 }}>Pasirinkti abonementą</Link>
           <Link href="/skaiciuokle" className="btn btn-lg rounded-full" style={{ borderRadius: 999, background: "rgb(255 255 255 / .14)", borderColor: "rgb(255 255 255 / .35)", color: "#fff" }}>Ar man apsimoka?</Link>
-          <Link href="/prisijungti" className="justify-self-center py-1 font-semibold text-white underline">Prisijungti</Link>
+          <Link href="/prisijungti" className="justify-self-center py-1 font-semibold text-white underline">Jau turiu paskyrą</Link>
         </div>
       </div>
     </section>
@@ -55,7 +55,7 @@ export function Welcome({ guest, greeting }: { guest: boolean; greeting?: string
           </ul>
           <Link href={L.meet} className="btn btn-primary btn-lg rounded-full text-lg">Susipažinti su vairuotoju →</Link>
           <Link href={L.calc} className="btn btn-lg rounded-full" style={{ background: "rgb(255 255 255 / .12)", borderColor: "rgb(255 255 255 / .3)", color: "#fff" }}>Ar man apsimoka? Kiek laiko sutaupysiu</Link>
-          {guest && <Link href="/prisijungti" className="justify-self-center font-semibold underline">Prisijungti</Link>}
+          {guest && <Link href="/prisijungti" className="justify-self-center font-semibold underline">Jau turiu paskyrą</Link>}
         </div>
       </section>
       <ul className="grid gap-2 sm:grid-cols-3">

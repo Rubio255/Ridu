@@ -3,14 +3,14 @@ import Link from "next/link";
 import { Logo } from "./logo";
 import { SAFETY } from "@/lib/welcome";
 
-// Viešų puslapių rėmelis neprisijungusiems: logotipas, grįžimas į pradžią ir prisijungimas
-export function PublicPage({ title, children }: { title: string; children: React.ReactNode }) {
+// Viešų puslapių rėmelis neprisijungusiems: logotipas, grįžimas į pradžią ir abonemento pasirinkimas (registracija tik po jo)
+export function PublicPage({ title, children, start = true }: { title: string; children: React.ReactNode; start?: boolean }) {
   return (
     <>
       <header className="sticky-safe sticky z-10 bg-[var(--brand)] text-[var(--brand-fg)]">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-2.5">
           <span className="flex items-center gap-2 font-bold"><Logo size={30} />Ridu</span>
-          <Link href="/prisijungti" className="rounded-full border border-current px-3 py-1 text-sm">Prisijungti</Link>
+          {start && <Link href="/planas" className="rounded-full border border-current px-3 py-1 text-sm">Pradėti</Link>}
         </div>
       </header>
       <main className="mx-auto grid max-w-xl gap-4 px-4 py-5 pb-12">
