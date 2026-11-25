@@ -996,6 +996,7 @@ function renderConv(id){
         <form class="chatform" id="cf" style="flex:1;min-width:0"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form></div>` :
         `<form class="chatform" id="cf"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form>`}
       <p class="muted small">Dėl kainos, mokėjimo ir sąlygų susitariate patys. Nemokėkite iš anksto prieš pirmą susitikimą.</p>
+      <p class="muted small row" style="flex-wrap:nowrap">${ic('shield')}<span>Žinutės automatiškai tikrinamos dėl sukčiavimo požymių.</span></p>
     </div>`;
   view.querySelector('#back').addEventListener('click', ()=>{ S.open=null; render(); });
   view.querySelector('[data-report-conv]').addEventListener('click', ()=>report(other.name));
@@ -1903,6 +1904,7 @@ const EN = {
 "Ačiū už atsiliepimą": "Thank you for your review",
 "Nuoroda nukopijuota. Ji veiks tik iki kelionės pabaigos": "Link copied. It works only until the trip ends",
 "Pagalba": "Help",
+"Žinutės automatiškai tikrinamos dėl sukčiavimo požymių.": "Messages are automatically checked for signs of fraud.",
 "Šis mygtukas nepakeičia 112.": "This does not replace 112.",
 "Jei gresia pavojus, pirmiausia skambinkite 112.": "If you are in danger, call 112 first.",
 "Skambinti 112": "Call 112",
