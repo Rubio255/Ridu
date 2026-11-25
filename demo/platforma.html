@@ -151,6 +151,7 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .ext{color:var(--info);font-weight:700;text-decoration:none;display:inline-flex;gap:4px;align-items:center;font-size:.88rem}
 .ext .ico{width:15px;height:15px}
 .pc{font-variant-numeric:tabular-nums;font-weight:700}
+.pcout:empty{display:none}.pcout{font-weight:500}
 .vrow{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .vrow:first-of-type{border-top:0;padding-top:0}
 .err{color:var(--bad);font-size:.85rem}
@@ -344,7 +345,11 @@ const GRAD = ['#0f4c45,#2a8f7f','#1d5b9a,#3f8fd6','#7a4a12,#c98a2b','#5b3a7a,#9a
 const grad = i => `linear-gradient(135deg,${GRAD[i % GRAD.length]})`;
 const daysTxt = d => d.length===5 && d.every(x=>x<5) ? 'Pr–Pn' : d.map(i=>DAYS[i]).join(', ');
 const eur = n => (Math.round(n*100)/100).toFixed(2).replace('.', ',') + ' €';
-const pcNorm = v => { const m = String(v).trim().toUpperCase().replace(/\s/g,'').match(/^(LT-?)?(\d{5})$/); return m ? 'LT-' + m[2] : null; };
+/* Demonstraciniai adresai. Tikroje versijoje pašto kodas gaunamas iš adresų paieškos (Registrų centro adresų registras / žemėlapių API). */
+const ADDR = {'Antakalnio g. 40, Vilnius':'LT-10223','Žirmūnų g. 70, Vilnius':'LT-09124','Gedimino pr. 9, Vilnius':'LT-01103','Kalvarijų g. 125, Vilnius':'LT-08221',
+  'Ozo g. 25, Vilnius':'LT-08105','Laisvės al. 53, Kaunas':'LT-44309','Savanorių pr. 255, Kaunas':'LT-50185','Taikos pr. 61, Klaipėda':'LT-91182'};
+const addrPc = v => { const t=String(v).trim(); if(t.length<5) return null; const k=Object.keys(ADDR).find(a=>a.toLowerCase()===t.toLowerCase()); if(k) return ADDR[k];
+  const m=t.toUpperCase().match(/(?:LT-?)?(\d{5})\b/); return m ? 'LT-'+m[1] : null; };
 /* Pajamos: tik mokami planai. Komisinio ir mokėjimų už keliones nėra. */
 const PLANS = {
   free:{n:'Nemokamas', price:{client:0, driver:0}},
@@ -382,7 +387,7 @@ const S = {
   open:null,            // {kind:'req'|'conv', id}
   newReq:false,
   reqs:[
-    {id:'q1', mine:true, client:'Lina', g:1, from:'LT-10223', to:'LT-08105', repeat:true, days:[0,2,4], date:'', time:'14:30', pax:1, type:'child', seat:true, note:'2 klasė, į krepšinį', km:6},
+    {id:'q1', mine:true, client:'Lina', g:1, from:'LT-10223', to:'LT-08105', addr:{from:'Antakalnio g. 40, Vilnius', to:'Ozo g. 25, Vilnius'}, repeat:true, days:[0,2,4], date:'', time:'14:30', pax:1, type:'child', seat:true, note:'2 klasė, į krepšinį', km:6},
     {id:'q2', client:'Paulius', g:2, from:'LT-09309', to:'LT-01108', repeat:true, days:[1,3], date:'', time:'15:15', pax:2, type:'child', seat:true, note:'Muzikos mokykla', km:5, willContact:true},
     {id:'q3', client:'Ona', g:3, from:'LT-10312', to:'LT-08406', repeat:false, days:[], date:'2026-11-27', time:'10:00', pax:1, type:'senior', seat:false, note:'Į polikliniką, reikės pagalbos su lazda', km:4, willContact:true},
     {id:'q4', client:'Gintarė', g:4, from:'LT-08221', to:'LT-09130', repeat:true, days:[0,1,2,3,4], date:'', time:'16:00', pax:1, type:'child', seat:false, note:'Plaukimas', km:7, willContact:false},
@@ -497,7 +502,7 @@ function render(){
 function renderMyReqs(){
   const mine = S.reqs.filter(q=>q.mine);
   view.innerHTML = `
-    <div class="card"><h2>Kur reikia nuvežti?</h2><p class="muted">Nurodykite pašto kodus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.</p>
+    <div class="card"><h2>Kur reikia nuvežti?</h2><p class="muted">Nurodykite adresus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.</p>
       <button class="btn block" id="new">${ic('plus')} Nauja užklausa</button></div>
     <h3>Mano užklausos</h3>
     <div class="list">${mine.map(q => {
@@ -515,9 +520,10 @@ function renderReqForm(){
     <button class="btn ghost" id="back" style="justify-self:start">${ic('back')} Atgal</button>
     <form class="card" id="rf" novalidate>
       <h2>Nauja užklausa</h2>
-      <div class="two"><label class="f" for="rf-from">Iš kur (pašto kodas)<input id="rf-from" inputmode="numeric" placeholder="LT-10223" value="LT-10223" autocomplete="postal-code"></label>
-        <label class="f" for="rf-to">Į kur (pašto kodas)<input id="rf-to" inputmode="numeric" placeholder="LT-08105"></label></div>
-      <p class="muted small">Vairuotojai mato tik pašto kodus. Tikslų adresą parašysite pokalbyje.</p>
+      <datalist id="addrs">${Object.keys(ADDR).map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
+      <label class="f" for="rf-from">Iš kur (adresas)<input id="rf-from" list="addrs" placeholder="Gatvė, namas, miestas" value="Antakalnio g. 40, Vilnius" autocomplete="street-address"><span class="pcout small muted" id="pc-from"></span></label>
+      <label class="f" for="rf-to">Į kur (adresas)<input id="rf-to" list="addrs" placeholder="Gatvė, namas, miestas" autocomplete="off"><span class="pcout small muted" id="pc-to"></span></label>
+      <p class="muted small row" style="flex-wrap:nowrap;align-items:flex-start">${ic('lock')}<span>Adresą matote tik jūs. Vairuotojai mato tik pašto kodą, kol patys nepasidalinsite adresu pokalbyje.</span></p>
       <div class="fieldset"><span>Kaip dažnai</span><div class="chips" data-one="repeat">
         <button type="button" class="chip" data-v="1" aria-pressed="true">Kartojasi kas savaitę</button><button type="button" class="chip" data-v="0" aria-pressed="false">Vieną kartą</button></div></div>
       <div class="fieldset" id="rf-days"><span>Dienos</span><div class="chips" data-many="days">${DAYS.map((d,i)=>`<button type="button" class="chip" data-v="${i}" aria-pressed="${f.days.includes(i)}">${d}</button>`).join('')}</div></div>
@@ -531,18 +537,20 @@ function renderReqForm(){
       <button class="btn block" type="submit">${ic('send')} Paskelbti užklausą</button>
     </form>`;
   view.querySelector('#back').addEventListener('click', ()=>{ S.newReq=false; render(); });
+  const pcShow = k => { const v=addrPc(view.querySelector('#rf-'+k).value), o=view.querySelector('#pc-'+k); o.innerHTML = v ? `Kiti matys: <span class="pc">${v}</span>` : ''; };
+  ['from','to'].forEach(k=>{ view.querySelector('#rf-'+k).addEventListener('input', ()=>pcShow(k)); pcShow(k); });
   view.querySelectorAll('[data-one]').forEach(g => g.addEventListener('click', e => { const b=e.target.closest('.chip'); if(!b) return; f[g.dataset.one] = g.dataset.one==='repeat' ? b.dataset.v==='1' : b.dataset.v; g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x===b));
     view.querySelector('#rf-days').hidden = !f.repeat; view.querySelector('#rf-datew').hidden = f.repeat; }));
   view.querySelector('[data-many]').addEventListener('click', e => { const b=e.target.closest('.chip'); if(!b) return; const v=Number(b.dataset.v), i=f.days.indexOf(v); i>=0?f.days.splice(i,1):f.days.push(v); f.days.sort((a,b)=>a-b); b.setAttribute('aria-pressed', i<0); });
   view.querySelector('#rf').addEventListener('submit', e => {
     e.preventDefault();
-    const err = view.querySelector('#rf-err'), from = pcNorm(view.querySelector('#rf-from').value), to = pcNorm(view.querySelector('#rf-to').value);
+    const err = view.querySelector('#rf-err'), aFrom = view.querySelector('#rf-from').value.trim(), aTo = view.querySelector('#rf-to').value.trim(), from = addrPc(aFrom), to = addrPc(aTo);
     const fail = t => { err.textContent=t; err.hidden=false; };
-    if(!from || !to) return fail('Pašto kodas turi būti 5 skaitmenys, pvz. LT-10223.');
+    if(!from || !to) return fail('Adreso neradome. Pasirinkite adresą iš pasiūlymų.');
     if(f.repeat && !f.days.length) return fail('Pasirinkite bent vieną dieną.');
     const date = view.querySelector('#rf-date').value;
     if(!f.repeat && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < TODAY)) return fail('Pasirinkite datą, ne ankstesnę nei šiandien.');
-    const q = {id:nid('q'), mine:true, client:'Lina', g:1, from, to, repeat:f.repeat, days:f.repeat?f.days:[], date, time:view.querySelector('#rf-time').value||'15:00',
+    const q = {id:nid('q'), mine:true, client:'Lina', g:1, from, to, addr:{from:aFrom, to:aTo}, repeat:f.repeat, days:f.repeat?f.days:[], date, time:view.querySelector('#rf-time').value||'15:00',
       pax:Number(view.querySelector('#rf-pax').value), type:f.type, seat:view.querySelector('#rf-seat').checked, note:view.querySelector('#rf-note').value.trim(), km:5};
     S.reqs.unshift(q); S.newReq=false; S.open={kind:'req', id:q.id};
     toast('Užklausa paskelbta. Vairuotojai jau mato ją');
@@ -570,7 +578,8 @@ function renderReq(id){
   view.innerHTML = `
     <button class="btn ghost" id="back" style="justify-self:start">${ic('back')} Atgal</button>
     <div class="card"><h2><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h2>
-      <p class="muted">${when(q)} · ${paxTxt(q)}${q.note?` · ${esc(q.note)}`:''}</p></div>
+      <p class="muted">${when(q)} · ${paxTxt(q)}${q.note?` · ${esc(q.note)}`:''}</p>
+      ${q.addr ? `<p class="small row" style="flex-wrap:nowrap;align-items:flex-start">${ic('lock')}<span>${esc(q.addr.from)} → ${esc(q.addr.to)}<br><span class="muted">Adresą matote tik jūs.</span></span></p>` : ''}</div>
     <h3>Pasiūlymai (${offs.length})</h3>
     ${offs.length ? offs.slice(0, has('plus')?99:FREE_OFFERS_SEEN).map(o=>offerCard(o,true)).join('') + (!has('plus') && offs.length>FREE_OFFERS_SEEN ? `<button class="card locked" id="unlock"><div class="row">${offs.slice(FREE_OFFERS_SEEN).map(o=>`<span class="blur">${avD(o.driver)}</span>`).join('')}<div style="flex:1;text-align:left"><b>Dar ${offs.length-FREE_OFFERS_SEEN} ${offs.length-FREE_OFFERS_SEEN===1?'pasiūlymas':'pasiūlymai'}</b><p class="muted small">Atrakinkite su Plus</p></div>${ic('lock')}</div></button>` : '') : `<div class="empty" style="height:auto">${ic('clock')}<h3>Laukiame pasiūlymų</h3><p class="muted">Vairuotojai paprastai atsiliepia per kelias valandas.</p></div>`}
     ${has('plus') ? `<p class="small">${ic('eye')} Užklausą peržiūrėjo 7 vairuotojai.</p>` : ''}
@@ -630,6 +639,7 @@ function renderConv(id){
       <div class="row">${av(other.name[0], other.g)}<div style="min-width:0"><h2>${esc(other.name)}</h2><p class="muted small">${esc(other.sub)}</p></div></div>
       <p class="small"><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)} · ${paxTxt(q)}</p>
       <p class="small row">${ic('phone')} ${me==='client' ? '+370 612 345 67' : '+370 698 765 43'}</p>
+      ${me==='client' && q.addr ? (cv.addrShared ? `<p class="small row muted">${ic('check')} Adresu pasidalinote</p>` : `<button class="btn ghost" id="share-addr">${ic('pin')} Pasidalinti adresu</button>`) : ''}
       ${cv.agreed ? `<div class="steps">
         <div class="step done"><span class="dot">${ic('check')}</span><div><b>Susitarta: ${eur(cv.agreed.price)}, ${cv.agreed.time}</b></div></div>
         ${child ? `<div class="step ${cv.meetDone?'done':'now'}"><span class="dot">${cv.meetDone?ic('check'):'2'}</span><div style="display:grid;gap:6px"><b>Pažintinis susitikimas</b><p class="muted small">Būtinas prieš pirmą vaiko kelionę.</p>${!cv.meetDone?`<button class="btn ghost" id="met">${ic('check')} Susitikimas įvyko</button>`:''}</div></div>` : ''}
@@ -672,6 +682,7 @@ function renderConv(id){
     open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst();
     cv.msgs.push({by:me, t:'Sutinku su šiuo variantu.'}); toast('Susitarta'); render();
   });
+  view.querySelector('#share-addr')?.addEventListener('click', ()=>{ cv.addrShared=true; cv.msgs.push({by:'client', t:`Paėmimo vieta: ${q.addr.from}. Kelionės tikslas: ${q.addr.to}.`}); toast('Adresas išsiųstas tik šiam vairuotojui'); render(); });
   view.querySelector('#met')?.addEventListener('click', ()=>{ cv.meetDone=true; render(); });
   view.querySelector('[data-contract]')?.addEventListener('click', ()=> has('pro') ? contract(o) : paywall('pro','Paruoštas pavėžėjimo sutarties šablonas su jūsų susitarimo duomenimis.'));
   const chat = view.querySelector('#chat'); chat.lastElementChild?.scrollIntoView({block:'nearest'});
@@ -918,7 +929,7 @@ Data: ${TODAY}
 Vežėjas: ${d.name} (LTSA pavėžėjimo leidimas Nr. __________)
 Užsakovas: ${q.client}
 
-1. Maršrutas: ${q.from} → ${q.to}. Tikslūs adresai: __________.
+1. Maršrutas: ${cv.addrShared && q.addr ? q.addr.from + ' → ' + q.addr.to : q.from + ' → ' + q.to + '. Tikslūs adresai: __________'}.
 2. Laikas: ${q.repeat ? daysTxt(a.days) + ', ' + a.time : q.date + ', ' + a.time}.
 3. Keleiviai: ${paxTxt(q)}.
 4. Kaina: ${eur(a.price)} už kelionę. Mokėjimo tvarka: __________.
