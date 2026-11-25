@@ -23,7 +23,7 @@ export function LoginForm({ plan }: { plan?: string } = {}) {
     // Be plano prisijungti gali tik esami naudotojai. Su planu sukuriama nauja kliento paskyra (profilis sukuriamas su vaidmeniu client).
     // Planas įsimenamas slapuke, kad jį išsaugotų ir nuoroda iš laiško (/auth/callback).
     if (plan) document.cookie = `ridu_plan=${plan}; path=/; max-age=3600; samesite=lax; secure`;
-    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: !!plan, data: plan ? { full_name: name.trim() } : undefined, emailRedirectTo: `${location.origin}/auth/callback`, captchaToken: captcha.token } });
+    const { error } = await sb().auth.signInWithOtp({ email, options: { shouldCreateUser: !!plan, data: plan ? { full_name: name.trim(), plan } : undefined, emailRedirectTo: `${location.origin}/auth/callback`, captchaToken: captcha.token } });
     captcha.reset();
     if (error) { setError(plan ? "Nepavyko išsiųsti laiško. Patikrinkite adresą ir bandykite dar kartą." : "Šio el. pašto neradome. Patikrinkite adresą arba susisiekite su mumis."); setState("idle"); }
     else setState("sent");
