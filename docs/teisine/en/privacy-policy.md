@@ -17,7 +17,7 @@ From all users:
 - phone notification settings and the device notification token;
 - reviews after a ride (rating 1–5 and a comment);
 - your location if you tap “Alert Ridu with my location” (SOS) during a ride;
-- plan and plan payment information (we do not store card details; the payment service provider handles them).
+- plan and plan payment information (we do not store card details; Stripe handles them); for drivers, also the VAT number and address for the invoice if provided.
 
 From clients:
 - ride addresses, from which we derive the postal code, time and days;
@@ -62,7 +62,8 @@ To protect against fraud, messages are automatically checked for requests for ad
 - During a ride, the client sees the driver’s location. The client may share a link with another person (e.g. the other parent); it works only until the ride ends.
 - Other users see reviews once both sides have rated or after 14 days. The first name, rating, comment and date are shown.
 - A Ridu administrator sees an SOS alert with location. If needed, we pass it on to emergency services or the police.
-- Service providers who help us: data storage and servers (Supabase, Vercel), driver identity and liveness checks (Didit), email delivery, plan payments. They process data only on our instructions under contracts.
+- Plan payments: Stripe Payments Europe, Ltd. (Ireland). We pass on only the email, name and internal account number, and at the driver’s request their VAT number and address for the invoice. Card details are entered and processed only by Stripe. Stripe also processes payment and fraud-prevention data as an independent controller under its own privacy policy (stripe.com/privacy).
+- Service providers who help us: data storage and servers (Supabase, Vercel), driver identity and liveness checks (Didit), email delivery. They process data only on our instructions under contracts.
 - Authorities, where the law requires (e.g. law enforcement, LTSA, the tax authority).
 
 We store data in the European Union. If a service provider transfers data outside the EU, safeguards approved by the European Commission apply (e.g. standard contractual clauses).

@@ -125,8 +125,12 @@ Apie galimai neteisėtą veiklą, pavyzdžiui, suklastotus dokumentus ar sukčia
 ## 12. Mokami planai
 
 - Planai Plus ir Pro yra mėnesio prenumerata. Kaina nurodoma prieš užsakant, su PVM, jei jis taikomas.
-- Prenumerata pratęsiama automatiškai kas mėnesį, kol ją atšauksite. Atšaukti galite bet kada skiltyje „Planai“, ir ji baigsis apmokėto laikotarpio pabaigoje.
-- Klientas vartotojas per 14 dienų nuo užsakymo gali atsisakyti plano mygtuku „Atsisakyti sutarties“ be priežasties. Jei paprašėte, kad planas veiktų iš karto, grąžiname sumą, proporcingą nepanaudotam laikui.
+- Už planą mokama kortele per mokėjimų paslaugų teikėją Stripe. Prieš apmokėdamas klientas pažymi „Prašau, kad planas veiktų iš karto“, ir planas įsijungia gavus apmokėjimą.
+- Prenumerata pratęsiama automatiškai kas mėnesį, kol ją atšauksite. Atšaukti galite bet kada skiltyje „Planai“ (per Stripe klientų portalą), ir planas veiks iki apmokėto laikotarpio pabaigos.
+- Jei mokėjimo nepavyksta nuskaityti, Stripe bando dar kelis kartus. Kol bandoma, planas veikia. Jei mokėjimas taip ir nepavyksta, planas baigiasi.
+- Klientas vartotojas per 14 dienų nuo užsakymo gali atsisakyti sutarties be priežasties mygtuku „Atsisakyti sutarties“. Tada planas baigiasi iš karto, o mes grąžiname sumą už nepanaudotą laiką per 14 dienų tuo pačiu mokėjimo būdu.
+- Ištrynus paskyrą prenumerata atšaukiama.
+- Vairuotojas sąskaitai gali nurodyti savo PVM mokėtojo kodą ir adresą.
 - Kainas galime keisti įspėję prieš 30 dienų. Jei nesutinkate, galite atšaukti prenumeratą.
 - Plano mokestis yra mokestis Ridu už platformos funkcijas. Tai nėra mokestis už keliones ir nesuteikia teisės į keliones.
 

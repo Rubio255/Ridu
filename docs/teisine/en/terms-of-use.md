@@ -125,8 +125,12 @@ We may report possibly illegal activity, such as forged documents or fraud, to L
 ## 12. Paid plans
 
 - Plus and Pro are monthly subscriptions. The price is shown before ordering, including VAT where it applies.
-- The subscription renews automatically each month until you cancel it. You may cancel at any time in “Plans”, and it ends at the end of the paid period.
-- A client who is a consumer may withdraw from the plan within 14 days of ordering without giving a reason, using the “Withdraw from contract” button. If you asked for the plan to start at once, we refund the amount for the unused time.
+- Plans are paid by card through the payment service provider Stripe. Before paying, the client ticks “I ask for the plan to start at once”, and the plan starts once payment is received.
+- The subscription renews automatically each month until you cancel it. You may cancel at any time in “Plans” (through the Stripe customer portal), and the plan stays active until the end of the paid period.
+- If a payment cannot be collected, Stripe retries several times. The plan stays active while retrying. If payment still fails, the plan ends.
+- A client who is a consumer may withdraw from the contract within 14 days of ordering without giving a reason, using the “Withdraw from contract” button. The plan then ends at once, and we refund the amount for the unused time within 14 days by the same payment method.
+- When an account is deleted, the subscription is cancelled.
+- A driver may add their VAT number and address for the invoice.
 - We may change prices with 30 days’ notice. If you disagree, you may cancel the subscription.
 - The plan fee is a fee to Ridu for platform features. It is not a fee for rides and gives no right to rides.
 

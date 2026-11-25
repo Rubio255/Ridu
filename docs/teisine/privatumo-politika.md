@@ -17,7 +17,7 @@ Visų naudotojų:
 - pranešimų telefone nustatymus ir įrenginio pranešimų žymą (token);
 - atsiliepimus po kelionės (įvertinimas 1–5 ir komentaras);
 - vietą, jei kelionės metu paspaudžiate „Pranešti Ridu su mano vieta“ (SOS);
-- plano ir mokėjimo už planą informaciją (banko kortelės duomenų nesaugome, juos tvarko mokėjimų paslaugų teikėjas).
+- plano ir mokėjimo už planą informaciją (banko kortelės duomenų nesaugome, juos tvarko Stripe); vairuotojams ir PVM kodą bei adresą sąskaitai, jei juos nurodo.
 
 Klientų:
 - kelionių adresus, iš kurių nustatome pašto kodą, laiką ir dienas;
@@ -62,7 +62,8 @@ Kad apsaugotume nuo sukčiavimo, žinutės automatiškai tikrinamos, ar jose nė
 - Kelionės metu klientas mato vairuotojo vietą. Klientas gali pasidalinti nuoroda su kitu asmeniu (pvz. kitu tėvu), ir ji veikia tik iki kelionės pabaigos.
 - Atsiliepimus mato kiti naudotojai, kai abi pusės įvertino arba praėjus 14 dienų. Rodomas vardas, įvertinimas, komentaras ir data.
 - SOS pranešimą su vieta mato Ridu administratorius. Jei reikia, jį perduodame skubiosios pagalbos tarnyboms ar policijai.
-- Paslaugų teikėjai, kurie mums padeda: duomenų saugojimas ir serveriai (Supabase, Vercel), vairuotojų tapatybės ir gyvumo patikra (Didit), el. laiškų siuntimas, mokėjimai už planus. Jie duomenis tvarko tik mūsų nurodymu pagal sutartis.
+- Mokėjimai už planus: Stripe Payments Europe, Ltd. (Airija). Perduodame tik el. paštą, vardą ir vidinį paskyros numerį, o vairuotojo prašymu ir PVM kodą bei adresą sąskaitai. Kortelės duomenis įveda ir tvarko tik Stripe. Mokėjimų ir sukčiavimo prevencijos duomenis Stripe tvarko ir kaip savarankiškas valdytojas pagal savo privatumo politiką (stripe.com/privacy).
+- Paslaugų teikėjai, kurie mums padeda: duomenų saugojimas ir serveriai (Supabase, Vercel), vairuotojų tapatybės ir gyvumo patikra (Didit), el. laiškų siuntimas. Jie duomenis tvarko tik mūsų nurodymu pagal sutartis.
 - Institucijos, jei to reikalauja įstatymas (pvz. teisėsauga, LTSA, VMI).
 
 Duomenis saugome Europos Sąjungoje. Jei paslaugų teikėjas duomenis perduoda už ES ribų, taikomos Europos Komisijos patvirtintos apsaugos priemonės (pvz. standartinės sutarčių sąlygos).
