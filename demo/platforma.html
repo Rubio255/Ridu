@@ -151,7 +151,22 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .ext{color:var(--info);font-weight:700;text-decoration:none;display:inline-flex;gap:4px;align-items:center;font-size:.88rem}
 .ext .ico{width:15px;height:15px}
 .pc{font-variant-numeric:tabular-nums;font-weight:700}
-.pcout:empty{display:none}.pcout{font-weight:500}
+.pcout:empty{display:none}
+.cal{border:1px solid var(--glass-line);border-radius:16px;padding:10px;display:grid;gap:8px}
+.cal-h{display:flex;align-items:center;justify-content:space-between}.cal-h b{font-family:var(--display);font-size:1.02rem}
+.cal-h .round.sm{width:36px;height:36px}.cal-h .flip .ico{transform:scaleX(-1)}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.cw{font-size:.75rem;font-weight:700;color:var(--muted);padding:2px 0}.cw.we{color:var(--bad)}
+.cd{position:relative;border:0;background:none;border-radius:10px;aspect-ratio:1;max-height:44px;font-weight:600;font-variant-numeric:tabular-nums;transition:transform .2s var(--spring),background .2s}
+.cd:hover:not(:disabled):not([aria-pressed="true"]){background:var(--surface-2)}
+.cd.we{color:var(--bad)}.cd:disabled{opacity:.3;cursor:default}
+.cd.today{box-shadow:inset 0 0 0 2px var(--line)}
+.cd.hol{color:var(--bad);background:color-mix(in srgb,var(--bad-bg) 70%,transparent)}
+.cd.hol::after,.cal-l .hd{content:"";position:absolute;bottom:4px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
+.cd[aria-pressed="true"]{background:linear-gradient(135deg,var(--brand),#2a8f7f);color:var(--brand-fg);animation:pop .3s var(--spring)}
+.cal-l{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:.8rem;color:var(--muted)}
+.cal-l li{display:flex;gap:8px;align-items:center}.cal-l .hd{position:static;margin:0;flex:none}
+.cal-s:empty{display:none}.cal-s{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.pcout{font-weight:500}
 .vrow{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .vrow:first-of-type{border-top:0;padding-top:0}
 .err{color:var(--bad);font-size:.85rem}
@@ -367,7 +382,51 @@ const FEAT = {
 const FREE_OFFERS_SEEN = 2, FREE_DAILY = 5, FREE_REQS = 3;
 const has = (lvl, role=S.role) => ({free:0,plus:1,pro:2})[S.plan[role]] >= ({plus:1,pro:2})[lvl];
 const TODAY = '2026-11-25';
-const when = q => q.repeat ? `${daysTxt(q.days)}, ${q.time}` : `${q.date.slice(5).replace('-','.')} d., ${q.time}`;
+/* ---------- Lietuviškas kalendorius ir šventės (skaičiuojamos, ne įrašytos) ---------- */
+const MON_N = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+const MON_G = ['sausio','vasario','kovo','balandžio','gegužės','birželio','liepos','rugpjūčio','rugsėjo','spalio','lapkričio','gruodžio'];
+const WDAY = ['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'];
+const iso = (y,m,d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const pIso = v => { const [y,m,d]=v.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)); };
+function easter(y){ // Gregorianinis (katalikų) Velykų skaičiavimas
+  const a=y%19, b=Math.floor(y/100), c=y%100, d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3),
+    h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451),
+    mo=Math.floor((h+l-7*m+114)/31), da=((h+l-7*m+114)%31)+1; return new Date(Date.UTC(y,mo-1,da)); }
+const firstSun = (y,m) => { const d=new Date(Date.UTC(y,m,1)); d.setUTCDate(1+(7-d.getUTCDay())%7); return d; };
+const HOL_CACHE = {};
+function holidays(y){ // Lietuvos valstybinės šventės ir poilsio dienos (Darbo kodeksas, 123 str.)
+  if(HOL_CACHE[y]) return HOL_CACHE[y];
+  const H = {}, put = (dt,n) => { H[dt.toISOString().slice(0,10)] = n; }, fx = (m,d,n) => put(new Date(Date.UTC(y,m,d)), n);
+  fx(0,1,'Naujieji metai'); fx(1,16,'Lietuvos valstybės atkūrimo diena'); fx(2,11,'Lietuvos nepriklausomybės atkūrimo diena');
+  const e = easter(y), e2 = new Date(e); e2.setUTCDate(e.getUTCDate()+1); put(e,'Velykos'); put(e2,'Antroji Velykų diena');
+  fx(4,1,'Tarptautinė darbo diena'); put(firstSun(y,4),'Motinos diena'); put(firstSun(y,5),'Tėvo diena');
+  fx(5,24,'Rasos ir Joninių diena'); fx(6,6,'Valstybės (Karaliaus Mindaugo karūnavimo) diena'); fx(7,15,'Žolinė');
+  fx(10,1,'Visų šventųjų diena'); fx(10,2,'Mirusiųjų atminimo (Vėlinių) diena'); fx(11,24,'Kūčios'); fx(11,25,'Kalėdos'); fx(11,26,'Antroji Kalėdų diena');
+  return HOL_CACHE[y] = H; }
+const holOf = v => v ? holidays(+v.slice(0,4))[v] : null;
+const dateTxt = (v, long) => { const d=pIso(v); return `${long?d.getUTCFullYear()+' m. ':''}${MON_G[d.getUTCMonth()]} ${d.getUTCDate()} d.${long?', '+WDAY[d.getUTCDay()]:''}`; };
+/* Kalendoriaus valdiklis: savaitė nuo pirmadienio, šventės pažymėtos, praeities dienos neaktyvios */
+function calendar(host, input, onPick){
+  let sel = input.value, cur = pIso(sel || TODAY); cur.setUTCDate(1);
+  const draw = () => {
+    const y=cur.getUTCFullYear(), m=cur.getUTCMonth(), lead=(cur.getUTCDay()+6)%7, n=new Date(Date.UTC(y,m+1,0)).getUTCDate(), H=holidays(y);
+    const minMonth = TODAY.slice(0,7) >= iso(y,m,1).slice(0,7);
+    let cells = '<span></span>'.repeat(lead);
+    for(let d=1; d<=n; d++){ const v=iso(y,m,d), h=H[v], we=((lead+d-1)%7)>4;
+      cells += `<button type="button" class="cd${h?' hol':''}${we?' we':''}${v===TODAY?' today':''}" data-d="${v}" aria-pressed="${v===sel}" ${v<TODAY?'disabled':''} aria-label="${dateTxt(v,true)}${h?', '+h:''}"${h?` title="${h}"`:''}>${d}</button>`; }
+    const monthHol = Object.entries(H).filter(([k])=>k.slice(5,7)===String(m+1).padStart(2,'0')).sort();
+    host.innerHTML = `<div class="cal-h"><button type="button" class="round sm" data-nav="-1" aria-label="Ankstesnis mėnuo" ${minMonth?'disabled':''}>${ic('back')}</button>
+      <b aria-live="polite">${y} m. ${MON_N[m].toLowerCase()}</b><button type="button" class="round sm flip" data-nav="1" aria-label="Kitas mėnuo">${ic('back')}</button></div>
+      <div class="cal-g" role="group" aria-label="${MON_N[m]}">${DAYS.map((x,i)=>`<span class="cw${i>4?' we':''}">${x}</span>`).join('')}${cells}</div>
+      ${monthHol.length?`<ul class="cal-l">${monthHol.map(([k,h])=>`<li><span class="hd"></span>${MON_G[m]} ${+k.slice(8)} d. – ${h}</li>`).join('')}</ul>`:''}
+      <p class="small cal-s">${sel?`${ic('cal')} <b>${dateTxt(sel,true)}</b>${holOf(sel)?` <span class="tag warn">${holOf(sel)}</span>`:''}`:''}</p>`;
+  };
+  host.addEventListener('click', e => { const b=e.target.closest('button'); if(!b||b.disabled) return;
+    if(b.dataset.nav){ cur.setUTCMonth(cur.getUTCMonth()+Number(b.dataset.nav)); draw(); return; }
+    sel = input.value = b.dataset.d; draw(); onPick?.(sel); host.querySelector(`[data-d="${sel}"]`)?.focus(); });
+  draw();
+}
+const when = q => q.repeat ? `${daysTxt(q.days)}, ${q.time}` : `${dateTxt(q.date)}, ${q.time}`;
 const paxTxt = q => `${q.pax} × ${PTYPE[q.type].toLowerCase()}${q.seat?' · reikia kėdutės':''}`;
 
 /* ---------- pavyzdiniai duomenys ---------- */
@@ -527,7 +586,7 @@ function renderReqForm(){
       <div class="fieldset"><span>Kaip dažnai</span><div class="chips" data-one="repeat">
         <button type="button" class="chip" data-v="1" aria-pressed="true">Kartojasi kas savaitę</button><button type="button" class="chip" data-v="0" aria-pressed="false">Vieną kartą</button></div></div>
       <div class="fieldset" id="rf-days"><span>Dienos</span><div class="chips" data-many="days">${DAYS.map((d,i)=>`<button type="button" class="chip" data-v="${i}" aria-pressed="${f.days.includes(i)}">${d}</button>`).join('')}</div></div>
-      <label class="f" for="rf-date" id="rf-datew" hidden>Data<input id="rf-date" type="date" value="2026-11-28" min="${TODAY}"></label>
+      <div class="fieldset" id="rf-datew" hidden><span>Data</span><input id="rf-date" type="hidden" value="2026-11-28"><div class="cal glass" id="rf-cal"></div></div>
       <div class="two"><label class="f" for="rf-time">Laikas<input id="rf-time" type="time" value="15:00" step="300"></label>
         <label class="f" for="rf-pax">Keleivių skaičius<select id="rf-pax">${[1,2,3,4].map(n=>`<option>${n}</option>`).join('')}</select></label></div>
       <div class="fieldset"><span>Keleivio tipas</span><div class="chips" data-one="type">${Object.entries(PTYPE).map(([k,v])=>`<button type="button" class="chip" data-v="${k}" aria-pressed="${k==='child'}">${v}</button>`).join('')}</div></div>
@@ -541,6 +600,7 @@ function renderReqForm(){
   ['from','to'].forEach(k=>{ view.querySelector('#rf-'+k).addEventListener('input', ()=>pcShow(k)); pcShow(k); });
   view.querySelectorAll('[data-one]').forEach(g => g.addEventListener('click', e => { const b=e.target.closest('.chip'); if(!b) return; f[g.dataset.one] = g.dataset.one==='repeat' ? b.dataset.v==='1' : b.dataset.v; g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x===b));
     view.querySelector('#rf-days').hidden = !f.repeat; view.querySelector('#rf-datew').hidden = f.repeat; }));
+  calendar(view.querySelector('#rf-cal'), view.querySelector('#rf-date'));
   view.querySelector('[data-many]').addEventListener('click', e => { const b=e.target.closest('.chip'); if(!b) return; const v=Number(b.dataset.v), i=f.days.indexOf(v); i>=0?f.days.splice(i,1):f.days.push(v); f.days.sort((a,b)=>a-b); b.setAttribute('aria-pressed', i<0); });
   view.querySelector('#rf').addEventListener('submit', e => {
     e.preventDefault();
@@ -924,13 +984,13 @@ function paywall(lvl, why){
 function contract(o){
   const q = reqOf(o.req), cv = convOf(o.id), d = drivers[o.driver], a = cv.agreed || {price:o.price, time:o.time, days:q.days};
   const txt = `PAVĖŽĖJIMO SUTARTIS
-Data: ${TODAY}
+Data: ${dateTxt(TODAY, true)}
 
 Vežėjas: ${d.name} (LTSA pavėžėjimo leidimas Nr. __________)
 Užsakovas: ${q.client}
 
 1. Maršrutas: ${cv.addrShared && q.addr ? q.addr.from + ' → ' + q.addr.to : q.from + ' → ' + q.to + '. Tikslūs adresai: __________'}.
-2. Laikas: ${q.repeat ? daysTxt(a.days) + ', ' + a.time : q.date + ', ' + a.time}.
+2. Laikas: ${q.repeat ? daysTxt(a.days) + ', ' + a.time : dateTxt(q.date, true) + ', ' + a.time}${!q.repeat && holOf(q.date) ? ' (' + holOf(q.date) + ')' : ''}.
 3. Keleiviai: ${paxTxt(q)}.
 4. Kaina: ${eur(a.price)} už kelionę. Mokėjimo tvarka: __________.
 5. Laukimas: iki 10 min. be papildomo mokesčio.${q.type==='child' ? `
