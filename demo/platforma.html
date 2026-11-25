@@ -158,6 +158,17 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .ext .ico{width:15px;height:15px}
 .pc{font-variant-numeric:tabular-nums;font-weight:700}
 .pcout:empty{display:none}
+.card > *{min-width:0}
+.lvb{background:var(--info-bg);border:0}
+.lv{display:grid;gap:12px;justify-items:center;text-align:center}
+.lv-cam{position:relative;width:190px;height:240px}
+.lv-cam .face{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#e9c9a8 0 22%,transparent 23%),radial-gradient(ellipse at 50% 92%,#2a8f7f 0 40%,transparent 41%),linear-gradient(#cfd8d6,#9fb2ae);overflow:hidden}
+.lv-cam svg{position:absolute;inset:0;width:100%;height:100%}
+.lv-cam ellipse{fill:none;stroke-width:6}
+.lv-cam .bg{stroke:var(--line)} .lv-cam .fg{stroke:var(--ok);stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.lv-step{min-height:2.6em;font-weight:700}
+.lv ul{text-align:left;margin:0;padding-left:18px}
+.lvlist{display:grid;gap:6px;margin:0;padding-left:18px}
 .slogan{margin:4px 0 -4px;font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em;
   background:linear-gradient(100deg,var(--brand) 0%,#2a8f7f 45%,var(--accent) 60%,var(--brand) 100%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sl 6s ease-in-out infinite}
 @keyframes sl{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
@@ -532,6 +543,31 @@ const PH_DEMO = st => Object.fromEntries(PHOTOS.map(p=>[p.k,{st, src:null, w:403
 S.photos = {d1:PH_DEMO('ok'), d2:PH_DEMO('ok'), d5:PH_DEMO('ok')};
 S.queue[0].photos = PH_DEMO('rev');
 
+/* Tapatybės ir gyvumo patikra pagal riziką (Didit; atsarginis variantas – vaizdo skambutis su Ridu).
+   Kada prašome: registruojantis pilna patikra; kas 7 d.; prieš pirmą kelionę su nauju klientu; atsitiktinai ~1 iš 10 darbo dienų;
+   rizikos signalas (naujas įrenginys, pakeista nuotrauka ar automobilis, kliento pranešimas, >14 d. neaktyvumas);
+   vaikų pastoviam maršrutui prieš pradžią ir kartą per savaitę. Po 2 nesėkmių profilis paslepiamas, peržiūri administratorius.
+   Saugomas tik rezultatas ir laikas. */
+S.live = {
+  d1:{kyc:'2026-11-20', how:'Didit', last:'2026-11-20T08:12', due:'random', failed:0, review:false},
+  d2:{kyc:'2026-10-02', how:'Didit', last:'2026-11-24T07:41', due:null, failed:0, review:false},
+  d5:{kyc:'2026-09-15', how:'Vaizdo skambutis', last:'2026-11-22T13:05', due:null, failed:0, review:false}
+};
+S.liveQueue = [];
+const LIVE_WHY = {initial:'Pirminė tapatybės patikra', weekly:'Savaitinė patikra', new_client:'Pirmoji kelionė su nauju klientu', random:'Atsitiktinė patikra',
+  new_device:'Prisijungėte nauju įrenginiu', profile_change:'Pakeista nuotrauka ar automobilis', report:'Gautas kliento pranešimas', inactive:'Ilgai nebuvote prisijungę', child_route:'Prasideda vaikų pastovus maršrutas'};
+const LIVE_RULES = ['Registruojantis: dokumentas ir selfis', 'Kas 7 dienas', 'Prieš pirmą kelionę su nauju klientu', 'Atsitiktinai, maždaug 1 iš 10 darbo dienų',
+  'Prisijungus nauju įrenginiu, pakeitus nuotrauką ar automobilį, gavus pranešimą arba po 14 d. pertraukos', 'Vaikų pastoviam maršrutui: prieš pradžią ir kartą per savaitę'];
+const liveOf = id => S.live[id] || {};
+const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+const liveDue = id => { const l = liveOf(id); if(l.review) return null; if(!l.kyc) return 'initial'; if(l.due) return l.due;
+  return !l.last || dayDiff(l.last.slice(0,10), TODAY) >= 7 ? 'weekly' : null; };
+const liveVisible = id => !liveOf(id).review;
+const liveWhen = id => { const l = liveOf(id); if(!l.last) return ''; const d = l.last.slice(0,10), t = l.last.slice(11,16), n = dayDiff(d, TODAY);
+  if(LANG==='en') return n===0 ? `today ${t}` : n===1 ? `yesterday ${t}` : dateTxt(d);
+  return n===0 ? `šiandien ${t}` : n===1 ? `vakar ${t}` : dateTxt(d); };
+const nowHM = () => new Date().toTimeString().slice(0,5);
+
 /* ---------- pagalbinės ---------- */
 const view = document.getElementById('view'), nav = document.getElementById('nav'), ovl = document.getElementById('overlay');
 let toastT;
@@ -592,7 +628,6 @@ document.querySelector('.seg').addEventListener('click', e => {
 let lastKey = '';
 function render(){
   renderNav();
-  legalGate();
   const key = S.role + S.tab[S.role] + JSON.stringify(S.open) + S.newReq;
   if(key !== lastKey){ lastKey = key; window.scrollTo({top:0}); view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
   else view.classList.remove('enter');
@@ -633,6 +668,7 @@ function routeView(id){
   ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="rv-t"><div class="card" style="text-align:left;justify-items:stretch">
     <div class="row">${avD(r.driver)}<div style="flex:1;min-width:0"><h2 id="rv-t">${esc(d.name)}</h2><p class="muted small">Vairuoja nuo ${d.since} m. · ${d.trips} kelionės</p></div>${r.price?`<span class="price">${eur(r.price)}</span>`:''}</div>
     <span class="tag ok" style="justify-self:start">${ic('shield')} Patikimas ir patikrintas vairuotojas</span>
+    ${liveOf(r.driver).last ? `<p class="muted small" data-noi18n style="margin-top:-6px">${LANG==='en'?'Identity confirmed':'Tapatybė patvirtinta'} ${liveWhen(r.driver)}</p>` : ''}
     <div class="strip">${PHOTOS.filter(p=>S.photos[r.driver]?.[p.k]?.st==='ok').map(p=>phTile(S.photos[r.driver][p.k], p, d.g)).join('')}</div>
     <div class="facts"><div>${ic('pin')}<span><span class="pc">${mpc(r.from)}</span> → <span class="pc">${mpc(r.to)}</span></span></div>
       <div>${ic('cal')}<span>Pastoviai: ${daysTxt(r.days)}, ${r.time}</span></div>
@@ -644,6 +680,7 @@ function routeView(id){
   ovl.querySelector('#rv-go').focus();
   ovl.querySelector('#rv-x').addEventListener('click', closeOv);
   ovl.querySelector('#rv-go').addEventListener('click', () => {
+    if(!consent('base', () => { routeView(r.id); ovl.querySelector('#rv-go')?.click(); }, 'Prieš pradedant pokalbį')) return;
     const q = {id:nid('q'), mine:true, client:'Lina', g:1, from:r.from, to:r.to, repeat:true, days:r.days.slice(), date:'', start:'2026-12-01', end:summerEnd('2026-12-01'), skipHol:true,
       time:r.time, pax:1, type:'child', seat:true, note:'Pagal vairuotojo maršrutą', km:5, direct:r.driver};
     const o = {id:nid('o'), req:q.id, driver:r.driver, price:r.price||8, time:r.time, note:r.note, status:'new'};
@@ -693,6 +730,7 @@ function renderReqForm(){
   view.querySelector('[data-many]').addEventListener('click', e => { const b=e.target.closest('.chip'); if(!b) return; const v=Number(b.dataset.v), i=f.days.indexOf(v); i>=0?f.days.splice(i,1):f.days.push(v); f.days.sort((a,b)=>a-b); b.setAttribute('aria-pressed', i<0); });
   view.querySelector('#rf').addEventListener('submit', e => {
     e.preventDefault();
+    if(!consent('base', () => view.querySelector('#rf')?.requestSubmit(), 'Prieš paskelbiant užklausą')) return;
     const err = view.querySelector('#rf-err'), aFrom = view.querySelector('#rf-from').value.trim(), aTo = view.querySelector('#rf-to').value.trim(), from = addrPc(aFrom), to = addrPc(aTo);
     const fail = t => { err.textContent=t; err.hidden=false; };
     if(!from || !to) return fail('Adreso neradome. Pasirinkite adresą iš pasiūlymų.');
@@ -715,6 +753,7 @@ function offerCard(o, forClient){
   return `<div class="card">
     <div class="row">${avD(o.driver)}<div style="flex:1;min-width:0"><h3>${esc(d.name)}</h3><p class="muted small">Vairuoja nuo ${d.since} m. · ${d.trips} kelionės</p></div><span class="price">${eur(o.price)}</span></div>
     <span class="tag ok" style="justify-self:start">${ic('shield')} Patikimas ir patikrintas vairuotojas</span>
+    ${liveOf(o.driver).last ? `<p class="muted small" data-noi18n style="margin-top:-6px">${LANG==='en'?'Identity confirmed':'Tapatybė patvirtinta'} ${liveWhen(o.driver)}</p>` : ''}
     <div class="strip">${PHOTOS.filter(p=>S.photos[o.driver]?.[p.k]?.st==='ok').map(p=>phTile(S.photos[o.driver][p.k], p, d.g, {btn:o.driver+':'+p.k})).join('')}</div>
     <p class="small">${esc(d.bio)}</p>
     <div class="row small muted">${ic('clock')} Siūlo ${o.time}${o.note?` · „${esc(o.note)}“`:''}</div>
@@ -723,7 +762,7 @@ function offerCard(o, forClient){
   </div>`;
 }
 function renderReq(id){
-  const q = reqOf(id), offs = S.offers.filter(o=>o.req===id && o.status!=='declined');
+  const q = reqOf(id), offs = S.offers.filter(o=>o.req===id && o.status!=='declined' && (o.status==='contact' || liveVisible(o.driver)));
   view.innerHTML = `
     <button class="btn ghost" id="back" style="justify-self:start">${ic('back')} Atgal</button>
     <div class="card"><h2><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h2>
@@ -739,7 +778,7 @@ function renderReq(id){
   view.querySelectorAll('[data-ph]').forEach(b=>b.addEventListener('click', ()=>{ const [dd,k]=b.dataset.ph.split(':'); lightbox(dd,k); }));
   view.querySelectorAll('[data-decline]').forEach(b=>b.addEventListener('click', ()=>{ offOf(b.dataset.decline).status='declined'; toast('Pasiūlymas atmestas'); render(); }));
   view.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', ()=>{ S.open={kind:'conv', id:b.dataset.open}; render(); }));
-  view.querySelectorAll('[data-contact]').forEach(b=>b.addEventListener('click', ()=>{ startConv(offOf(b.dataset.contact)); S.open={kind:'conv', id:b.dataset.contact}; render(); }));
+  view.querySelectorAll('[data-contact]').forEach(b=>b.addEventListener('click', ()=>{ if(!consent('base', ()=>b.click(), 'Prieš pradedant pokalbį')) return; startConv(offOf(b.dataset.contact)); S.open={kind:'conv', id:b.dataset.contact}; render(); }));
 }
 function startConv(o){
   o.status='contact';
@@ -810,7 +849,7 @@ function renderConv(id){
         <div class="two"><button type="button" class="btn ghost" id="co-cancel">Atšaukti</button><button type="button" class="btn" id="co-send">${ic('send')} Siūlyti</button></div>
       </div>
       <div class="row" style="flex-wrap:nowrap"><button class="btn ghost" id="propose" aria-label="Siūlyti savo variantą" title="Siūlyti savo variantą">${ic('swap')}</button>
-        <form class="chatform" id="cf" style="flex:1"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form></div>` :
+        <form class="chatform" id="cf" style="flex:1;min-width:0"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form></div>` :
         `<form class="chatform" id="cf"><input id="cmsg" placeholder="Rašykite žinutę" autocomplete="off" aria-label="Žinutė"><button class="btn" aria-label="Siųsti">${ic('send')}</button></form>`}
       <p class="muted small">Dėl kainos, mokėjimo ir sąlygų susitariate patys. Nemokėkite iš anksto prieš pirmą susitikimą.</p>
     </div>`;
@@ -832,7 +871,7 @@ function renderConv(id){
     render(); simulateReply(o);
   });
   view.querySelector('[data-accept]')?.addEventListener('click', () => {
-    open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst();
+    open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst(); newClientCheck(o);
     cv.msgs.push({by:me, t:'Sutinku su šiuo variantu.'}); toast('Susitarta'); render();
   });
   view.querySelector('#share-addr')?.addEventListener('click', ()=>{ cv.addrShared=true; cv.msgs.push({by:'client', t:`Paėmimo vieta: ${q.addr.from}. Kelionės tikslas: ${q.addr.to}.`}); toast('Adresas išsiųstas tik šiam vairuotojui'); render(); });
@@ -841,6 +880,11 @@ function renderConv(id){
   const chat = view.querySelector('#chat'); chat.lastElementChild?.scrollIntoView({block:'nearest'});
 }
 /* Kita pusė atsako pati, jei jos nevaldome demonstracijoje */
+// Prieš pirmą kelionę su nauju klientu vairuotojas patvirtina tapatybę (jei šiandien dar netikrino)
+function newClientCheck(o){
+  const l = S.live[o.driver]; if(!l || l.review || l.due || l.last?.startsWith(TODAY)) return;
+  l.due = reqOf(o.req).type==='child' && reqOf(o.req).repeat ? 'child_route' : 'new_client';
+}
 function simulateReply(o){
   if(persona(o)) return;
   const cv = convOf(o.id), q = reqOf(o.req);
@@ -851,7 +895,7 @@ function simulateReply(o){
     const replier = open.by==='client' ? 'driver' : 'client';
     const target = replier==='driver' ? o.price : open.price;
     if(open.price >= target*0.9 || cv.msgs.filter(m=>m.kind==='offer').length > 2){
-      open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst();
+      open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst(); newClientCheck(o);
       cv.msgs.push({by:replier, t:'Tinka, sutinku.'});
     } else {
       open.state='old';
@@ -864,7 +908,7 @@ function simulateReply(o){
 }
 
 /* ---------- VAIRUOTOJAS: užklausų kaladė ---------- */
-const driverOk = () => Object.values(S.verify[ME_DRIVER]).every(v=>v.st==='ok'||v.st==='warn') && Object.values(S.photos[ME_DRIVER]).every(p=>p.st==='ok' || p.prev==='ok');
+const driverOk = () => !liveOf(ME_DRIVER).review && Object.values(S.verify[ME_DRIVER]).every(v=>v.st==='ok'||v.st==='warn') && Object.values(S.photos[ME_DRIVER]).every(p=>p.st==='ok' || p.prev==='ok');
 function poolItems(){
   const me = drivers[ME_DRIVER];
   return S.reqs.filter(q => !q.direct && !S.skipped.includes(q.id) && !S.offers.some(o=>o.req===q.id && o.driver===ME_DRIVER)
@@ -890,13 +934,14 @@ function poolCard(q, back){
   </article>`;
 }
 function renderPool(){
+  if(liveOf(ME_DRIVER).review){ view.innerHTML = `<div class="empty">${ic('lock')}<h3>Profilis laikinai paslėptas</h3><p class="muted">Tapatybės patikra nepavyko 2 kartus. Ridu komanda peržiūrės ir susisieks. Galite pasirinkti vaizdo skambutį.</p><button class="btn" id="goc">Į patikrą</button></div>`; view.querySelector('#goc').addEventListener('click', ()=>{ S.tab.driver='check'; render(); }); return; }
   if(!driverOk()){ view.innerHTML = `<div class="empty">${ic('lock')}<h3>Užbaikite patikrą</h3><p class="muted">Užklausas matysite, kai patvirtinsime jūsų duomenis.</p><button class="btn" id="goc">Į patikrą</button></div>`; view.querySelector('#goc').addEventListener('click',()=>{S.tab.driver='check'; render();}); return; }
   const items = poolItems();
   const head = `<p class="slogan">Išsirink savo keleivį</p><div class="row between"><div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>
-    <span class="tag ${has('plus')?'ok':S.daily?'info':'bad'}">${has('plus')?'Neribota':`Liko ${S.daily} iš ${FREE_DAILY}`}</span></div>`;
+    <span class="tag ${has('plus')?'ok':S.daily?'info':'bad'}">${has('plus')?'Neribota':`Liko ${S.daily} iš ${FREE_DAILY}`}</span></div>` + liveBanner();
   if(!items.length){
     view.innerHTML = head + `<div class="empty">${ic('search')}<h3>Naujų užklausų nėra</h3><p class="muted">Pranešime, kai atsiras naujų. Užklausą galite paskelbti ir patys: perjunkite į „Man reikia važiuoti“.</p>${S.history.length?`<button class="btn ghost" id="undo">${ic('undo')} Grąžinti paskutinę</button>`:''}</div>`;
-    view.querySelector('#undo')?.addEventListener('click', undo); return;
+    view.querySelector('#undo')?.addEventListener('click', undo); bindLive(); return;
   }
   view.innerHTML = head + `<div class="deck" id="deck" style="height:400px">${items[1]?poolCard(items[1],true):''}${poolCard(items[0],false)}</div>
     <div class="actions">
@@ -906,6 +951,7 @@ function renderPool(){
       <span style="width:44px"></span>
     </div>
     <p class="muted small" style="text-align:center">Braukite į dešinę, kad pasisiūlytumėte, į kairę, kad praleistumėte.</p>`;
+  bindLive();
   const top = view.querySelector('.sw:not(.back)'), q = items[0];
   bindSwipe(top, dir => dir>0 ? tryOffer(q, top) : skip(q, top));
   view.querySelector('#no').addEventListener('click', ()=>skip(q, top));
@@ -929,11 +975,62 @@ document.addEventListener('keydown', e => {
 });
 function fly(el, dir){ el.style.transform=`translateX(${dir*600}px) rotate(${dir*25}deg)`; el.querySelector(dir>0?'.stamp.yes':'.stamp.no').style.opacity=1; }
 function skip(q, el){ fly(el,-1); S.skipped.push(q.id); S.history.push(q.id); setTimeout(render, 230); }
+function liveBanner(){
+  const r = liveDue(ME_DRIVER); if(!r) return '';
+  return `<div class="card lvb"><div class="row" style="flex-wrap:nowrap">${ic('id')}<div style="min-width:0"><b>Patvirtinkite, kad tai jūs</b><p class="small muted" data-noi18n>${L(LIVE_WHY[r])}. ${L('Užtrunka apie 10 s.')}</p></div></div>
+    <button class="btn" data-live>Pradėti patikrą</button></div>`;
+}
+function bindLive(){ view.querySelectorAll('[data-live]').forEach(b=>b.addEventListener('click', ()=>openLive())); }
 function tryOffer(q, el){
+  if(!consent('driver', () => tryOffer(q, el), 'Prieš pirmą pasiūlymą')){ el.style.transform=''; el.querySelectorAll('.stamp').forEach(x=>x.style.opacity=0); return; }
+  if(liveDue(ME_DRIVER)){ el.style.transform=''; el.querySelectorAll('.stamp').forEach(x=>x.style.opacity=0); return openLive(); }
   if(!has('plus') && S.daily<=0){ el.style.transform=''; el.querySelectorAll('.stamp').forEach(x=>x.style.opacity=0); return paywall('plus','Šiandien nemokami pasisiūlymai baigėsi. Su Plus siūlykitės be ribų.'); }
   offerForm(q, el);
 }
 function undo(){ if(!has('plus')) return paywall('plus','Grąžinkite praleistą užklausą su Plus.'); const id=S.history.pop(); if(!id) return; S.skipped=S.skipped.filter(x=>x!==id); render(); }
+/* Gyvumo patikra: ~10 s, vaizdas tikrinamas Didit, Ridu saugo tik rezultatą ir laiką */
+function openLive(after){
+  const l = S.live[ME_DRIVER], reason = liveDue(ME_DRIVER) || 'weekly', P = 2*Math.PI*Math.sqrt((80*80+108*108)/2);
+  ovReturn = () => render();
+  const steps = ['Pažiūrėkite tiesiai į kamerą', 'Lėtai pasukite galvą į kairę ir į dešinę', 'Mirktelėkite'];
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="lv-t"><div class="card lv">
+    <h2 id="lv-t">Patvirtinkite, kad tai jūs</h2><p class="muted small">${L(LIVE_WHY[reason])}</p>
+    <div class="lv-cam"><span class="face"></span><svg viewBox="0 0 190 240" aria-hidden="true"><ellipse class="bg" cx="95" cy="120" rx="80" ry="108"/><ellipse class="fg" id="lv-ring" cx="95" cy="120" rx="80" ry="108" stroke-dasharray="${P}" stroke-dashoffset="${P}"/></svg></div>
+    <p class="lv-step" id="lv-step" aria-live="polite">Pasiruošę? Laikykite telefoną veido aukštyje.</p>
+    <div class="two" id="lv-btns"><button class="btn ghost" id="lv-x">Vėliau</button><button class="btn" id="lv-go">Pradėti</button></div>
+    <p class="muted small">Vaizdą patikrina Didit. Ridu išsaugo tik rezultatą ir laiką, ne vaizdą.</p>
+  </div></div>`;
+  const ring = ovl.querySelector('#lv-ring'), step = ovl.querySelector('#lv-step'), btns = ovl.querySelector('#lv-btns');
+  ovl.querySelector('#lv-go').focus();
+  ovl.querySelector('#lv-x').addEventListener('click', closeOv);
+  ovl.querySelector('#lv-go').addEventListener('click', () => {
+    btns.innerHTML = `<button class="btn ghost" id="lv-fail" style="grid-column:1/-1">Imituoti nesėkmę (demonstracija)</button>`;
+    let fail = false; btns.querySelector('#lv-fail').addEventListener('click', ()=>{ fail = true; });
+    const T = matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : 4500, t0 = performance.now();
+    const tick = now => { if(!ovl.contains(ring)) return;
+      const k = Math.min(1, (now - t0) / T); ring.setAttribute('stroke-dashoffset', String(P*(1-k)));
+      step.textContent = L(steps[Math.min(steps.length-1, Math.floor(k*steps.length))]);
+      if(fail && k > .4) return liveResult(false, after);
+      k < 1 ? requestAnimationFrame(tick) : liveResult(true, after); };
+    requestAnimationFrame(tick);
+  });
+}
+function liveResult(ok, after){
+  const l = S.live[ME_DRIVER];
+  if(ok){ Object.assign(l, {last:`${TODAY}T${nowHM()}`, due:null, failed:0}); ovReturn=null; ovl.innerHTML=''; toast('Tapatybė patvirtinta'); render(); after?.(); return; }
+  l.failed++; if(l.failed >= 2){ l.review = true; if(!S.liveQueue.some(x=>x.id===ME_DRIVER && x.kind==='review')) S.liveQueue.unshift({id:ME_DRIVER, kind:'review', at:TODAY}); }
+  const left = !l.review;
+  ovl.querySelector('.lv').innerHTML = `<div class="row" style="justify-content:center">${ic('x')}<h2 id="lv-t">${left?'Nepavyko patvirtinti':'Profilis laikinai paslėptas'}</h2></div>
+    <p class="muted">${left?'Patikrinkite apšvietimą, nusiimkite akinius nuo saulės ir pabandykite dar kartą. Liko 1 bandymas.':'Patikra nepavyko 2 kartus. Ridu komanda peržiūrės ir susisieks. Galite pasirinkti vaizdo skambutį su Ridu.'}</p>
+    <div class="two">${left?`<button class="btn ghost" id="lv-vc">Vaizdo skambutis</button><button class="btn" id="lv-re">Bandyti dar kartą</button>`:`<button class="btn ghost" id="lv-ok">Gerai</button><button class="btn" id="lv-vc">Vaizdo skambutis</button>`}</div>`;
+  ovl.querySelector('#lv-re')?.addEventListener('click', ()=>openLive(after));
+  ovl.querySelector('#lv-ok')?.addEventListener('click', closeOv);
+  ovl.querySelector('#lv-vc').addEventListener('click', ()=>{ videoCall(); closeOv(); });
+}
+function videoCall(){
+  if(!S.liveQueue.some(x=>x.id===ME_DRIVER && x.kind==='video')) S.liveQueue.unshift({id:ME_DRIVER, kind:'video', at:TODAY});
+  toast('Ridu komanda susisieks dėl vaizdo skambučio');
+}
 let ovReturn = null;
 function closeOv(){ ovl.innerHTML=''; if(ovReturn){ const r=ovReturn; ovReturn=null; r(); } }
 function offerForm(q, el){
@@ -975,6 +1072,7 @@ function renderSent(){
 }
 
 function routeForm(){
+  if(!consent('driver', routeForm, 'Prieš skelbiant maršrutą')) return;
   if(!driverOk()) return toast('Pirmiausia užbaikite patikrą');
   const f = {days:[0,1,2,3,4]};
   ovReturn = () => render();
@@ -1005,12 +1103,26 @@ function routeForm(){
 
 /* ---------- VAIRUOTOJAS: patikra be dokumentų kėlimo ---------- */
 const VTAG = {ok:`<span class="tag ok">${ic('check')} Patvirtinta</span>`, warn:`<span class="tag warn">${ic('clock')} Baigiasi</span>`, rev:`<span class="tag info">${ic('clock')} Tikrinama</span>`, none:`<span class="tag bad">Trūksta</span>`, bad:`<span class="tag bad">Netiko</span>`};
+function liveCard(){
+  const l = liveOf(ME_DRIVER), r = liveDue(ME_DRIVER), next = l.last ? new Date(Date.parse(l.last.slice(0,10)) + 7*864e5).toISOString().slice(0,10) : null;
+  return `<div class="card"><h3>Tapatybė</h3>
+    <div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>Dokumentas ir selfis</b><p class="muted small">Vieną kartą registruojantis.</p></div>${l.kyc?VTAG.ok:VTAG.none}</div>
+      ${l.kyc?`<p class="small" data-noi18n>${LANG==='en'?`Confirmed via ${l.how==='Didit'?'Didit':'video call'} · ${dateTxt(l.kyc)}`:`Patvirtinta per ${l.how} · ${dateTxt(l.kyc)}`}</p>`:''}</div>
+    <div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>Gyvumo patikra</b><p class="muted small">Apie 10 s su telefono kamera.</p></div>${l.review?VTAG.bad:r?`<span class="tag warn">${ic('clock')} Reikia dabar</span>`:VTAG.ok}</div>
+      ${l.last?`<p class="small" data-noi18n>${LANG==='en'?'Last':'Paskutinė'}: ${liveWhen(ME_DRIVER)}${!r&&next?` · ${LANG==='en'?'next no later than':'kita ne vėliau kaip'} ${dateTxt(next)}`:''}</p>`:''}
+      ${r?`<p class="small" data-noi18n>${L(LIVE_WHY[r])}.</p><button class="btn" data-live>Pradėti patikrą</button>`:''}
+      ${l.review?`<p class="small">Profilis paslėptas, kol Ridu komanda peržiūrės. ${S.liveQueue.some(x=>x.id===ME_DRIVER&&x.kind==='video')?'Vaizdo skambutis užsakytas.':''}</p>${S.liveQueue.some(x=>x.id===ME_DRIVER&&x.kind==='video')?'':'<button class="btn ghost" id="lv-vc2">Užsisakyti vaizdo skambutį</button>'}`:''}
+      <details><summary class="small" style="cursor:pointer;font-weight:700">Kada prašome patikros?</summary><ul class="lvlist small">${LIVE_RULES.map(x=>`<li>${x}</li>`).join('')}</ul>
+      <p class="muted small">Po 2 nesėkmingų bandymų profilis paslepiamas ir jį peržiūri Ridu komanda. Saugome tik rezultatą ir laiką.</p></details></div>
+  </div>`;
+}
 function renderDriverCheck(){
   const v = S.verify[ME_DRIVER];
   const warn = Object.values(v).find(x=>x.st==='warn');
   view.innerHTML = `<h2>Patikra</h2>
     <div class="card" style="background:${driverOk()?'var(--ok-bg)':'var(--warn-bg)'};border:0"><div class="row">${ic('shield')}<b>${driverOk()?'Profilis matomas klientams':'Profilis paslėptas, kol vyksta patikra'}</b></div>
       ${warn?`<p class="small">${esc(warn.note)}. Pratęskite, kitaip profilis bus paslėptas.</p>`:''}</div>
+    ${liveCard()}
     <p class="muted small">Pakanka galiojančio LTSA pavėžėjimo leidimo. Įveskite jo ir automobilio numerį, o mes patikriname autentiškumą. Saugome tik numerį ir patikros žymą.</p>
     <div class="card"><h3>Nuotraukos</h3>
       <p class="muted small">Jūsų veidas ir automobilis iš išorės bei vidaus. Aukšta raiška: ne mažiau ${MIN_LONG}×${MIN_SHORT} px. Klientai mato jas pasiūlyme.</p>
@@ -1023,6 +1135,7 @@ function renderDriverCheck(){
         ${x.how?`<p class="small">Patvirtinta per ${esc(x.how)}${x.at?` · ${x.at}`:''}</p>`:''}
         ${c.k!=='id' && x.st!=='rev' ? `<details><summary class="small" style="cursor:pointer;font-weight:700">${x.val?'Atnaujinti':'Įvesti'}</summary><form class="chatform" data-k="${c.k}" style="margin-top:8px"><input aria-label="${c.t}" placeholder="${c.ph}" id="v-${c.k}"><button class="btn">Siųsti</button></form></details>` : ''}
       </div>`; }).join('')}</div>`;
+  bindLive(); view.querySelector('#lv-vc2')?.addEventListener('click', ()=>{ videoCall(); render(); });
   view.querySelectorAll('input[data-ph]').forEach(inp => inp.addEventListener('change', () => {
     const file = inp.files?.[0], k = inp.dataset.ph, err = view.querySelector('#ph-err'); if(!file) return;
     const url = URL.createObjectURL(file), img = new Image();
@@ -1055,6 +1168,9 @@ const FAQ = {
     ['Kaip tikrinami vairuotojai?', [
       'Kiekvieno vairuotojo pavėžėjimo leidimą ir su juo susietą automobilį tikriname pagal Lietuvos transporto saugos administracijos (LTSA) duomenis.',
       'Nuotraukas peržiūrime prieš jas parodant klientams. Tik praėję patikrą vairuotojai gauna ženklelį „Patikimas ir patikrintas vairuotojas“.']],
+    ['Kaip žinoti, kad vairuoja tas pats žmogus?', [
+      'Registruodamasis vairuotojas patvirtina tapatybę dokumentu ir selfiu. Vėliau trumpai gyvumo patikrai jo prašome bent kas 7 dienas, prieš pirmą kelionę su nauju klientu ir atsitiktinai.',
+      'Pasiūlyme matote, kada tapatybė patvirtinta paskutinį kartą. Jei patikra nepavyksta, profilis paslepiamas.']],
     ['Kas yra LTSA pavėžėjimo leidimas ir kodėl jis svarbus?', [
       'Vežti keleivius už atlygį lengvuoju automobiliu galima tik turint LTSA išduotą leidimą. Jame nurodytas ir automobilis.',
       'Leidimas reiškia, kad vežimas legalus, o vairuotojas ir automobilis žinomi valstybei.']],
@@ -1084,7 +1200,12 @@ const FAQ = {
       'Prašymą pateikite Lietuvos transporto saugos administracijai (ltsa.lrv.lt). Leidime nurodomas automobilis, kuriuo vešite keleivius.',
       'Gavę leidimą, Ridu įveskite jo ir automobilio numerius. Patikriname paprastai per 1 darbo dieną.']],
     ['Ką Ridu tikrina ir saugo?', [
-      'Tikriname tik LTSA leidimo autentiškumą ir su juo susietą automobilį. Saugome tik numerį ir patikros datą, dokumentų kopijų nekeliate.']],
+      'Tikriname LTSA leidimo autentiškumą, su juo susietą automobilį ir jūsų tapatybę. Saugome tik numerį, patikros rezultatą ir datą. Dokumentų kopijų ir patikros vaizdo nesaugome.']],
+    ['Kas yra gyvumo patikra ir kada jos prašoma?', [
+      'Tai apie 10 s trunkanti patikra telefono kamera: pažiūrite į kamerą, pasukate galvą ir mirktelite. Taip klientai žino, kad vairuoja tas pats žmogus.',
+      'Prašome kas 7 dienas, prieš pirmą kelionę su nauju klientu, atsitiktinai maždaug 1 iš 10 darbo dienų ir prisijungus nauju įrenginiu, pakeitus nuotrauką ar automobilį arba po ilgesnės pertraukos.']],
+    ['Kas, jei patikra nepavyksta?', [
+      'Pabandykite dar kartą geresnėje šviesoje. Po 2 nesėkmių profilis laikinai paslepiamas, o Ridu komanda susisiekia. Galite pasirinkti vaizdo skambutį su Ridu.']],
     ['Kodėl reikia aukštos raiškos nuotraukų?', [
       'Klientai renkasi vairuotoją pagal tai, ką mato. Aiški nuotrauka ir švarus salonas kelia pasitikėjimą. Kiekvieną nuotrauką peržiūrime prieš rodydami.']],
     ['Kaip nustatoma kaina?', [
@@ -1117,8 +1238,9 @@ function renderFaq(){
 const LEGAL = {"lt":{"terms":{"t":"Ridu naudojimosi taisyklės","v":"2026-11-25","sections":[{"h":"1. Kas yra Ridu","html":"<p>Ridu yra internetinė paieškos platforma. Ji padeda žmonėms, kuriems reikia nuvežti save, vaiką ar artimąjį (klientams), rasti vairuotojus, turinčius LTSA pavėžėjimo leidimą (vairuotojus), ir susitarti tarpusavyje.</p><p>Platformą valdo MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas info@ridu.lt (toliau – Ridu, mes).</p><p>Ridu neveža keleivių, nenustato kainų, nepriima mokėjimų už keliones ir neskiria vairuotojų. Pavėžėjimo sutartį sudaro klientas ir vairuotojas tiesiogiai. Ridu nėra šios sutarties šalis ir už jos vykdymą neatsako.</p>"},{"h":"2. Kas gali naudotis","html":"<ul><li>Naudotis gali tik pilnamečiai (18 m. ir vyresni) veiksnūs asmenys. Vaikai patys paskyrų nekuria: už juos užsako tėvai ar kiti teisėti atstovai.</li><li>Vienas žmogus gali turėti tik vieną kliento ir vieną vairuotojo paskyrą.</li><li>Registruodamiesi pateikiate tikrus ir savo duomenis ir juos atnaujinate, kai jie pasikeičia.</li><li>Vairuotoju gali būti tik asmuo, kuris turi galiojantį LTSA pavėžėjimo leidimą su jame nurodytu automobiliu, vairuotojo pažymėjimą ir įregistruotą veiklą (pvz. individualią veiklą). Vairuotojas su klientais santykiauja kaip verslininkas.</li></ul>"},{"h":"3. Paskyra ir saugumas","html":"<ul><li>Prisijungimo duomenis saugokite ir niekam jų neperduokite. Už veiksmus savo paskyroje atsakote jūs.</li><li>Jei manote, kad paskyra pasiekta be jūsų žinios, nedelsdami pakeiskite prisijungimą ir praneškite mums.</li><li>Ridu niekada neprašys jūsų slaptažodžio, patvirtinimo kodo ar banko duomenų žinute ar telefonu.</li></ul>"},{"h":"4. Kaip veikia paieška ir susitarimas","html":"<ol><li>Klientas paskelbia užklausą. Kiti naudotojai mato tik pašto kodą, laiką ir keleivių skaičių, bet ne tikslų adresą ir ne vardą.</li><li>Vairuotojai pasisiūlo su kaina. Vairuotojas taip pat gali paskelbti savo pastovų maršrutą.</li><li>Kai klientas sutinka kontaktuoti, atsiveria pokalbis. Tikslų adresą klientas pasako pats, kai nori.</li><li>Dėl kainos, laiko, mokėjimo ir kitų sąlygų šalys susitaria pačios ir sudaro sutartį. Pro plane galima naudotis sutarties šablonu.</li></ol><p>Pasiūlymų tvarka. Užklausos ir pasiūlymai rikiuojami pagal atstumą tarp pašto kodų, laiką ir paskelbimo datą. Pro plano naudotojų užklausos ir pasiūlymai gali būti rodomi aukščiau. Tokie įrašai pažymimi žyma „Iškelta“. Ridu nevertina ir nerikiuoja vairuotojų pagal tai, kiek kelionių jie priima ar atsisako.</p>"},{"h":"5. Ką reiškia ženklelis „Patikimas ir patikrintas vairuotojas“","html":"<p>Ženklelį gauna vairuotojas, kurio LTSA pavėžėjimo leidimą ir su juo susietą automobilį patikrinome pagal viešus LTSA duomenis, o nuotraukas peržiūrėjome. Patikra daroma registruojantis ir vėliau periodiškai.</p><p>Ženklelis nėra garantija, kad kelionė praeis be problemų. Prieš sudarydami sutartį pasikalbėkite su vairuotoju, o vaiko atveju susitikite.</p>"},{"h":"6. Kliento teisės ir pareigos","html":"<p>Klientas turi teisę:</p><ul><li>nemokamai skelbti užklausas pagal savo planą, rinktis vairuotoją ar atsisakyti visų pasiūlymų;</li><li>bet kada nutraukti pokalbį ir užblokuoti naudotoją;</li><li>pranešti apie pažeidimą ir gauti atsakymą.</li></ul><p>Klientas privalo:</p><ul><li>nurodyti teisingą informaciją apie kelionę ir keleivius;</li><li>užsakydamas kitam suaugusiajam, gauti jo sutikimą;</li><li>užsakydamas vaikui, būti jo tėvu, motina ar kitu teisėtu atstovu arba turėti jų sutikimą;</li><li>vykdyti su vairuotoju sudarytą sutartį ir sumokėti sutartą kainą tiesiogiai vairuotojui.</li></ul>"},{"h":"7. Vairuotojo teisės ir pareigos","html":"<p>Vairuotojas turi teisę:</p><ul><li>pats spręsti, ar, kada ir kiek vežti, kokią kainą siūlyti ir kurias užklausas praleisti;</li><li>tuo pat metu dirbti per kitas platformas ar savarankiškai;</li><li>gauti paaiškinimą, jei jo profilis apribojamas, ir šį sprendimą apskųsti.</li></ul><p>Vairuotojas privalo:</p><ul><li>vežti tik turėdamas galiojantį LTSA pavėžėjimo leidimą ir tik jame nurodytu automobiliu, o leidimui pasibaigus ar pasikeitus automobiliui tą pačią dieną atnaujinti duomenis Ridu;</li><li>turėti galiojantį privalomąjį civilinės atsakomybės draudimą, tinkamą keleivių vežimui už atlygį, ir tvarkingą automobilį su galiojančia technine apžiūra;</li><li>vežti vaikus tik tinkamose saugos kėdutėse ar paaukštinimuose pagal Kelių eismo taisykles;</li><li>laikytis Kelių eismo taisyklių ir darbo bei poilsio režimo, nevairuoti pavargęs ar apsvaigęs;</li><li>savarankiškai deklaruoti pajamas ir mokėti mokesčius;</li><li>klientams, kurie yra vartotojai, suteikti visą įstatymų reikalaujamą informaciją: savo vardą, pavardę, veiklos pažymos numerį, kontaktus, kainą ir sąlygas;</li><li>naudoti tik savo nuotraukas ir tikras automobilio nuotraukas.</li></ul><p>Vairuotojas yra savarankiškas vežėjas. Jis nėra Ridu darbuotojas ar atstovas ir negali veikti Ridu vardu.</p>"},{"h":"8. Vaikų kelionės","html":"<ul><li>Prieš pirmą vaiko kelionę klientas ir vairuotojas susitinka.</li><li>Vaikas perduodamas tik sutartyje nurodytam suaugusiajam ar įstaigai, nebent tėvai raštu leido paleisti vaiką vieną.</li><li>Klientas nurodo vaiko ūgį ir amžių, kad būtų parinkta tinkama kėdutė.</li><li>Ridu nesprendžia tėvų ginčų. Jei vaiką užsako vienas iš tėvų, jis atsako už tai, kad turi teisę tai daryti.</li></ul>"},{"h":"9. Draudžiama","html":"<p>Platformoje draudžiama:</p><ul><li>apsimesti kitu asmeniu, naudoti svetimas ar suklastotas nuotraukas, leidimus ar dokumentus;</li><li>vežti be galiojančio leidimo ar kitu automobiliu nei nurodytas leidime;</li><li>prašyti išankstinio mokėjimo prieš pirmą susitikimą ar kelionę, siųsti mokėjimo nuorodas, prašyti kodų ar banko duomenų;</li><li>skelbti netikras užklausas ar pasiūlymus, rinkti kitų naudotojų duomenis, juos kopijuoti ar naudoti reklamai;</li><li>kurti kelias paskyras, naudotis užblokuoto asmens paskyra ar perleisti paskyrą kitam;</li><li>grasinti, įžeidinėti, priekabiauti, diskriminuoti ar elgtis smurtiškai;</li><li>siūlyti ar prašyti neteisėtų paslaugų, pavyzdžiui, vežti draudžiamus daiktus;</li><li>naudoti robotus, automatinį duomenų rinkimą ar bandyti pažeisti sistemos saugumą;</li><li>rašyti netikrus atsiliepimus.</li></ul><p>Daugiau patarimų rasite skiltyje „Saugumas ir draudžiamas elgesys“.</p>"},{"h":"10. Pranešimai apie pažeidimus","html":"<p>Apie neteisėtą turinį ar elgesį praneškite mygtuku „Pranešti“ pokalbyje ar profilyje arba el. paštu info@ridu.lt. Nurodykite, kas ir kodėl yra pažeidimas, ir kur jį rasti.</p><p>Pranešimus peržiūrime nedelsdami, o skubius (susijusius su vaikų ar žmonių saugumu) – pirmiausia. Pranešusiam asmeniui pranešame, ką nusprendėme.</p><p>Jei yra grėsmė žmogaus gyvybei ar saugumui, skambinkite 112. Apie tokius atvejus taip pat informuojame teisėsaugą.</p>"},{"h":"11. Ką Ridu gali daryti dėl pažeidimų","html":"<p>Pagal pažeidimo sunkumą galime:</p><ul><li>įspėti;</li><li>paslėpti ar pašalinti užklausą, pasiūlymą, nuotrauką ar žinutę;</li><li>laikinai apriboti paskyrą ar jos matomumą;</li><li>sustabdyti paskyrą, kol išsiaiškinsime aplinkybes;</li><li>panaikinti paskyrą ir neleisti kurti naujos.</li></ul><p>Kiekvieną sprendimą paaiškiname: kas nuspręsta, kodėl, kuo remtasi ir kaip jį apskųsti. Išimtis – kai teisėsauga prašo neinformuoti.</p><p>Vairuotojo paskyrą visam laikui panaikiname įspėję prieš 30 dienų. Iš karto galime veikti, jei to reikalauja teisės aktai, jei yra grėsmė žmonių saugumui, sukčiavimas, suklastoti dokumentai, negaliojantis leidimas ar pakartotiniai pažeidimai.</p><p>Apie galimai neteisėtą veiklą, pavyzdžiui, suklastotus dokumentus ar sukčiavimą, galime pranešti LTSA, policijai ar kitoms institucijoms.</p>"},{"h":"12. Mokami planai","html":"<ul><li>Planai Plus ir Pro yra mėnesio prenumerata. Kaina nurodoma prieš užsakant, su PVM, jei jis taikomas.</li><li>Prenumerata pratęsiama automatiškai kas mėnesį, kol ją atšauksite. Atšaukti galite bet kada skiltyje „Planai“, ir ji baigsis apmokėto laikotarpio pabaigoje.</li><li>Klientas vartotojas per 14 dienų nuo užsakymo gali atsisakyti plano mygtuku „Atsisakyti sutarties“ be priežasties. Jei paprašėte, kad planas veiktų iš karto, grąžiname sumą, proporcingą nepanaudotam laikui.</li><li>Kainas galime keisti įspėję prieš 30 dienų. Jei nesutinkate, galite atšaukti prenumeratą.</li><li>Plano mokestis yra mokestis Ridu už platformos funkcijas. Tai nėra mokestis už keliones ir nesuteikia teisės į keliones.</li></ul>"},{"h":"13. Atsakomybė","html":"<p>Ridu atsako už platformos veikimą ir už tai, kad laikytųsi šių taisyklių ir teisės aktų.</p><p>Ridu neatsako už:</p><ul><li>vežimą, jo kokybę, vėlavimą, kelionės metu padarytą žalą ar sužalojimą: už tai atsako vežėjas ir jo draudikas;</li><li>sutartis tarp kliento ir vairuotojo, jų vykdymą ir mokėjimus;</li><li>naudotojų pateiktą informaciją, kurios neteisėtumo nežinojome; sužinoję tokią informaciją nedelsiant pašaliname;</li><li>trumpus platformos veikimo sutrikimus dėl priežiūros ar nuo mūsų nepriklausančių aplinkybių.</li></ul><p>Jei Ridu atsako už žalą, atsakomybė ribojama suma, kurią per paskutinius 12 mėnesių sumokėjote Ridu, bet ne mažiau kaip 100 €. Šis ribojimas netaikomas, jei žala padaryta tyčia ar dėl didelio neatsargumo, jei sužalota gyvybė ar sveikata, ir kitais atvejais, kai įstatymas neleidžia riboti atsakomybės.</p><p>Šios taisyklės neriboja teisių, kurias vartotojams suteikia įstatymai.</p>"},{"h":"14. Vairuotojo atsakomybė Ridu","html":"<p>Jei trečiasis asmuo ar institucija pareiškia Ridu reikalavimą dėl to, kad vairuotojas pažeidė šias taisykles ar įstatymus (pavyzdžiui, vežė be leidimo ar draudimo), vairuotojas atlygina Ridu dėl to patirtus nuostolius ir pagrįstas teisines išlaidas.</p>"},{"h":"15. Turinys ir nuotraukos","html":"<p>Įkeltos nuotraukos ir tekstai lieka jūsų. Įkeldami suteikiate Ridu teisę juos rodyti kitiems naudotojams platformoje, kol turite paskyrą. Įkelkite tik tai, ką turite teisę skelbti.</p>"},{"h":"16. Skundai ir ginčai","html":"<ul><li>Skundą dėl Ridu sprendimo ar paslaugos galite pateikti per 6 mėnesius mygtuku „Pateikti skundą“ arba el. paštu info@ridu.lt. Atsakome per 14 dienų.</li><li>Klientas vartotojas, jei nesutariame, gali kreiptis į Valstybinę vartotojų teisių apsaugos tarnybą (vvtat.lrv.lt).</li><li>Ginčus su vairuotoju dėl kelionės sprendžiate tiesiogiai su juo. Ridu gali padėti susisiekti ir pateikti pokalbio istoriją, jei to prašo institucija ar teismas.</li><li>Taikoma Lietuvos Respublikos teisė. Ginčai sprendžiami Lietuvos teismuose. Vartotojai išsaugo visas savo gyvenamosios šalies įstatymų suteiktas apsaugas.</li></ul>"},{"h":"17. Taisyklių keitimas","html":"<p>Apie pakeitimus pranešame programėlėje ir el. paštu ne vėliau kaip prieš 15 dienų. Jei pakeitimai jums nepriimtini, galite nutraukti naudojimąsi ir ištrinti paskyrą. Skubiai keisti galime tik tada, kai to reikalauja įstatymas ar saugumas.</p>"},{"h":"18. Paskyros ištrynimas","html":"<p>Paskyrą galite ištrinti bet kada nustatymuose. Kai kuriuos duomenis saugome ilgiau, jei to reikia pagal įstatymą ar ginčui spręsti (žr. Privatumo politiką).</p>"},{"h":"19. Kalba","html":"<p>Taisyklės pateikiamos lietuvių ir anglų kalbomis. Jei tarp jų yra skirtumų, vadovaujamasi lietuviška versija.</p>"}]},"privacy":{"t":"Ridu privatumo politika","v":"2026-11-25","sections":[{"h":"1. Kas tvarko jūsų duomenis","html":"<p>Duomenų valdytojas: MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas info@ridu.lt. Klausimais apie duomenis rašykite info@ridu.lt.</p>"},{"h":"2. Kokius duomenis renkame","html":"<p>Visų naudotojų:</p><ul><li>vardą, el. paštą, telefono numerį, prisijungimo ir saugumo duomenis (pvz. prisijungimo laiką, įrenginio tipą, IP adresą);</li><li>žinutes, pasiūlymus ir susitarimus pokalbiuose;</li><li>pranešimus apie pažeidimus ir skundus;</li><li>plano ir mokėjimo už planą informaciją (banko kortelės duomenų nesaugome, juos tvarko mokėjimų paslaugų teikėjas).</li></ul><p>Klientų:</p><ul><li>kelionių adresus, iš kurių nustatome pašto kodą, laiką ir dienas;</li><li>keleivių skaičių, tipą (vaikas, suaugęs, senjoras), vaiko amžių ar ūgį, jei reikia kėdutės, ir pastabas vairuotojui.</li></ul><p>Vairuotojų:</p><ul><li>vardą, pavardę, veiklos pažymos numerį, LTSA leidimo numerį, automobilio valstybinį numerį ir patikros rezultatą;</li><li>savo ir automobilio nuotraukas.</li></ul><p>Mes nerenkame sveikatos duomenų ir dokumentų kopijų. Pastabose prašome nerašyti daugiau, nei reikia kelionei.</p>"},{"h":"3. Kam ir kuo remdamiesi naudojame","html":"<table><thead><tr><th>Tikslas</th><th>Teisinis pagrindas</th></tr></thead><tbody><tr><td>Paskyra, užklausos, pasiūlymai, pokalbiai</td><td>Sutarties vykdymas (BDAR 6 str. 1 d. b p.)</td></tr><tr><td>Vairuotojų LTSA leidimo ir nuotraukų patikra</td><td>Teisėtas interesas užtikrinti saugumą ir išvengti sukčiavimo (f p.)</td></tr><tr><td>Sukčiavimo, pažeidimų prevencija, pranešimų nagrinėjimas</td><td>Teisėtas interesas (f p.) ir teisinė prievolė pagal Skaitmeninių paslaugų aktą (c p.)</td></tr><tr><td>Mokami planai, sąskaitos, apskaita</td><td>Sutarties vykdymas ir teisinė prievolė (b ir c p.)</td></tr><tr><td>Atsakymai institucijoms (pvz. teisėsaugai, VMI)</td><td>Teisinė prievolė (c p.)</td></tr><tr><td>Naujienos el. paštu</td><td>Jūsų sutikimas (a p.), jį galite atšaukti bet kada</td></tr></tbody></table><p>Automatizuotų sprendimų, kurie jums turėtų teisinių pasekmių, nepriimame. Paskyrų apribojimus visada peržiūri žmogus.</p>"},{"h":"4. Kas mato jūsų duomenis","html":"<ul><li>Kiti naudotojai mato tik tiek, kiek reikia susitarti. Kol klientas nesutinka kontaktuoti, vairuotojas mato tik pašto kodą, laiką ir keleivių skaičių. Tikslų adresą vairuotojas mato tik kai klientas juo pasidalina pokalbyje.</li><li>Klientai mato vairuotojo vardą, patvirtintas nuotraukas ir patikros ženklelį. Leidimo numerio klientams nerodome.</li><li>Paslaugų teikėjai, kurie mums padeda: duomenų saugojimas ir serveriai (Supabase, Vercel), el. laiškų siuntimas, mokėjimai už planus. Jie duomenis tvarko tik mūsų nurodymu pagal sutartis.</li><li>Institucijos, jei to reikalauja įstatymas (pvz. teisėsauga, LTSA, VMI).</li></ul><p>Duomenis saugome Europos Sąjungoje. Jei paslaugų teikėjas duomenis perduoda už ES ribų, taikomos Europos Komisijos patvirtintos apsaugos priemonės (pvz. standartinės sutarčių sąlygos).</p>"},{"h":"5. Kiek laiko saugome","html":"<ul><li>Paskyros duomenis – kol turite paskyrą.</li><li>Užklausas ir pokalbius – 12 mėnesių po paskutinės žinutės, kad būtų galima išspręsti ginčus.</li><li>Tikslius adresus – kol galioja užklausa, vėliau lieka tik pašto kodas.</li><li>Duomenis apie pažeidimus, užblokuotas paskyras ir sukčiavimą – 3 metus.</li><li>Apskaitos dokumentus – 10 metų, kaip reikalauja įstatymas.</li><li>Ištrynus paskyrą duomenys ištrinami per 30 dienų, išskyrus tuos, kuriuos privalome saugoti ilgiau.</li></ul>"},{"h":"6. Vaikų duomenys","html":"<p>Vaikai paskyrų nekuria. Vaiko duomenis pateikia tėvai ar kiti teisėti atstovai ir tik tiek, kiek reikia saugiai kelionei: amžių ar ūgį kėdutei, vardą perdavimui. Vaiko duomenys vairuotojui rodomi tik po kliento sutikimo kontaktuoti.</p>"},{"h":"7. Jūsų teisės","html":"<p>Jūs galite:</p><ul><li>gauti savo duomenų kopiją;</li><li>ištaisyti netikslius duomenis;</li><li>ištrinti duomenis ar paskyrą;</li><li>apriboti duomenų tvarkymą ar jam prieštarauti;</li><li>gauti duomenis perkeliamu formatu;</li><li>atšaukti sutikimą.</li></ul><p>Rašykite info@ridu.lt. Atsakome per 1 mėnesį. Jei manote, kad pažeidėme jūsų teises, galite kreiptis į Valstybinę duomenų apsaugos inspekciją (vdai.lrv.lt).</p>"},{"h":"8. Saugumas","html":"<p>Naudojame šifruotą ryšį, prieigos ribojimą duomenų bazėje, dviejų veiksnių prisijungimą vairuotojams ir administravimui. Darbuotojai mato tik tai, ko reikia jų darbui.</p>"},{"h":"9. Slapukai","html":"<p>Naudojame tik būtinus slapukus prisijungimui ir saugumui. Statistikos ar reklamos slapukus naudotume tik gavę jūsų sutikimą.</p>"},{"h":"10. Pakeitimai","html":"<p>Apie esminius šios politikos pakeitimus pranešime programėlėje.</p>"},{"h":"11. Kalba","html":"<p>Politika pateikiama lietuvių ir anglų kalbomis. Jei tarp jų yra skirtumų, vadovaujamasi lietuviška versija.</p>"}]},"safety":{"t":"Saugumas ir draudžiamas elgesys","v":"2026-11-25","sections":[{"h":"Kaip apsisaugoti nuo apgaulės","html":"<ul><li>Nemokėkite iš anksto nepažįstamam žmogui prieš pirmą susitikimą ar kelionę.</li><li>Nespauskite mokėjimo nuorodų, gautų žinutėmis. Ridu neima mokesčio už keliones.</li><li>Niekam nesakykite prisijungimo kodo, slaptažodžio ar banko duomenų. Ridu jų niekada neprašo.</li><li>Bendraukite Ridu pokalbyje, kol susitariate. Tada lieka susirašinėjimo istorija, jei kiltų ginčas.</li><li>Patikrinkite, ar automobilis ir vairuotojas atitinka nuotraukas. Jei ne, nesėskite ir praneškite mums.</li><li>Prieš pirmą vaiko kelionę susitikite su vairuotoju.</li><li>Sutartį sudarykite raštu. Joje įrašykite vairuotojo vardą, pavardę ir veiklos pažymos numerį.</li></ul>"},{"h":"Kas draudžiama","html":"<ul><li>Apsimesti kitu, naudoti svetimas nuotraukas ar suklastotus dokumentus.</li><li>Vežti be galiojančio LTSA leidimo ar kitu automobiliu.</li><li>Prašyti išankstinio mokėjimo, kodų ar banko duomenų.</li><li>Skelbti netikras užklausas, pasiūlymus ar atsiliepimus.</li><li>Kurti kelias paskyras ar naudotis užblokuoto asmens paskyra.</li><li>Grasinti, įžeidinėti, priekabiauti ar diskriminuoti.</li><li>Rinkti kitų naudotojų duomenis ar naudoti juos kitiems tikslams.</li></ul>"},{"h":"Kas nutinka pažeidus","html":"<p>Pagal pažeidimą įspėjame, paslepiame turinį, apribojame ar panaikiname paskyrą. Sukčiavimo ir suklastotų dokumentų atvejais paskyrą sustabdome iš karto ir galime pranešti policijai ar LTSA. Kiekvieną sprendimą paaiškiname, o jį galite apskųsti.</p>"},{"h":"Kaip pranešti","html":"<p>Spauskite „Pranešti“ pokalbyje ar profilyje. Jei kyla grėsmė žmogaus gyvybei ar saugumui, skambinkite 112.</p>"}]}},"en":{"terms":{"t":"Ridu Terms of Use","v":"2026-11-25","sections":[{"h":"1. What Ridu is","html":"<p>Ridu is an online search platform. It helps people who need a ride for themselves, a child or a relative (clients) find drivers who hold an LTSA ride-hailing permit (drivers) and come to an agreement with them.</p><p>The platform is operated by MB „Įmonių veiklos analizė“, company code 307404233, registered office Giedraičių g. 39, R53, LT-09302 Vilnius, Lithuania, phone +370 649 94125, email info@ridu.lt (Ridu, we).</p><p>Ridu does not carry passengers, set prices, accept payments for rides or assign drivers. The ride contract is concluded directly between the client and the driver. Ridu is not a party to that contract and is not responsible for its performance.</p>"},{"h":"2. Who may use Ridu","html":"<ul><li>Only adults (18 or older) with full legal capacity may use Ridu. Children do not create accounts: parents or other legal guardians book for them.</li><li>One person may have only one client account and one driver account.</li><li>When registering, you provide true data about yourself and keep it up to date.</li><li>Only a person who holds a valid LTSA ride-hailing permit naming the vehicle, a driving licence and a registered business activity (for example, self-employment) may be a driver. Drivers deal with clients as traders.</li></ul>"},{"h":"3. Account and security","html":"<ul><li>Keep your login details safe and do not share them. You are responsible for actions in your account.</li><li>If you think someone accessed your account without your knowledge, change your login at once and tell us.</li><li>Ridu will never ask for your password, verification code or bank details by message or phone.</li></ul>"},{"h":"4. How search and agreement work","html":"<ol><li>The client posts a request. Other users see only the postal code, time and number of passengers, not the exact address or name.</li><li>Drivers respond with a price. A driver may also publish a regular route.</li><li>When the client agrees to be contacted, a chat opens. The client shares the exact address when they choose.</li><li>The parties agree on price, time, payment and other terms themselves and conclude a contract. A contract template is available on the Pro plan.</li></ol><p>Order of offers. Requests and offers are ordered by distance between postal codes, time and date posted. Requests and offers of Pro plan users may be shown higher. Such entries are marked “Boosted”. Ridu does not rate or rank drivers by how many rides they accept or decline.</p>"},{"h":"5. What the “Trusted and verified driver” badge means","html":"<p>The badge is given to a driver whose LTSA ride-hailing permit and linked vehicle we checked against public LTSA data and whose photos we reviewed. The check is made at registration and periodically afterwards.</p><p>The badge does not guarantee that a ride will go without problems. Talk to the driver before concluding a contract, and meet them in the case of a child.</p>"},{"h":"6. Client rights and obligations","html":"<p>The client has the right to:</p><ul><li>post requests free of charge within their plan, choose a driver or decline all offers;</li><li>end a chat and block a user at any time;</li><li>report a violation and receive a response.</li></ul><p>The client must:</p><ul><li>give correct information about the ride and passengers;</li><li>when booking for another adult, obtain their consent;</li><li>when booking for a child, be the child’s parent or other legal guardian or have their consent;</li><li>perform the contract concluded with the driver and pay the agreed price directly to the driver.</li></ul>"},{"h":"7. Driver rights and obligations","html":"<p>The driver has the right to:</p><ul><li>decide whether, when and how much to drive, what price to offer and which requests to skip;</li><li>work through other platforms or independently at the same time;</li><li>receive an explanation if their profile is restricted and appeal the decision.</li></ul><p>The driver must:</p><ul><li>carry passengers only with a valid LTSA ride-hailing permit and only in the vehicle named in it, and update their data on Ridu the same day the permit expires or the vehicle changes;</li><li>hold valid compulsory motor third-party liability insurance suitable for carrying passengers for payment, and keep the vehicle roadworthy with a valid technical inspection;</li><li>carry children only in suitable child seats or boosters as required by the Road Traffic Rules;</li><li>follow the Road Traffic Rules and rest requirements, and never drive tired or impaired;</li><li>declare income and pay taxes themselves;</li><li>give clients who are consumers all information required by law: name, surname, business certificate number, contact details, price and terms;</li><li>use only their own photos and real photos of the vehicle.</li></ul><p>The driver is an independent carrier. The driver is not an employee or representative of Ridu and may not act on Ridu’s behalf.</p>"},{"h":"8. Rides for children","html":"<ul><li>Before a child’s first ride, the client and the driver meet.</li><li>A child is handed over only to the adult or institution named in the contract, unless the parents allowed in writing that the child may leave alone.</li><li>The client states the child’s height and age so that a suitable seat is used.</li><li>Ridu does not resolve disputes between parents. A parent who books for a child is responsible for having the right to do so.</li></ul>"},{"h":"9. Prohibited conduct","html":"<p>On the platform it is prohibited to:</p><ul><li>impersonate another person or use someone else’s or forged photos, permits or documents;</li><li>carry passengers without a valid permit or in a vehicle other than the one named in the permit;</li><li>ask for advance payment before the first meeting or ride, send payment links, or ask for codes or bank details;</li><li>post fake requests or offers, collect other users’ data, copy it or use it for advertising;</li><li>create several accounts, use a blocked person’s account or transfer an account to someone else;</li><li>threaten, insult, harass, discriminate or behave violently;</li><li>offer or request illegal services, such as carrying prohibited items;</li><li>use bots or automated data collection, or attempt to breach system security;</li><li>write fake reviews.</li></ul><p>More tips are in “Safety and prohibited conduct”.</p>"},{"h":"10. Reporting violations","html":"<p>Report illegal content or conduct with the “Report” button in the chat or profile, or by email at info@ridu.lt. Say what the violation is, why, and where to find it.</p><p>We review reports without delay, urgent ones (concerning the safety of children or people) first. We tell the person who reported what we decided.</p><p>If someone’s life or safety is at risk, call 112. We also inform law enforcement of such cases.</p>"},{"h":"11. What Ridu may do about violations","html":"<p>Depending on how serious the violation is, we may:</p><ul><li>give a warning;</li><li>hide or remove a request, offer, photo or message;</li><li>temporarily restrict an account or its visibility;</li><li>suspend an account while we clarify the circumstances;</li><li>close an account and refuse a new one.</li></ul><p>We explain every decision: what was decided, why, on what basis and how to appeal. The exception is where law enforcement asks us not to inform.</p><p>We close a driver account permanently with 30 days’ notice. We may act at once where the law requires it, where people’s safety is at risk, or in cases of fraud, forged documents, an invalid permit or repeated violations.</p><p>We may report possibly illegal activity, such as forged documents or fraud, to LTSA, the police or other authorities.</p>"},{"h":"12. Paid plans","html":"<ul><li>Plus and Pro are monthly subscriptions. The price is shown before ordering, including VAT where it applies.</li><li>The subscription renews automatically each month until you cancel it. You may cancel at any time in “Plans”, and it ends at the end of the paid period.</li><li>A client who is a consumer may withdraw from the plan within 14 days of ordering without giving a reason, using the “Withdraw from contract” button. If you asked for the plan to start at once, we refund the amount for the unused time.</li><li>We may change prices with 30 days’ notice. If you disagree, you may cancel the subscription.</li><li>The plan fee is a fee to Ridu for platform features. It is not a fee for rides and gives no right to rides.</li></ul>"},{"h":"13. Liability","html":"<p>Ridu is responsible for the operation of the platform and for complying with these terms and the law.</p><p>Ridu is not responsible for:</p><ul><li>the ride, its quality, delays, or damage or injury during the ride: the carrier and their insurer are responsible for that;</li><li>contracts between client and driver, their performance and payments;</li><li>information posted by users whose illegality we were not aware of; once we become aware of such information, we remove it without delay;</li><li>short platform outages due to maintenance or circumstances beyond our control.</li></ul><p>Where Ridu is liable for damage, liability is limited to the amount you paid Ridu in the last 12 months, but not less than 100 €. This limit does not apply to damage caused intentionally or by gross negligence, to harm to life or health, or in other cases where the law does not allow liability to be limited.</p><p>These terms do not limit the rights that the law gives consumers.</p>"},{"h":"14. Driver’s liability to Ridu","html":"<p>If a third party or authority brings a claim against Ridu because a driver breached these terms or the law (for example, drove without a permit or insurance), the driver compensates Ridu for the resulting losses and reasonable legal costs.</p>"},{"h":"15. Content and photos","html":"<p>Photos and texts you upload remain yours. By uploading them, you allow Ridu to show them to other users on the platform for as long as you have an account. Upload only what you have the right to publish.</p>"},{"h":"16. Complaints and disputes","html":"<ul><li>You may submit a complaint about a Ridu decision or service within 6 months using the “Submit a complaint” button or by email at info@ridu.lt. We reply within 14 days.</li><li>A client who is a consumer may, if we cannot agree, apply to the State Consumer Rights Protection Authority of Lithuania (vvtat.lrv.lt).</li><li>Disputes with a driver about a ride are settled directly with the driver. Ridu may help to get in touch and provide the chat history if an authority or court asks for it.</li><li>Lithuanian law applies. Disputes are settled in Lithuanian courts. Consumers keep all protections given by the laws of their country of residence.</li></ul>"},{"h":"17. Changes to the terms","html":"<p>We announce changes in the app and by email at least 15 days in advance. If you do not accept the changes, you may stop using Ridu and delete your account. We may change the terms urgently only where the law or safety requires it.</p>"},{"h":"18. Deleting your account","html":"<p>You may delete your account at any time in settings. We keep some data longer where the law or a dispute requires it (see the Privacy Policy).</p>"},{"h":"19. Language","html":"<p>These terms are available in Lithuanian and English. If the versions differ, the Lithuanian version prevails.</p>"}]},"privacy":{"t":"Ridu Privacy Policy","v":"2026-11-25","sections":[{"h":"1. Who processes your data","html":"<p>Data controller: MB „Įmonių veiklos analizė“, company code 307404233, registered office Giedraičių g. 39, R53, LT-09302 Vilnius, Lithuania, phone +370 649 94125, email info@ridu.lt. For questions about your data, write to info@ridu.lt.</p>"},{"h":"2. What data we collect","html":"<p>From all users:</p><ul><li>name, email, phone number, login and security data (such as login time, device type, IP address);</li><li>messages, offers and agreements in chats;</li><li>reports of violations and complaints;</li><li>plan and plan payment information (we do not store card details; the payment service provider handles them).</li></ul><p>From clients:</p><ul><li>ride addresses, from which we derive the postal code, time and days;</li><li>number and type of passengers (child, adult, senior), the child’s age or height if a seat is needed, and notes for the driver.</li></ul><p>From drivers:</p><ul><li>name, surname, business certificate number, LTSA permit number, vehicle registration number and the result of the check;</li><li>photos of themselves and the vehicle.</li></ul><p>We do not collect health data or copies of documents. Please write no more in notes than the ride needs.</p>"},{"h":"3. Why and on what basis we use it","html":"<table><thead><tr><th>Purpose</th><th>Legal basis</th></tr></thead><tbody><tr><td>Account, requests, offers, chats</td><td>Performance of a contract (GDPR Art. 6(1)(b))</td></tr><tr><td>Checking drivers’ LTSA permits and photos</td><td>Legitimate interest in safety and fraud prevention (Art. 6(1)(f))</td></tr><tr><td>Preventing fraud and violations, handling reports</td><td>Legitimate interest (f) and legal obligation under the Digital Services Act (c)</td></tr><tr><td>Paid plans, invoices, accounting</td><td>Performance of a contract and legal obligation (b and c)</td></tr><tr><td>Responding to authorities (e.g. law enforcement, tax authority)</td><td>Legal obligation (c)</td></tr><tr><td>News by email</td><td>Your consent (a), which you may withdraw at any time</td></tr></tbody></table><p>We do not make automated decisions with legal effects on you. A person always reviews account restrictions.</p>"},{"h":"4. Who sees your data","html":"<ul><li>Other users see only what is needed to agree. Until the client agrees to be contacted, the driver sees only the postal code, time and number of passengers. The driver sees the exact address only when the client shares it in the chat.</li><li>Clients see the driver’s first name, approved photos and the verification badge. We do not show the permit number to clients.</li><li>Service providers who help us: data storage and servers (Supabase, Vercel), email delivery, plan payments. They process data only on our instructions under contracts.</li><li>Authorities, where the law requires (e.g. law enforcement, LTSA, the tax authority).</li></ul><p>We store data in the European Union. If a service provider transfers data outside the EU, safeguards approved by the European Commission apply (e.g. standard contractual clauses).</p>"},{"h":"5. How long we keep it","html":"<ul><li>Account data: for as long as you have an account.</li><li>Requests and chats: 12 months after the last message, so that disputes can be resolved.</li><li>Exact addresses: while the request is active; afterwards only the postal code remains.</li><li>Data on violations, blocked accounts and fraud: 3 years.</li><li>Accounting documents: 10 years, as the law requires.</li><li>After you delete your account, data is deleted within 30 days, except data we must keep longer.</li></ul>"},{"h":"6. Children’s data","html":"<p>Children do not create accounts. A child’s data is provided by parents or other legal guardians, and only as much as a safe ride needs: age or height for the seat, first name for the handover. A child’s data is shown to the driver only after the client agrees to be contacted.</p>"},{"h":"7. Your rights","html":"<p>You may:</p><ul><li>get a copy of your data;</li><li>correct inaccurate data;</li><li>delete data or your account;</li><li>restrict or object to processing;</li><li>receive data in a portable format;</li><li>withdraw consent.</li></ul><p>Write to info@ridu.lt. We reply within 1 month. If you think we have breached your rights, you may complain to the State Data Protection Inspectorate of Lithuania (vdai.lrv.lt).</p>"},{"h":"8. Security","html":"<p>We use encrypted connections, access restrictions in the database, and two-factor login for drivers and administration. Staff see only what their work requires.</p>"},{"h":"9. Cookies","html":"<p>We use only cookies necessary for login and security. We would use statistics or advertising cookies only with your consent.</p>"},{"h":"10. Changes","html":"<p>We will announce material changes to this policy in the app.</p>"},{"h":"11. Language","html":"<p>This policy is available in Lithuanian and English. If the versions differ, the Lithuanian version prevails.</p>"}]},"safety":{"t":"Safety and prohibited conduct","v":"2026-11-25","sections":[{"h":"How to protect yourself from fraud","html":"<ul><li>Do not pay a stranger in advance before the first meeting or ride.</li><li>Do not click payment links received in messages. Ridu charges no fee for rides.</li><li>Never share your login code, password or bank details. Ridu never asks for them.</li><li>Keep talking in the Ridu chat until you agree. That way the conversation history stays if a dispute arises.</li><li>Check that the vehicle and driver match the photos. If they do not, do not get in and report it to us.</li><li>Meet the driver before a child’s first ride.</li><li>Make the contract in writing. Include the driver’s name, surname and business certificate number.</li></ul>"},{"h":"What is prohibited","html":"<ul><li>Impersonating someone, using someone else’s photos or forged documents.</li><li>Carrying passengers without a valid LTSA permit or in another vehicle.</li><li>Asking for advance payment, codes or bank details.</li><li>Posting fake requests, offers or reviews.</li><li>Creating several accounts or using a blocked person’s account.</li><li>Threatening, insulting, harassing or discriminating.</li><li>Collecting other users’ data or using it for other purposes.</li></ul>"},{"h":"What happens after a violation","html":"<p>Depending on the violation, we warn, hide content, restrict or close the account. In cases of fraud or forged documents we suspend the account at once and may inform the police or LTSA. We explain every decision, and you may appeal it.</p>"},{"h":"How to report","html":"<p>Tap “Report” in the chat or profile. If someone’s life or safety is at risk, call 112.</p>"}]}}};
 /* LEGAL:END */
 I.flag = '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.07-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.53"/>';
+const LEGAL_VER = '2026-11-25';
 const LG = {
-  ok:{client:false, driver:false},
+  ok:(()=>{ try { const v = JSON.parse(localStorage.getItem('ridu-consent')||'{}'); return v.ver===LEGAL_VER ? v : {}; } catch { return {}; } })(), // {base, driver}
   cancelled:{client:null, driver:null},   // atšauktas planas veikia iki laikotarpio pabaigos   // ar priimtos taisyklės (tikroje versijoje saugoma su versija ir data)
   reports:[{id:'rp1', who:'Andrius', by:'Klientas', reason:0, text:'Prieš susitikimą prašė pervesti 50 € avansą į sąskaitą.', at:'2026-11-24', st:'new'}]
 };
@@ -1144,25 +1266,33 @@ const ACT_TXT = {warn:'Naudotojas įspėtas', hide:'Turinys paslėptas', suspend
 const legalDoc = k => LEGAL[typeof LANG !== 'undefined' ? LANG : 'lt']?.[k] || LEGAL.lt[k];
 const openDoc = k => { ovReturn=null; ovl.innerHTML=''; S.open={kind:'legal', id:k}; render(); };
 
-/* Prieš pirmą naudojimą: taisyklių priėmimas (atskiri, iš anksto nepažymėti laukeliai) */
-function legalGate(){
+/* Taisyklių priėmimas tik prieš pirmą svarbų veiksmą (užklausa, pasisiūlymas, pokalbis, planas, maršrutas).
+   Naršyti galima laisvai. Vairuotojo papildomi patvirtinimai – prieš pirmą pasisiūlymą ar maršrutą. Atskiri, iš anksto nepažymėti laukeliai. */
+function consent(kind, then, why){
+  if(S.role==='owner') return true;
+  const need = kind==='driver' ? GATE.driver.filter(([k]) => !GATE_BASE.some(([b]) => b===k) ? !LG.ok.driver : !LG.ok.base) : (LG.ok.base ? [] : GATE_BASE);
+  if(!need.length) return true;
+  legalGate(need, kind, then, why); return false;
+}
+function legalGate(items, kind, then, why){
   const r = S.role;
-  if(r==='owner' || LG.ok[r] || ovl.innerHTML || S.open?.kind==='legal') return;
   ovReturn = null;
   ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="lg-t"><form class="card" id="lg" novalidate style="text-align:left;justify-items:stretch">
-    <div class="row between" style="flex-wrap:nowrap"><h2 id="lg-t">Prieš pradedant</h2><button type="button" class="langbtn dark" data-setlang data-noi18n>${LANG==='en'?'LT':'EN'}</button></div>
+    <div class="row between" style="flex-wrap:nowrap"><h2 id="lg-t">${why || 'Prieš tęsiant'}</h2><button type="button" class="langbtn dark" data-setlang data-noi18n>${LANG==='en'?'LT':'EN'}</button></div>
     <p class="muted small">${r==='client' ? 'Ridu padeda rasti vairuotoją. Sutartį ir mokėjimą su juo tvarkote patys.' : 'Ridu padeda rasti klientų. Vežate savo vardu kaip savarankiškas vežėjas.'}</p>
-    ${GATE[r].map(([k,t]) => `<label class="chk"><input type="checkbox" data-g="${k}"><span>${t}</span></label>`).join('')}
+    ${items.map(([k,t]) => `<label class="chk"><input type="checkbox" data-g="${k}"><span>${t}</span></label>`).join('')}
     <label class="chk"><input type="checkbox" id="lg-news"><span>Noriu gauti naujienas el. paštu (nebūtina).</span></label>
     <p class="err" id="lg-err" hidden>Pažymėkite visus privalomus punktus.</p>
     <button class="btn">${ic('check')} Tęsti</button>
   </form></div>`;
   ovl.querySelectorAll('[data-doc]').forEach(b => b.addEventListener('click', () => openDoc(b.dataset.doc)));
-  ovl.querySelector('[data-setlang]').addEventListener('click', () => { ovl.innerHTML=''; setLang(LANG==='en'?'lt':'en'); render(); });
+  ovl.querySelector('[data-setlang]').addEventListener('click', () => { ovl.innerHTML=''; setLang(LANG==='en'?'lt':'en'); render(); legalGate(items, kind, then, why); });
   ovl.querySelector('#lg').addEventListener('submit', e => {
     e.preventDefault();
     if([...ovl.querySelectorAll('[data-g]')].some(c => !c.checked)){ ovl.querySelector('#lg-err').hidden = false; return; }
-    LG.ok[r] = true; ovl.innerHTML = ''; toast('Ačiū. Taisykles rasite skiltyje DUK');
+    LG.ok.base = true; if(kind==='driver') LG.ok.driver = true; LG.ok.ver = LEGAL_VER;
+    try { localStorage.setItem('ridu-consent', JSON.stringify(LG.ok)); } catch {}
+    ovl.innerHTML = ''; toast('Ačiū. Taisykles rasite skiltyje DUK'); then?.();
   });
 }
 
@@ -1249,6 +1379,16 @@ function bindPlanLegal(r){
 }
 
 /* ---------- Ridu administravimas (atskira, viešoje programėlėje nerodoma dalis) ---------- */
+function ownerLive(){
+  return `<h3>Tapatybės patikra</h3>
+    ${S.liveQueue.map((it,i) => `<div class="card"><div class="row">${av(drivers[it.id].name[0], drivers[it.id].g)}<div style="flex:1;min-width:0"><h3>${esc(drivers[it.id].name)}</h3>
+      <p class="muted small">${it.kind==='video'?'Prašo vaizdo skambučio':'Gyvumo patikra nepavyko 2 kartus'}</p></div></div>
+      <p class="muted small">Vaizdo skambučiu palyginkite veidą su dokumentu, profilio nuotrauka ir vardu LTSA leidime. Nieko neįrašinėkite.</p>
+      <div class="two"><button class="btn ghost" data-lq="${i}" data-v="bad">${ic('x')} Netinka</button><button class="btn" data-lq="${i}" data-v="ok">${ic('check')} Patvirtinti</button></div></div>`).join('')}
+    <div class="card">${Object.keys(S.live).map(id => { const l = S.live[id], r = liveDue(id);
+      return `<div class="row between" style="flex-wrap:nowrap"><span>${esc(drivers[id].name)}</span><span class="row small" style="flex-wrap:nowrap"><span class="muted">${liveWhen(id)}</span>${l.review?VTAG.bad:r?`<span class="tag warn">${ic('clock')} Laukia</span>`:VTAG.ok}</span></div>`; }).join('')}
+      <p class="muted small">Prašome registruojantis, kas 7 d., prieš pirmą kelionę su nauju klientu, atsitiktinai ir esant rizikos signalui. Saugomas tik rezultatas ir laikas.</p></div>`;
+}
 function renderOwner(){
   view.innerHTML = `<h2>Ridu administravimas: vairuotojų patikra</h2>
     <p class="muted small">Tikrinamas tik LTSA leidimo autentiškumas: ar leidimas galioja ir ar automobilis su juo susietas. Kol nėra automatinės sąsajos, tikrinama rankiniu būdu pagal nuorodą. Išsaugomas tik numeris ir kas bei kada patikrino.</p>
@@ -1269,7 +1409,14 @@ function renderOwner(){
           <span class="muted small" style="font-size:.72rem">${ph.w}×${ph.h}</span>
           ${ph.st==='rev'?`<div class="row" style="flex-wrap:nowrap;gap:4px"><button class="round sm" style="width:36px;height:36px;color:var(--bad)" data-pa="bad" data-p="${pi}" data-k="${d.k}" aria-label="Netinka: ${d.t}">${ic('x')}</button><button class="round sm" style="width:36px;height:36px;color:var(--ok)" data-pa="ok" data-p="${pi}" data-k="${d.k}" aria-label="Patvirtinti: ${d.t}">${ic('check')}</button></div>`:''}</div>`; }).join('')}</div></div>` : ''}
       ${Object.values(p.items).every(i=>i.st==='ok') && Object.values(p.photos||{}).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
-    </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}`;
+    </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}
+    ${ownerLive()}`;
+  view.querySelectorAll('[data-lq]').forEach(b => b.addEventListener('click', () => {
+    const it = S.liveQueue[Number(b.dataset.lq)], l = S.live[it.id];
+    if(b.dataset.v==='ok'){ Object.assign(l, {review:false, failed:0, due:null, last:`${TODAY}T${nowHM()}`, how:l.how||'Vaizdo skambutis'}); S.liveQueue = S.liveQueue.filter(x=>x.id!==it.id); toast(`${drivers[it.id].name}: ${LANG==='en'?'identity confirmed':'tapatybė patvirtinta'}`); }
+    else { l.review = true; S.liveQueue = S.liveQueue.filter(x=>x.id!==it.id); toast(`${drivers[it.id].name}: ${LANG==='en'?'profile stays hidden':'profilis lieka paslėptas'}`); }
+    render();
+  }));
   view.querySelectorAll('[data-pa]').forEach(b => b.addEventListener('click', () => {
     const p = S.queue[Number(b.dataset.p)], ph = p.photos[b.dataset.k]; ph.st = b.dataset.pa;
     if(p.me) S.photos[ME_DRIVER][b.dataset.k].st = ph.st;
@@ -1298,6 +1445,7 @@ function renderPlans(){
     ${planLegal(r)}`;
   bindPlanLegal(r);
   view.querySelectorAll('[data-plan]').forEach(b => b.addEventListener('click', () => {
+    if(b.dataset.plan!=='free' && !consent('base', () => b.click(), 'Prieš įsigyjant planą')) return;
     S.plan[r] = b.dataset.plan; if(b.dataset.plan!=='free') burst(); toast(`Įjungtas planas ${PLANS[b.dataset.plan].n}`); render();
   }));
 }
@@ -1463,6 +1611,12 @@ const EN = {
 "Kalėdos": "Christmas Day",
 "Antroji Kalėdų diena": "Second Day of Christmas",
 "Prieš pradedant": "Before you start",
+"Prieš tęsiant": "Before you continue",
+"Prieš paskelbiant užklausą": "Before posting a request",
+"Prieš pradedant pokalbį": "Before starting a chat",
+"Prieš pirmą pasiūlymą": "Before your first offer",
+"Prieš skelbiant maršrutą": "Before posting a route",
+"Prieš įsigyjant planą": "Before buying a plan",
 "Ridu padeda rasti vairuotoją. Sutartį ir mokėjimą su juo tvarkote patys.": "Ridu helps you find a driver. You arrange the agreement and payment with them yourself.",
 "Ridu padeda rasti klientų. Vežate savo vardu kaip savarankiškas vežėjas.": "Ridu helps you find clients. You drive in your own name as an independent carrier.",
 "Man yra 18 metų ar daugiau.": "I am 18 or older.",
@@ -1477,6 +1631,70 @@ const EN = {
 "Pažymėkite visus privalomus punktus.": "Please tick all required boxes.",
 "Ačiū. Taisykles rasite skiltyje DUK": "Thank you. You'll find the terms in the FAQ section",
 "Išsirink savo vairuotoją": "Choose your driver",
+"Pirminė tapatybės patikra": "Initial identity check",
+"Savaitinė patikra": "Weekly check",
+"Pirmoji kelionė su nauju klientu": "First trip with a new client",
+"Atsitiktinė patikra": "Random check",
+"Prisijungėte nauju įrenginiu": "You signed in on a new device",
+"Pakeista nuotrauka ar automobilis": "Photo or car changed",
+"Gautas kliento pranešimas": "A client report was received",
+"Ilgai nebuvote prisijungę": "You have been away for a while",
+"Prasideda vaikų pastovus maršrutas": "A regular children's route is starting",
+"Registruojantis: dokumentas ir selfis": "At sign-up: ID document and selfie",
+"Kas 7 dienas": "Every 7 days",
+"Prieš pirmą kelionę su nauju klientu": "Before the first trip with a new client",
+"Atsitiktinai, maždaug 1 iš 10 darbo dienų": "At random, about 1 in 10 working days",
+"Prisijungus nauju įrenginiu, pakeitus nuotrauką ar automobilį, gavus pranešimą arba po 14 d. pertraukos": "After signing in on a new device, changing your photo or car, a report, or a 14-day break",
+"Vaikų pastoviam maršrutui: prieš pradžią ir kartą per savaitę": "For a regular children's route: before it starts and once a week",
+"Profilis laikinai paslėptas": "Profile temporarily hidden",
+"Tapatybės patikra nepavyko 2 kartus. Ridu komanda peržiūrės ir susisieks. Galite pasirinkti vaizdo skambutį.": "The identity check failed twice. The Ridu team will review it and contact you. You can choose a video call.",
+"Patvirtinkite, kad tai jūs": "Confirm it's you",
+"Užtrunka apie 10 s.": "It takes about 10 s.",
+"Pradėti patikrą": "Start check",
+"Pažiūrėkite tiesiai į kamerą": "Look straight at the camera",
+"Lėtai pasukite galvą į kairę ir į dešinę": "Slowly turn your head left and right",
+"Mirktelėkite": "Blink",
+"Pasiruošę? Laikykite telefoną veido aukštyje.": "Ready? Hold your phone at face height.",
+"Vėliau": "Later",
+"Pradėti": "Start",
+"Vaizdą patikrina Didit. Ridu išsaugo tik rezultatą ir laiką, ne vaizdą.": "Didit checks the image. Ridu keeps only the result and time, not the image.",
+"Imituoti nesėkmę (demonstracija)": "Simulate a failure (demo)",
+"Tapatybė patvirtinta": "Identity confirmed",
+"Nepavyko patvirtinti": "Could not confirm",
+"Patikrinkite apšvietimą, nusiimkite akinius nuo saulės ir pabandykite dar kartą. Liko 1 bandymas.": "Check the lighting, take off sunglasses and try again. 1 attempt left.",
+"Patikra nepavyko 2 kartus. Ridu komanda peržiūrės ir susisieks. Galite pasirinkti vaizdo skambutį su Ridu.": "The check failed twice. The Ridu team will review it and contact you. You can choose a video call with Ridu.",
+"Vaizdo skambutis": "Video call",
+"Bandyti dar kartą": "Try again",
+"Gerai": "OK",
+"Ridu komanda susisieks dėl vaizdo skambučio": "The Ridu team will contact you about a video call",
+"Tapatybė": "Identity",
+"Dokumentas ir selfis": "ID document and selfie",
+"Vieną kartą registruojantis.": "Once, at sign-up.",
+"Gyvumo patikra": "Liveness check",
+"Apie 10 s su telefono kamera.": "About 10 s with your phone camera.",
+"Reikia dabar": "Needed now",
+"Kada prašome patikros?": "When do we ask for a check?",
+"Po 2 nesėkmingų bandymų profilis paslepiamas ir jį peržiūri Ridu komanda. Saugome tik rezultatą ir laiką.": "After 2 failed attempts the profile is hidden and the Ridu team reviews it. We keep only the result and time.",
+"Profilis paslėptas, kol Ridu komanda peržiūrės.": "Profile hidden until the Ridu team reviews it.",
+"Profilis paslėptas, kol Ridu komanda peržiūrės. Vaizdo skambutis užsakytas.": "Profile hidden until the Ridu team reviews it. Video call requested.",
+"Užsisakyti vaizdo skambutį": "Request a video call",
+"Tapatybės patikra": "Identity check",
+"Prašo vaizdo skambučio": "Asks for a video call",
+"Gyvumo patikra nepavyko 2 kartus": "Liveness check failed twice",
+"Vaizdo skambučiu palyginkite veidą su dokumentu, profilio nuotrauka ir vardu LTSA leidime. Nieko neįrašinėkite.": "On the video call, compare the face with the ID document, profile photo and the name on the LTSA permit. Do not record anything.",
+"Netinka": "Reject",
+"Patvirtinti": "Confirm",
+"Laukia": "Pending",
+"Prašome registruojantis, kas 7 d., prieš pirmą kelionę su nauju klientu, atsitiktinai ir esant rizikos signalui. Saugomas tik rezultatas ir laikas.": "Requested at sign-up, every 7 days, before the first trip with a new client, at random and on a risk signal. Only the result and time are kept.",
+"Kaip žinoti, kad vairuoja tas pats žmogus?": "How do I know the same person is driving?",
+"Registruodamasis vairuotojas patvirtina tapatybę dokumentu ir selfiu. Vėliau trumpai gyvumo patikrai jo prašome bent kas 7 dienas, prieš pirmą kelionę su nauju klientu ir atsitiktinai.": "At sign-up, drivers confirm their identity with an ID document and a selfie. After that, we ask for a short liveness check at least every 7 days, before the first trip with a new client, and at random.",
+"Pasiūlyme matote, kada tapatybė patvirtinta paskutinį kartą. Jei patikra nepavyksta, profilis paslepiamas.": "The offer shows when identity was last confirmed. If a check fails, the profile is hidden.",
+"Tikriname LTSA leidimo autentiškumą, su juo susietą automobilį ir jūsų tapatybę. Saugome tik numerį, patikros rezultatą ir datą. Dokumentų kopijų ir patikros vaizdo nesaugome.": "We check that your LTSA permit is genuine, the car linked to it, and your identity. We keep only the number, the check result and date. We do not keep document copies or check images.",
+"Kas yra gyvumo patikra ir kada jos prašoma?": "What is the liveness check and when is it requested?",
+"Tai apie 10 s trunkanti patikra telefono kamera: pažiūrite į kamerą, pasukate galvą ir mirktelite. Taip klientai žino, kad vairuoja tas pats žmogus.": "It is a check of about 10 s with your phone camera: look at the camera, turn your head and blink. This way clients know the same person is driving.",
+"Prašome kas 7 dienas, prieš pirmą kelionę su nauju klientu, atsitiktinai maždaug 1 iš 10 darbo dienų ir prisijungus nauju įrenginiu, pakeitus nuotrauką ar automobilį arba po ilgesnės pertraukos.": "We ask every 7 days, before the first trip with a new client, at random on about 1 in 10 working days, and after signing in on a new device, changing your photo or car, or a longer break.",
+"Kas, jei patikra nepavyksta?": "What if the check fails?",
+"Pabandykite dar kartą geresnėje šviesoje. Po 2 nesėkmių profilis laikinai paslepiamas, o Ridu komanda susisiekia. Galite pasirinkti vaizdo skambutį su Ridu.": "Try again in better light. After 2 failures the profile is temporarily hidden and the Ridu team contacts you. You can choose a video call with Ridu.",
 "Išsirink savo keleivį": "Choose your passenger",
 "Kur reikia nuvežti?": "Where do you need to go?",
 "Nurodykite adresus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.": "Enter the addresses, time and passengers. Verified drivers will offer a price.",

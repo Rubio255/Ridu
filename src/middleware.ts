@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
   const { data } = await sb.auth.getClaims();
   const user = data?.claims?.sub;
   const p = req.nextUrl.pathname;
-  const open = p === "/" || p === "/sw.js" || p.startsWith("/prisijungti") || p.startsWith("/auth") || p.startsWith("/api/cron") || p.startsWith("/api/k/") || p.startsWith("/k/") || p === "/privatumas" || ["/saugumas", "/abonementas", "/seimoms", "/susipazinti", "/skaiciuokle"].includes(p);
+  const open = p === "/" || p === "/sw.js" || p.startsWith("/prisijungti") || p.startsWith("/auth") || p.startsWith("/api/cron") || p === "/api/didit/webhook" || p.startsWith("/api/k/") || p.startsWith("/k/") || p === "/privatumas" || ["/saugumas", "/abonementas", "/seimoms", "/susipazinti", "/skaiciuokle"].includes(p);
   if (!user && !open) return NextResponse.redirect(new URL("/prisijungti", req.url));
   return res;
 }
