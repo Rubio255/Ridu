@@ -65,7 +65,8 @@ The driver must:
 - follow the Road Traffic Rules and rest requirements, and never drive tired or impaired;
 - declare income and pay taxes themselves;
 - give clients who are consumers all information required by law: name, surname, business certificate number, contact details, price and terms;
-- use only their own photos and real photos of the vehicle.
+- use only their own photos and real photos of the vehicle;
+- complete an identity and liveness check when Ridu asks (at registration, periodically, before the first ride with a new client, at random or when there is a risk signal). After 2 failed attempts the profile is hidden until an administrator reviews the case. The driver may ask to confirm identity by video call and may appeal the decision.
 
 The driver is an independent carrier. The driver is not an employee or representative of Ridu and may not act on Ridu’s behalf.
 

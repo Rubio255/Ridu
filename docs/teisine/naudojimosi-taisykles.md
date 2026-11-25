@@ -65,7 +65,8 @@ Vairuotojas privalo:
 - laikytis Kelių eismo taisyklių ir darbo bei poilsio režimo, nevairuoti pavargęs ar apsvaigęs;
 - savarankiškai deklaruoti pajamas ir mokėti mokesčius;
 - klientams, kurie yra vartotojai, suteikti visą įstatymų reikalaujamą informaciją: savo vardą, pavardę, veiklos pažymos numerį, kontaktus, kainą ir sąlygas;
-- naudoti tik savo nuotraukas ir tikras automobilio nuotraukas.
+- naudoti tik savo nuotraukas ir tikras automobilio nuotraukas;
+- atlikti tapatybės ir gyvumo patikrą, kai Ridu jos paprašo (registruojantis, periodiškai, prieš pirmą kelionę su nauju klientu, atsitiktinai ar pastebėjus rizikos ženklą). Po 2 nesėkmingų bandymų profilis paslepiamas, kol administratorius peržiūri atvejį. Vairuotojas gali prašyti patvirtinti tapatybę vaizdo skambučiu ir apskųsti sprendimą.
 
 Vairuotojas yra savarankiškas vežėjas. Jis nėra Ridu darbuotojas ar atstovas ir negali veikti Ridu vardu.
 

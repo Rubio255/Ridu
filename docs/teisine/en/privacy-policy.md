@@ -19,10 +19,11 @@ From clients:
 - number and type of passengers (child, adult, senior), the child’s age or height if a seat is needed, and notes for the driver.
 
 From drivers:
+- the result and time of the identity and liveness check (see section “Identity and liveness check”);
 - name, surname, business certificate number, LTSA permit number, vehicle registration number and the result of the check;
 - photos of themselves and the vehicle.
 
-We do not collect health data or copies of documents. Please write no more in notes than the ride needs.
+We do not collect health data and do not store copies of documents, selfies or biometric data. Please write no more in notes than the ride needs.
 
 ## 3. Why and on what basis we use it
 
@@ -30,6 +31,7 @@ We do not collect health data or copies of documents. Please write no more in no
 | --- | --- |
 | Account, requests, offers, chats | Performance of a contract (GDPR Art. 6(1)(b)) |
 | Checking drivers’ LTSA permits and photos | Legitimate interest in safety and fraud prevention (Art. 6(1)(f)) |
+| Driver identity and liveness check via Didit (biometric data) | Explicit consent (GDPR Art. 9(2)(a)); without it, a video call with Ridu is available instead |
 | Preventing fraud and violations, handling reports | Legitimate interest (f) and legal obligation under the Digital Services Act (c) |
 | Paid plans, invoices, accounting | Performance of a contract and legal obligation (b and c) |
 | Responding to authorities (e.g. law enforcement, tax authority) | Legal obligation (c) |
@@ -41,16 +43,27 @@ We do not make automated decisions with legal effects on you. A person always re
 
 - Other users see only what is needed to agree. Until the client agrees to be contacted, the driver sees only the postal code, time and number of passengers. The driver sees the exact address only when the client shares it in the chat.
 - Clients see the driver’s first name, approved photos and the verification badge. We do not show the permit number to clients.
-- Service providers who help us: data storage and servers (Supabase, Vercel), email delivery, plan payments. They process data only on our instructions under contracts.
+- Service providers who help us: data storage and servers (Supabase, Vercel), driver identity and liveness checks (Didit), email delivery, plan payments. They process data only on our instructions under contracts.
 - Authorities, where the law requires (e.g. law enforcement, LTSA, the tax authority).
 
 We store data in the European Union. If a service provider transfers data outside the EU, safeguards approved by the European Commission apply (e.g. standard contractual clauses).
+
+## 4a. Identity and liveness check
+
+We verify a driver’s identity through Didit (didit.me). At registration, the driver takes a photo of an identity document and of themselves. Later, for example every 7 days, before the first ride with a new client, at random or when we see a risk signal, Didit briefly checks that the same live person is at the phone.
+
+Didit processes the image and the document as our data processor. Ridu does not receive or store them. We keep only the result (confirmed or not) and the time.
+
+Comparing facial images is processing of biometric data, so we ask for your explicit consent before the check. You may withdraw consent. If you do not consent, your identity can be confirmed by a video call with Ridu.
+
+After 2 failed attempts the profile is hidden until an administrator reviews the case. A person always makes the decision.
 
 ## 5. How long we keep it
 
 - Account data: for as long as you have an account.
 - Requests and chats: 12 months after the last message, so that disputes can be resolved.
 - Exact addresses: while the request is active; afterwards only the postal code remains.
+- Identity and liveness check results and times: while the driver account exists; failed ones for 3 years.
 - Data on violations, blocked accounts and fraud: 3 years.
 - Accounting documents: 10 years, as the law requires.
 - After you delete your account, data is deleted within 30 days, except data we must keep longer.
