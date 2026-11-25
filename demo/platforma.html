@@ -167,6 +167,14 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .cd[aria-pressed="true"]{background:linear-gradient(135deg,var(--brand),#2a8f7f);color:var(--brand-fg);animation:pop .3s var(--spring)}
 .cal-l{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:.8rem;color:var(--muted)}
 .cal-l li{display:flex;gap:8px;align-items:center}.cal-l .hd{position:static;margin:0;flex:none}
+.faq{display:grid;gap:10px}
+.faq details{gap:0;padding:0;overflow:hidden}
+.faq summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 16px;font-weight:700}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ico{transition:transform .35s var(--spring);color:var(--brand)}
+.faq details[open] summary .ico{transform:rotate(45deg)}
+.faq .ans{display:grid;gap:8px;padding:0 16px 14px;color:var(--fg);font-size:.93rem}
+.faq details[open] .ans{animation:rise .4s var(--ease)}
 .cal-s:empty{display:none}.sum:empty{display:none}.sum{display:flex;gap:6px;align-items:flex-start;margin-top:10px}.cal-s{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.pcout{font-weight:500}
 .vrow{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .vrow:first-of-type{border-top:0;padding-top:0}
@@ -339,6 +347,7 @@ const I = {
   file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
   undo:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
   search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
@@ -540,8 +549,8 @@ const lastOpen = cv => [...cv.msgs].reverse().find(m => m.kind==='offer' && m.st
 
 /* ---------- navigacija ---------- */
 const TABS = {
-  client:[['reqs','Užklausos','search'],['convs','Pokalbiai','msg'],['plans','Planai','gem']],
-  driver:[['pool','Užklausos','search'],['sent','Pasiūlymai','send'],['convs','Pokalbiai','msg'],['check','Patikra','shield'],['plans','Planai','gem']],
+  client:[['reqs','Užklausos','search'],['convs','Pokalbiai','msg'],['plans','Planai','gem'],['faq','DUK','help']],
+  driver:[['pool','Užklausos','search'],['sent','Pasiūlymai','send'],['convs','Pokalbiai','msg'],['check','Patikra','shield'],['plans','Planai','gem'],['faq','DUK','help']],
   owner:[['verify','Patikra','shield']]
 };
 function badge(k){
@@ -569,6 +578,7 @@ function render(){
   if(S.open?.kind==='req') return renderReq(S.open.id);
   const t = S.tab[S.role];
   if(t==='plans') return renderPlans();
+  if(t==='faq') return renderFaq();
   if(S.role==='client') return t==='reqs' ? (S.newReq ? renderReqForm() : renderMyReqs()) : renderConvList();
   if(S.role==='driver') return t==='pool' ? renderPool() : t==='sent' ? renderSent() : t==='convs' ? renderConvList() : renderDriverCheck();
   return renderOwner();
@@ -1006,6 +1016,64 @@ function renderDriverCheck(){
     v[k] = {st:'rev', val}; S.queue.unshift({driver:'Rimas', g:0, items:{[k]:{st:'rev', val}}, me:true});
     toast('Išsiųsta patikrai. Paprastai per 1 darbo dieną'); render();
   }));
+}
+
+/* ---------- DUK: klientams ir vairuotojams ---------- */
+const FAQ = {
+  client:[
+    ['Kodėl verta rinktis Ridu?', [
+      'Vairuotojai patikrinti, o jų veidą ir automobilį matote nuotraukose dar prieš susisiekdami.',
+      'Kainą siūlo vairuotojai, o jūs pasirenkate. Komisinio nėra: mokate tik vairuotojui tiek, kiek susitarėte.',
+      'Pastoviam vežimui randate vieną žmogų, kuris veža kasdien tuo pačiu laiku.']],
+    ['Kaip tikrinami vairuotojai?', [
+      'Kiekvieno vairuotojo pavėžėjimo leidimą ir su juo susietą automobilį tikriname pagal Lietuvos transporto saugos administracijos (LTSA) duomenis.',
+      'Nuotraukas peržiūrime prieš jas parodant klientams. Tik praėję patikrą vairuotojai gauna ženklelį „Patikimas ir patikrintas vairuotojas“.']],
+    ['Kas yra LTSA pavėžėjimo leidimas ir kodėl jis svarbus?', [
+      'Vežti keleivius už atlygį lengvuoju automobiliu galima tik turint LTSA išduotą leidimą. Jame nurodytas ir automobilis.',
+      'Leidimas reiškia, kad vežimas legalus, o vairuotojas ir automobilis žinomi valstybei.']],
+    ['Ar vairuotojas mato mano adresą ir telefoną?', [
+      'Ne. Vairuotojai mato tik pašto kodą. Vardą ir telefoną mato tik tada, kai sutinkate kontaktuoti, o tikslų adresą, kai juo pasidalinate pokalbyje.']],
+    ['Kas sudaro sutartį ir kaip mokama?', [
+      'Sutartį sudarote jūs ir vairuotojas. Ridu yra paieškos platforma ir nėra sutarties šalis.',
+      'Už keliones mokate tiesiogiai vairuotojui taip, kaip susitarsite. Pro plane rasite paruoštą sutarties šabloną.']],
+    ['Kam reikalingas pažintinis susitikimas?', [
+      'Prieš pirmą vaiko kelionę susitinkate su vairuotoju. Vaikas pamato, kas jį veš, o jūs aptariate, kam ir kur vaiką perduoti.']],
+    ['Kaip veikia pastovus vežimas ir šventės?', [
+      'Pasirenkate dienas, laiką ir laikotarpį. Švenčių dienomis kelionės praleidžiamos, jei taip pažymite.']],
+    ['Kiek kainuoja Ridu?', [
+      `Pradėti galima nemokamai. Plus (${eur(PLANS.plus.price.client)}/mėn.) leidžia matyti visus pasiūlymus, Pro (${eur(PLANS.pro.price.client)}/mėn.) prideda sutarčių šablonus.`]],
+    ['Ką daryti, jei vairuotojas netinka?', [
+      'Galite bet kada ieškoti kito vairuotojo. Pagal sutartį ją galima nutraukti įspėjus prieš 30 d., o dėl esminio pažeidimo – iš karto. Apie netinkamą elgesį parašykite mums, peržiūrėsime vairuotojo profilį.']]
+  ],
+  driver:[
+    ['Ko reikia, kad galėčiau registruotis?', [
+      'Galiojančio LTSA pavėžėjimo leidimo su jame nurodytu automobiliu.',
+      `Savo nuotraukos ir automobilio nuotraukų iš išorės ir vidaus (ne mažiau ${MIN_LONG}×${MIN_SHORT} px).`,
+      'Įregistruotos veiklos, pvz. individualios veiklos pagal pažymą VMI. Mokesčius mokate patys.']],
+    ['Kaip gauti LTSA pavėžėjimo leidimą?', [
+      'Prašymą pateikite Lietuvos transporto saugos administracijai (ltsa.lrv.lt). Leidime nurodomas automobilis, kuriuo vešite keleivius.',
+      'Gavę leidimą, Ridu įveskite jo ir automobilio numerius. Patikriname paprastai per 1 darbo dieną.']],
+    ['Ką Ridu tikrina ir saugo?', [
+      'Tikriname tik LTSA leidimo autentiškumą ir su juo susietą automobilį. Saugome tik numerį ir patikros datą, dokumentų kopijų nekeliate.']],
+    ['Kodėl reikia aukštos raiškos nuotraukų?', [
+      'Klientai renkasi vairuotoją pagal tai, ką mato. Aiški nuotrauka ir švarus salonas kelia pasitikėjimą. Kiekvieną nuotrauką peržiūrime prieš rodydami.']],
+    ['Kaip nustatoma kaina?', [
+      'Kainą siūlote jūs. Klientas gali pasiūlyti savo variantą, ir derinatės, kol abu sutinkate. Komisinio nėra: visas uždarbis jūsų.']],
+    ['Kuo skiriasi užklausos ir pastovus maršrutas?', [
+      'Užklausas skelbia klientai, o jūs pasisiūlote. Pastovų maršrutą skelbiate jūs, ir klientai jus randa patys.']],
+    ['Ar galiu vežti vaikus?', [
+      'Taip, jei turite tinkamas kėdutes. Prieš pirmą vaiko kelionę susitinkate su šeima. Įsitikinkite, kad atitinkate visus teisės aktų reikalavimus vežant vaikus.']],
+    ['Kiek kainuoja Ridu?', [
+      `Nemokamai galite pasisiūlyti ${FREE_DAILY} kartus per dieną. Plus (${eur(PLANS.plus.price.driver)}/mėn.) be ribų, Pro (${eur(PLANS.pro.price.driver)}/mėn.) su sutarčių šablonais ir paryškintais pasiūlymais.`]],
+    ['Kas atsako už kelionę?', [
+      'Jūs esate vežėjas ir sutarties šalis. Pasirūpinkite draudimu, automobilio technine būkle ir keleivių saugumu.']]
+  ]
+};
+function renderFaq(){
+  const r = S.role==='driver' ? 'driver' : 'client';
+  view.innerHTML = `<div class="card"><h2>Dažniausi klausimai</h2><p class="muted">${r==='client' ? 'Kaip veikia Ridu ir kodėl tai saugu.' : 'Ko reikia, kad galėtumėte vežti su Ridu.'}</p></div>
+    <div class="faq">${FAQ[r].map(([q,a],i)=>`<details class="card"${i===0?' open':''}><summary><span>${q}</span>${ic('plus')}</summary><div class="ans">${a.map(t=>`<p>${t}</p>`).join('')}</div></details>`).join('')}</div>
+    ${r==='driver' ? `<a class="ext" href="https://ltsa.lrv.lt/" target="_blank" rel="noopener">${ic('ext')} LTSA svetainė</a>` : ''}`;
 }
 
 /* ---------- Ridu administravimas (atskira, viešoje programėlėje nerodoma dalis) ---------- */
