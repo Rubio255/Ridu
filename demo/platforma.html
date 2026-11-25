@@ -22,6 +22,7 @@
   --ok:#6fd49c; --ok-bg:#163526; --warn:#f0c062; --warn-bg:#3a2e10; --bad:#f2958c; --bad-bg:#3d1916; --info:#8dbcf0; --info-bg:#172a40;
   --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;min-height:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
@@ -251,23 +252,16 @@ const S = {
   conv:{},              // offerId -> {msgs:[], agreed:null, meetDone:false, confirmed:false}
   skipped:[], history:[],
   verify:{ // vairuotojo Rimo patikra
-    d1:{id:{st:'ok', how:'Smart-ID', at:'2026-11-20'}, iv:{st:'ok', val:'IV 1234567', at:'2026-11-20'}, ltsa:{st:'ok', val:'PV-2026-00917', at:'2026-11-20'},
-        lic:{st:'ok', val:'LT 1234567 · B', until:'2031-04-12', at:'2026-11-20'}, car:{st:'warn', val:'LKN 512', until:'2026-12-14', at:'2026-11-20', note:'Draudimas baigiasi 2026-12-14'},
-        rep:{st:'ok', val:'****-7F2A', until:'2027-05-20', at:'2026-11-20'}}
+    d1:{ltsa:{st:'ok', val:'PV-2026-00917 · LKN 512', at:'2026-11-20'}}
   },
   queue:[
-    {driver:'Andrius', g:5, items:{id:{st:'ok', how:'el. bankininkystė'}, iv:{st:'rev', val:'IV 7788123'}, ltsa:{st:'rev', val:'PV-2026-01842'}, lic:{st:'rev', val:'LT 9876543 · B'}, car:{st:'rev', val:'MZL 204'}, rep:{st:'rev', val:'A9C4-22D1-7F00'}}}
+    {driver:'Andrius', g:5, items:{ltsa:{st:'rev', val:'PV-2026-01842 · MZL 204'}}}
   ]
 };
 
 /* Patikros punktai: kas, kur tikrinama, ar yra automatinė patikra */
 const CHECKS = [
-  {k:'id', t:'Asmens tapatybė', hint:'Patvirtinkite per Smart-ID arba el. bankininkystę. Dokumento kopijos nereikia.', auto:true, src:'Smart-ID / bankų tapatybės patvirtinimas', url:null},
-  {k:'iv', t:'Individualios veiklos pažymos numeris', hint:'Rasite VMI Mano VMI paskyroje.', ph:'IV 1234567', src:'VMI', url:'https://www.vmi.lt/evmi/', until:false},
-  {k:'ltsa', t:'Įrašas LTSA keleivių vežimo registre', hint:'Pavėžėjimo leidimo numeris. Tikrinamas vairuotojas ir automobilis.', ph:'PV-2026-00000', src:'LTSA', url:'https://ltsa.lrv.lt/', until:false},
-  {k:'lic', t:'Vairuotojo pažymėjimo numeris ir kategorija', hint:'B kategorija, stažas nuo 2 metų.', ph:'LT 1234567 · B', src:'Regitra', url:'https://www.eregitra.lt/', until:true},
-  {k:'car', t:'Automobilio valstybinis numeris', hint:'Pagal jį tikriname techninę apžiūrą ir draudimą.', ph:'ABC 123', src:'Regitra (TA) ir LDGB (draudimas)', url:'https://www.eregitra.lt/', url2:'https://www.ldgb.lt/', until:true},
-  {k:'rep', t:'Pažymos apie teistumą patikros kodas', hint:'Tik jei vešite vaikus. Saugome tik žymą „patikrinta iki“, ne pačią pažymą.', ph:'QR arba patikros kodas', src:'Informatikos ir ryšių departamentas (e. paslaugos)', url:'https://www.epaslaugos.lt/', until:true, childOnly:true}
+  {k:'ltsa', t:'LTSA pavėžėjimo leidimas', hint:'Leidimo numeris ir su juo susieto automobilio valstybinis numeris. LTSA juos skelbia Licencijų informacinėje sistemoje.', ph:'PV-2026-00000 · ABC 123', src:'LTSA / Licencijų informacinė sistema', url:'https://ltsa.lrv.lt/', until:false}
 ];
 
 /* Nuotraukos: vairuotojas ir automobilis, aukšta raiška */
@@ -653,7 +647,7 @@ function renderDriverCheck(){
   view.innerHTML = `<h2>Patikra</h2>
     <div class="card" style="background:${driverOk()?'var(--ok-bg)':'var(--warn-bg)'};border:0"><div class="row">${ic('shield')}<b>${driverOk()?'Profilis matomas klientams':'Profilis paslėptas, kol vyksta patikra'}</b></div>
       ${warn?`<p class="small">${esc(warn.note)}. Pratęskite, kitaip profilis bus paslėptas.</p>`:''}</div>
-    <p class="muted small">Dokumentų kopijų kelti nereikia. Įveskite numerius, o mes juos patikriname registruose. Saugome tik numerį, galiojimo datą ir patikros žymą.</p>
+    <p class="muted small">Pakanka galiojančio LTSA pavėžėjimo leidimo. Įveskite jo ir automobilio numerį, o mes patikriname autentiškumą. Saugome tik numerį ir patikros žymą.</p>
     <div class="card"><h3>Nuotraukos</h3>
       <p class="muted small">Jūsų veidas ir automobilis iš išorės bei vidaus. Aukšta raiška: ne mažiau ${MIN_LONG}×${MIN_SHORT} px. Klientai mato jas pasiūlyme.</p>
       <div class="phs">${PHOTOS.map(p => `<label class="filebtn" for="ph-${p.k}" style="display:block;cursor:pointer" title="${p.t}">${phTile(S.photos[ME_DRIVER][p.k], p, drivers[ME_DRIVER].g, {status:true})}<input id="ph-${p.k}" type="file" accept="image/jpeg,image/png,image/heic,image/webp" data-ph="${p.k}" aria-label="Įkelti: ${p.t}"></label>`).join('')}</div>
@@ -690,7 +684,7 @@ function renderDriverCheck(){
 /* ---------- Ridu administravimas (atskira, viešoje programėlėje nerodoma dalis) ---------- */
 function renderOwner(){
   view.innerHTML = `<h2>Ridu administravimas: vairuotojų patikra</h2>
-    <p class="muted small">Tapatybė patvirtinama automatiškai per Smart-ID ar banką. Kitus punktus tikrinate patys pagal nuorodas: viešo API šiems registrams neradome. Išsaugomas tik numeris, galiojimo data ir kas bei kada patikrino.</p>
+    <p class="muted small">Tikrinamas tik LTSA leidimo autentiškumas: ar leidimas galioja ir ar automobilis su juo susietas. Kol nėra automatinės sąsajos, tikrinama rankiniu būdu pagal nuorodą. Išsaugomas tik numeris ir kas bei kada patikrino.</p>
     ${S.queue.length ? S.queue.map((p,pi) => `<div class="card">
       <div class="row">${av(p.driver[0], p.g)}<div><h3>${esc(p.driver)}</h3><p class="muted small">${[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='ok').length} iš ${Object.keys(p.items).length + Object.keys(p.photos||{}).length} patvirtinta</p></div></div>
       ${CHECKS.filter(c=>p.items[c.k]).map(c => { const it=p.items[c.k];
@@ -708,9 +702,7 @@ function renderOwner(){
           <span class="muted small" style="font-size:.72rem">${ph.w}×${ph.h}</span>
           ${ph.st==='rev'?`<div class="row" style="flex-wrap:nowrap;gap:4px"><button class="round sm" style="width:36px;height:36px;color:var(--bad)" data-pa="bad" data-p="${pi}" data-k="${d.k}" aria-label="Netinka: ${d.t}">${ic('x')}</button><button class="round sm" style="width:36px;height:36px;color:var(--ok)" data-pa="ok" data-p="${pi}" data-k="${d.k}" aria-label="Patvirtinti: ${d.t}">${ic('check')}</button></div>`:''}</div>`; }).join('')}</div></div>` : ''}
       ${Object.values(p.items).every(i=>i.st==='ok') && Object.values(p.photos||{}).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
-    </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}
-    <div class="card"><h3>Netrukus baigsis</h3><div class="row between small"><span>Rimas · draudimas (LKN 512)</span><span class="tag warn">2026-12-14</span></div>
-      <p class="muted small">Likus 30 d. vairuotojui siunčiamas priminimas. Pasibaigus profilis paslepiamas automatiškai.</p></div>`;
+    </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}`;
   view.querySelectorAll('[data-pa]').forEach(b => b.addEventListener('click', () => {
     const p = S.queue[Number(b.dataset.p)], ph = p.photos[b.dataset.k]; ph.st = b.dataset.pa;
     if(p.me) S.photos[ME_DRIVER][b.dataset.k].st = ph.st;
