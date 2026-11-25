@@ -6,7 +6,7 @@ Versija 2026-11-25. Projektas: prieš paskelbiant turi peržiūrėti Lietuvos te
 
 Ridu yra internetinė paieškos platforma. Ji padeda žmonėms, kuriems reikia nuvežti save, vaiką ar artimąjį (klientams), rasti vairuotojus, turinčius LTSA pavėžėjimo leidimą (vairuotojus), ir susitarti tarpusavyje.
 
-Platformą valdo [MB pavadinimas], įmonės kodas [kodas], buveinė [adresas], el. paštas [el. paštas] (toliau – Ridu, mes).
+Platformą valdo MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas [el. paštas] (toliau – Ridu, mes).
 
 Ridu neveža keleivių, nenustato kainų, nepriima mokėjimų už keliones ir neskiria vairuotojų. Pavėžėjimo sutartį sudaro klientas ir vairuotojas tiesiogiai. Ridu nėra šios sutarties šalis ir už jos vykdymą neatsako.
 

@@ -4,7 +4,7 @@ Versija 2026-11-25. Projektas: prieš paskelbiant turi peržiūrėti Lietuvos te
 
 ## 1. Kas tvarko jūsų duomenis
 
-Duomenų valdytojas: [MB pavadinimas], įmonės kodas [kodas], buveinė [adresas], el. paštas [el. paštas]. Klausimais apie duomenis rašykite [el. paštas].
+Duomenų valdytojas: MB „Įmonių veiklos analizė“, įmonės kodas 307404233, buveinė Giedraičių g. 39, R53, LT-09302 Vilnius, tel. +370 649 94125, el. paštas [el. paštas]. Klausimais apie duomenis rašykite [el. paštas].
 
 ## 2. Kokius duomenis renkame
 
