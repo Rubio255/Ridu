@@ -351,7 +351,9 @@ function renderReqForm(){
     const fail = t => { err.textContent=t; err.hidden=false; };
     if(!from || !to) return fail('Pašto kodas turi būti 5 skaitmenys, pvz. LT-10223.');
     if(f.repeat && !f.days.length) return fail('Pasirinkite bent vieną dieną.');
-    const q = {id:nid('q'), mine:true, client:'Lina', g:1, from, to, repeat:f.repeat, days:f.repeat?f.days:[], date:view.querySelector('#rf-date').value, time:view.querySelector('#rf-time').value||'15:00',
+    const date = view.querySelector('#rf-date').value;
+    if(!f.repeat && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < TODAY)) return fail('Pasirinkite datą, ne ankstesnę nei šiandien.');
+    const q = {id:nid('q'), mine:true, client:'Lina', g:1, from, to, repeat:f.repeat, days:f.repeat?f.days:[], date, time:view.querySelector('#rf-time').value||'15:00',
       pax:Number(view.querySelector('#rf-pax').value), type:f.type, seat:view.querySelector('#rf-seat').checked, note:view.querySelector('#rf-note').value.trim(), km:5};
     S.reqs.unshift(q); S.newReq=false; S.open={kind:'req', id:q.id};
     toast('Užklausa paskelbta. Vairuotojai jau mato ją');
