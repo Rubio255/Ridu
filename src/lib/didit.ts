@@ -9,6 +9,7 @@ import type { DueReason } from "./liveness";
 //   DIDIT_WORKFLOW_INITIAL    – dokumentas + selfis su gyvumu (registruojantis)
 //   DIDIT_WORKFLOW_LIVENESS   – gyvumas + veido atitikimas (pakartotinė patikra, ~10 s)
 //   LIVENESS_RANDOM_SECRET    – druska atsitiktinėms patikros dienoms
+//   LIVENESS_DAILY_CAP        – Didit sesijų per parą visai platformai (numatyta 50)
 const BASE = "https://verification.didit.me";
 
 export const diditEnabled = () => !!(process.env.DIDIT_API_KEY && process.env.DIDIT_WEBHOOK_SECRET && process.env.DIDIT_WORKFLOW_INITIAL && process.env.DIDIT_WORKFLOW_LIVENESS);
@@ -27,7 +28,8 @@ export async function startCheck(driverId: string, reason: DueReason) {
   });
   if (!res.ok) { console.error("didit session", res.status); return { ok: false as const, error: "provider" }; }
   const s = (await res.json()) as { session_id: string; url: string };
-  const { error } = await supabaseAdmin().from("driver_identity_checks").insert({ driver_id: driverId, kind, reason, method: "didit", provider_session_id: s.session_id });
+  // Didit grąžina tą pačią nebaigtą sesiją tam pačiam vairuotojui, todėl įrašas nesidubliuoja ir limitas neskaičiuojamas dukart
+  const { error } = await supabaseAdmin().from("driver_identity_checks").upsert({ driver_id: driverId, kind, reason, method: "didit", provider_session_id: s.session_id }, { onConflict: "provider_session_id", ignoreDuplicates: true });
   if (error) { console.error("identity check insert", error.code); return { ok: false as const, error: "db" }; }
   return { ok: true as const, url: s.url };
 }

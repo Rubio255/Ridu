@@ -8,6 +8,9 @@ export const WEEKLY_DAYS = 7;       // reguliari patikra aktyviems vairuotojams
 export const INACTIVE_DAYS = 14;    // po ilgesnės pertraukos tikriname iš karto
 export const RANDOM_RATE = 0.1;     // ~1 iš 10 darbo dienų, vairuotojas iš anksto nežino
 export const MAX_ATTEMPTS = 2;
+export const MAX_PER_DAY = 2;       // Didit sesijų vienam vairuotojui per 24 h
+export const DAILY_CAP = 50;        // Didit sesijų per parą visai platformai (LIVENESS_DAILY_CAP)
+export const SESSION_REUSE_MIN = 30; // nebaigta sesija naudojama pakartotinai, nauja nekuriama
 
 export type LivenessState = {
   identity_verified_at: string | null;
@@ -86,4 +89,26 @@ export const REASON_LT: Record<DueReason, string> = {
   report: "Gautas kliento pranešimas",
   inactive: "Ilgai nebuvote prisijungę",
   child_route: "Prasideda vaikų pastovus maršrutas",
+};
+
+// Pigūs filtrai prieš mokamą Didit patikrą: botas ar piktnaudžiautojas neturi pasiekti Didit.
+export type GuardInput = {
+  emailConfirmed: boolean; phoneConfirmed: boolean; permitVerified: boolean;
+  driverSessions24h: number; platformSessionsToday: number; dailyCap?: number;
+};
+export type GuardError = "email" | "phone" | "permit" | "driver_limit" | "platform_limit";
+export function guardCheck(g: GuardInput): GuardError | null {
+  if (!g.emailConfirmed) return "email";
+  if (!g.phoneConfirmed) return "phone";
+  if (!g.permitVerified) return "permit";
+  if (g.driverSessions24h >= MAX_PER_DAY) return "driver_limit";
+  if (g.platformSessionsToday >= (g.dailyCap ?? DAILY_CAP)) return "platform_limit";
+  return null;
+}
+export const GUARD_LT: Record<GuardError, string> = {
+  email: "Pirmiausia patvirtinkite el. pašto adresą.",
+  phone: "Pirmiausia patvirtinkite telefono numerį.",
+  permit: "Patikra prasidės, kai patvirtinsime jūsų LTSA leidimą.",
+  driver_limit: "Šiandien bandymų nebeliko. Pabandykite rytoj arba rinkitės vaizdo skambutį.",
+  platform_limit: "Šiuo metu patikra laikinai neprieinama. Pabandykite vėliau arba rinkitės vaizdo skambutį.",
 };

@@ -17,7 +17,10 @@ create table driver_identity_checks (
   created_at timestamptz not null default now()
 );
 create index driver_identity_checks_driver_idx on driver_identity_checks (driver_id, created_at desc);
+create index driver_identity_checks_created_idx on driver_identity_checks (created_at); -- dienos limitui visai platformai
 
+alter table drivers add column ltsa_permit_no text;               -- LTSA pavėžėjimo leidimo numeris
+alter table drivers add column ltsa_verified_at timestamptz;       -- administratorius patikrino leidimą; be to Didit nepaleidžiamas
 alter table drivers add column identity_verified_at timestamptz;   -- paskutinė sėkminga pirminė patikra
 alter table drivers add column liveness_checked_at timestamptz;    -- paskutinė sėkminga gyvumo patikra
 alter table drivers add column liveness_due_reason text;           -- rizikos signalas, laukiantis patikros (null = nėra)

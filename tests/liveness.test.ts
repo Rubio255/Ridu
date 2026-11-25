@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { livenessDue, livenessOk, afterResult, diditResult, verifyDiditSignature, randomDay, type LivenessState } from "../src/lib/liveness";
+import { guardCheck, livenessDue, livenessOk, afterResult, diditResult, verifyDiditSignature, randomDay, type LivenessState } from "../src/lib/liveness";
 
 const now = new Date("2026-11-25T10:00:00Z");
 const ago = (d: number) => new Date(now.getTime() - d * 864e5).toISOString();
@@ -51,4 +51,15 @@ test("Didit būsenos ir parašas", () => {
   assert.ok(verifyDiditSignature(raw, sig, ts, "k", now.getTime()));
   assert.ok(!verifyDiditSignature(raw + " ", sig, ts, "k", now.getTime()));
   assert.ok(!verifyDiditSignature(raw, sig, ts, "k", now.getTime() + 600_000));
+});
+
+test("pigūs filtrai prieš Didit", () => {
+  const ok = { emailConfirmed: true, phoneConfirmed: true, permitVerified: true, driverSessions24h: 0, platformSessionsToday: 0 };
+  assert.equal(guardCheck(ok), null);
+  assert.equal(guardCheck({ ...ok, emailConfirmed: false }), "email");
+  assert.equal(guardCheck({ ...ok, phoneConfirmed: false }), "phone");
+  assert.equal(guardCheck({ ...ok, permitVerified: false }), "permit");
+  assert.equal(guardCheck({ ...ok, driverSessions24h: 2 }), "driver_limit");
+  assert.equal(guardCheck({ ...ok, platformSessionsToday: 50 }), "platform_limit");
+  assert.equal(guardCheck({ ...ok, platformSessionsToday: 50, dailyCap: 80 }), null);
 });

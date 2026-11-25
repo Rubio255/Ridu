@@ -1113,7 +1113,7 @@ const VTAG = {ok:`<span class="tag ok">${ic('check')} Patvirtinta</span>`, warn:
 function liveCard(){
   const l = liveOf(ME_DRIVER), r = liveDue(ME_DRIVER), next = l.last ? new Date(Date.parse(l.last.slice(0,10)) + 7*864e5).toISOString().slice(0,10) : null;
   return `<div class="card"><h3>Tapatybė</h3>
-    <div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>Dokumentas ir selfis</b><p class="muted small">Vieną kartą registruojantis.</p></div>${l.kyc?VTAG.ok:VTAG.none}</div>
+    <div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>Dokumentas ir selfis</b><p class="muted small">Vieną kartą registruojantis. Pradedama, kai patvirtinate el. paštą, telefoną ir LTSA leidimą.</p></div>${l.kyc?VTAG.ok:VTAG.none}</div>
       ${l.kyc?`<p class="small" data-noi18n>${LANG==='en'?`Confirmed via ${l.how==='Didit'?'Didit':'video call'} · ${dateTxt(l.kyc)}`:`Patvirtinta per ${l.how} · ${dateTxt(l.kyc)}`}</p>`:''}</div>
     <div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>Gyvumo patikra</b><p class="muted small">Apie 10 s su telefono kamera.</p></div>${l.review?VTAG.bad:r?`<span class="tag warn">${ic('clock')} Reikia dabar</span>`:VTAG.ok}</div>
       ${l.last?`<p class="small" data-noi18n>${LANG==='en'?'Last':'Paskutinė'}: ${liveWhen(ME_DRIVER)}${!r&&next?` · ${LANG==='en'?'next no later than':'kita ne vėliau kaip'} ${dateTxt(next)}`:''}</p>`:''}
@@ -1679,7 +1679,7 @@ const EN = {
 "Ridu komanda susisieks dėl vaizdo skambučio": "The Ridu team will contact you about a video call",
 "Tapatybė": "Identity",
 "Dokumentas ir selfis": "ID document and selfie",
-"Vieną kartą registruojantis.": "Once, at sign-up.",
+"Vieną kartą registruojantis. Pradedama, kai patvirtinate el. paštą, telefoną ir LTSA leidimą.": "Once, at sign-up. It starts after you confirm your email, phone and LTSA permit.",
 "Gyvumo patikra": "Liveness check",
 "Apie 10 s su telefono kamera.": "About 10 s with your phone camera.",
 "Reikia dabar": "Needed now",
