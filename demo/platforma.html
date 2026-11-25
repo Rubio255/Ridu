@@ -153,6 +153,18 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .vrow{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .vrow:first-of-type{border-top:0;padding-top:0}
 .err{color:var(--bad);font-size:.85rem}
+.phs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.ph{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:12px;overflow:hidden;border:0;padding:0;display:grid;place-items:center;color:#fff;font-size:.72rem;font-weight:700;background:var(--surface-2)}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ph .lbl{position:absolute;left:0;right:0;bottom:0;padding:3px 6px;background:rgba(0,0,0,.45);text-align:left}
+.ph .ico{width:26px;height:26px;opacity:.9}
+.ph .st{position:absolute;top:5px;right:5px}
+.ph.empty{border:1px dashed var(--line);color:var(--muted)}
+.ph.empty .lbl{background:none;color:var(--muted)}
+.strip{display:flex;gap:6px;overflow-x:auto}
+.strip .ph{flex:0 0 96px}
+.lb{max-width:min(92vw,900px);width:100%;display:grid;gap:10px;justify-items:center}
+.lb .ph{width:100%;font-size:1rem}
 </style>
 
 <header>
@@ -259,6 +271,19 @@ const CHECKS = [
   {k:'rep', t:'Pažymos apie teistumą patikros kodas', hint:'Tik jei vešite vaikus. Saugome tik žymą „patikrinta iki“, ne pačią pažymą.', ph:'QR arba patikros kodas', src:'Informatikos ir ryšių departamentas (e. paslaugos)', url:'https://www.epaslaugos.lt/', until:true, childOnly:true}
 ];
 
+/* Nuotraukos: vairuotojas ir automobilis, aukšta raiška */
+const PHOTOS = [
+  {k:'face', t:'Jūsų nuotrauka', short:'Vairuotojas', ic:'users'},
+  {k:'ext1', t:'Automobilis iš priekio', short:'Priekis', ic:'car'},
+  {k:'ext2', t:'Automobilis iš šono', short:'Šonas', ic:'car'},
+  {k:'int1', t:'Salonas: priekinės sėdynės', short:'Salonas', ic:'users'},
+  {k:'int2', t:'Salonas: galinė sėdynė', short:'Galinė sėdynė', ic:'users'}
+];
+const MIN_LONG = 1920, MIN_SHORT = 1080;
+const PH_DEMO = st => Object.fromEntries(PHOTOS.map(p=>[p.k,{st, src:null, w:4032, h:3024}]));
+S.photos = {d1:PH_DEMO('ok'), d2:PH_DEMO('ok'), d5:PH_DEMO('ok')};
+S.queue[0].photos = PH_DEMO('rev');
+
 /* ---------- pagalbinės ---------- */
 const view = document.getElementById('view'), nav = document.getElementById('nav'), ovl = document.getElementById('overlay');
 let toastT;
@@ -266,11 +291,25 @@ function toast(t){ document.querySelector('.toast')?.remove(); clearTimeout(toas
 const reqOf = id => S.reqs.find(q=>q.id===id);
 const offOf = id => S.offers.find(o=>o.id===id);
 const convOf = id => S.conv[id] ??= {msgs:[], agreed:null, meetDone:false, confirmed:false};
+const avD = id => { const f=S.photos?.[id]?.face; return f?.src && f.st==='ok' ? `<img src="${f.src}" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none">` : av(drivers[id].name[0], drivers[id].g); };
 const av = (letter, g, size=46) => `<span class="av" style="background:${grad(g)};width:${size}px;height:${size}px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:700;flex:none">${esc(letter)}</span>`;
 const clientConvs = () => S.offers.filter(o => reqOf(o.req).mine && o.status==='contact');
 const driverConvs = () => S.offers.filter(o => o.driver===ME_DRIVER && o.status==='contact');
 const myDriverOffers = () => S.offers.filter(o => o.driver===ME_DRIVER);
 const persona = o => reqOf(o.req).mine && o.driver===ME_DRIVER; // abi pusės valdomos demonstracijoje
+function phTile(ph, def, g, opts={}){
+  const st = opts.status && ph ? {ok:'', rev:`<span class="tag info st">Tikrinama</span>`, bad:`<span class="tag bad st">Netiko</span>`}[ph.st] || '' : '';
+  if(!ph || ph.st==='none') return `<span class="ph empty">${ic('plus')}<span class="lbl">${def.short}</span></span>`;
+  const bg = ph.src ? `<img src="${ph.src}" alt="${def.t}">` : `<span style="position:absolute;inset:0;background:${grad(g + (def.k.startsWith('int')?2:def.k==='face'?0:1))}"></span>${ic(def.ic)}`;
+  return `<${opts.btn?'button type="button"':'span'} class="ph" ${opts.btn?`data-ph="${opts.btn}" aria-label="Didinti: ${def.t}"`:''}>${bg}<span class="lbl">${def.short}</span>${st}</${opts.btn?'button':'span'}>`;
+}
+function lightbox(driverId, k){
+  const d = drivers[driverId], set = S.photos[driverId], def = PHOTOS.find(p=>p.k===k);
+  ovReturn = null;
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-label="${def.t}"><div class="lb">${phTile(set[k], def, d.g)}
+    <p style="color:#fff">${esc(d.name)} · ${def.t}</p><button class="btn ghost" id="lb-x">${ic('x')} Uždaryti</button></div></div>`;
+  ovl.querySelector('#lb-x').focus(); ovl.querySelector('#lb-x').addEventListener('click', closeOv);
+}
 const lastOpen = cv => [...cv.msgs].reverse().find(m => m.kind==='offer' && m.state==='open');
 
 /* ---------- navigacija ---------- */
@@ -283,7 +322,7 @@ function badge(k){
   if(S.role==='client' && k==='reqs') return S.offers.filter(o=>reqOf(o.req).mine && o.status==='new').length;
   if(S.role==='client' && k==='convs') return clientConvs().filter(o=>{const m=lastOpen(convOf(o.id)); return m && m.by==='driver';}).length;
   if(S.role==='driver' && k==='convs') return driverConvs().filter(o=>{const m=lastOpen(convOf(o.id)); return m && m.by==='client';}).length;
-  if(S.role==='owner' && k==='verify') return S.queue.reduce((n,p)=>n+Object.values(p.items).filter(i=>i.st==='rev').length,0);
+  if(S.role==='owner' && k==='verify') return S.queue.reduce((n,p)=>n+[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='rev').length,0);
   return 0;
 }
 function renderNav(){
@@ -367,8 +406,9 @@ function refresh(){ if(ovl.innerHTML) return; const a=document.activeElement; if
 function offerCard(o, forClient){
   const d = drivers[o.driver];
   return `<div class="card">
-    <div class="row">${av(d.name[0], d.g)}<div style="flex:1;min-width:0"><h3>${esc(d.name)}</h3><p class="muted small">Vairuoja nuo ${d.since} m. · ${d.trips} kelionės</p></div><span class="price">${eur(o.price)}</span></div>
+    <div class="row">${avD(o.driver)}<div style="flex:1;min-width:0"><h3>${esc(d.name)}</h3><p class="muted small">Vairuoja nuo ${d.since} m. · ${d.trips} kelionės</p></div><span class="price">${eur(o.price)}</span></div>
     <span class="tag ok" style="justify-self:start">${ic('shield')} Patikimas ir patikrintas vairuotojas</span>
+    <div class="strip">${PHOTOS.filter(p=>S.photos[o.driver]?.[p.k]?.st==='ok').map(p=>phTile(S.photos[o.driver][p.k], p, d.g, {btn:o.driver+':'+p.k})).join('')}</div>
     <p class="small">${esc(d.bio)}</p>
     <div class="row small muted">${ic('clock')} Siūlo ${o.time}${o.note?` · „${esc(o.note)}“`:''}</div>
     ${forClient ? (o.status==='contact' ? `<button class="btn ghost" data-open="${o.id}">${ic('msg')} Atidaryti pokalbį</button>` :
@@ -385,6 +425,7 @@ function renderReq(id){
     ${offs.length ? offs.map(o=>offerCard(o,true)).join('') : `<div class="empty" style="height:auto">${ic('clock')}<h3>Laukiame pasiūlymų</h3><p class="muted">Vairuotojai paprastai atsiliepia per kelias valandas.</p></div>`}
     <p class="muted small">Kol nesutiksite kontaktuoti, vairuotojas nemato jūsų vardo ir telefono.</p>`;
   view.querySelector('#back').addEventListener('click', ()=>{ S.open=null; render(); });
+  view.querySelectorAll('[data-ph]').forEach(b=>b.addEventListener('click', ()=>{ const [dd,k]=b.dataset.ph.split(':'); lightbox(dd,k); }));
   view.querySelectorAll('[data-decline]').forEach(b=>b.addEventListener('click', ()=>{ offOf(b.dataset.decline).status='declined'; toast('Pasiūlymas atmestas'); render(); }));
   view.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', ()=>{ S.open={kind:'conv', id:b.dataset.open}; render(); }));
   view.querySelectorAll('[data-contact]').forEach(b=>b.addEventListener('click', ()=>{ startConv(offOf(b.dataset.contact)); S.open={kind:'conv', id:b.dataset.contact}; render(); }));
@@ -504,7 +545,7 @@ function simulateReply(o){
 }
 
 /* ---------- VAIRUOTOJAS: užklausų kaladė ---------- */
-const driverOk = () => Object.values(S.verify[ME_DRIVER]).every(v=>v.st==='ok'||v.st==='warn');
+const driverOk = () => Object.values(S.verify[ME_DRIVER]).every(v=>v.st==='ok'||v.st==='warn') && Object.values(S.photos[ME_DRIVER]).every(p=>p.st==='ok' || p.prev==='ok');
 function poolItems(){
   const me = drivers[ME_DRIVER];
   return S.reqs.filter(q => !S.skipped.includes(q.id) && !S.offers.some(o=>o.req===q.id && o.driver===ME_DRIVER)
@@ -613,13 +654,33 @@ function renderDriverCheck(){
   view.innerHTML = `<h2>Patikra</h2>
     <div class="card" style="background:${driverOk()?'var(--ok-bg)':'var(--warn-bg)'};border:0"><div class="row">${ic('shield')}<b>${driverOk()?'Profilis matomas klientams':'Profilis paslėptas, kol vyksta patikra'}</b></div>
       ${warn?`<p class="small">${esc(warn.note)}. Pratęskite, kitaip profilis bus paslėptas.</p>`:''}</div>
-    <p class="muted small">Dokumentų kelti nereikia. Įveskite numerius, o mes juos patikriname registruose. Saugome tik numerį, galiojimo datą ir patikros žymą.</p>
+    <p class="muted small">Dokumentų kopijų kelti nereikia. Įveskite numerius, o mes juos patikriname registruose. Saugome tik numerį, galiojimo datą ir patikros žymą.</p>
+    <div class="card"><h3>Nuotraukos</h3>
+      <p class="muted small">Jūsų veidas ir automobilis iš išorės bei vidaus. Aukšta raiška: ne mažiau ${MIN_LONG}×${MIN_SHORT} px. Klientai mato jas pasiūlyme.</p>
+      <div class="phs">${PHOTOS.map(p => `<label class="filebtn" for="ph-${p.k}" style="display:block;cursor:pointer" title="${p.t}">${phTile(S.photos[ME_DRIVER][p.k], p, drivers[ME_DRIVER].g, {status:true})}<input id="ph-${p.k}" type="file" accept="image/jpeg,image/png,image/heic,image/webp" data-ph="${p.k}" aria-label="Įkelti: ${p.t}"></label>`).join('')}</div>
+      <p class="err" id="ph-err" hidden></p>
+    </div>
     <div class="card">${CHECKS.map(c => { const x = v[c.k] || {st:'none'};
       return `<div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>${c.t}</b><p class="muted small">${c.hint}</p></div>${VTAG[x.st]}</div>
         ${x.val?`<p class="small">${esc(x.val)}${x.until?` · galioja iki ${x.until}`:''}${x.at?` · patikrinta ${x.at}`:''}</p>`:''}
         ${x.how?`<p class="small">Patvirtinta per ${esc(x.how)}${x.at?` · ${x.at}`:''}</p>`:''}
         ${c.k!=='id' && x.st!=='rev' ? `<details><summary class="small" style="cursor:pointer;font-weight:700">${x.val?'Atnaujinti':'Įvesti'}</summary><form class="chatform" data-k="${c.k}" style="margin-top:8px"><input aria-label="${c.t}" placeholder="${c.ph}" id="v-${c.k}"><button class="btn">Siųsti</button></form></details>` : ''}
       </div>`; }).join('')}</div>`;
+  view.querySelectorAll('input[data-ph]').forEach(inp => inp.addEventListener('change', () => {
+    const file = inp.files?.[0], k = inp.dataset.ph, err = view.querySelector('#ph-err'); if(!file) return;
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const L = Math.max(img.naturalWidth, img.naturalHeight), Sh = Math.min(img.naturalWidth, img.naturalHeight);
+      if(L < MIN_LONG || Sh < MIN_SHORT){ URL.revokeObjectURL(url); err.textContent = `Per maža raiška (${img.naturalWidth}×${img.naturalHeight} px). Reikia bent ${MIN_LONG}×${MIN_SHORT} px.`; err.hidden=false; return; }
+      const old = S.photos[ME_DRIVER][k]; const ph = {st:'rev', src:url, w:img.naturalWidth, h:img.naturalHeight, prev: old && (old.st==='ok' || old.prev==='ok') ? 'ok' : ''};
+      S.photos[ME_DRIVER][k] = ph;
+      let q = S.queue.find(x=>x.me); if(!q){ q={driver:'Rimas', g:0, items:{}, me:true}; S.queue.unshift(q); }
+      q.photos = q.photos || {}; q.photos[k] = ph;
+      toast('Nuotrauka išsiųsta patikrai'); render();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); err.textContent='Nepavyko atidaryti failo. Įkelkite JPG arba PNG.'; err.hidden=false; };
+    img.src = url;
+  }));
   view.querySelectorAll('form[data-k]').forEach(f => f.addEventListener('submit', e => {
     e.preventDefault(); const k=f.dataset.k, val=f.querySelector('input').value.trim(); if(!val){ toast('Įveskite numerį'); return; }
     v[k] = {st:'rev', val}; S.queue.unshift({driver:'Rimas', g:0, items:{[k]:{st:'rev', val}}, me:true});
@@ -632,7 +693,7 @@ function renderOwner(){
   view.innerHTML = `<h2>Vairuotojų patikra</h2>
     <p class="muted small">Tapatybė patvirtinama automatiškai per Smart-ID ar banką. Kitus punktus tikrinate patys pagal nuorodas: viešo API šiems registrams neradome. Išsaugomas tik numeris, galiojimo data ir kas bei kada patikrino.</p>
     ${S.queue.length ? S.queue.map((p,pi) => `<div class="card">
-      <div class="row">${av(p.driver[0], p.g)}<div><h3>${esc(p.driver)}</h3><p class="muted small">${Object.values(p.items).filter(i=>i.st==='ok').length} iš ${Object.keys(p.items).length} patvirtinta</p></div></div>
+      <div class="row">${av(p.driver[0], p.g)}<div><h3>${esc(p.driver)}</h3><p class="muted small">${[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='ok').length} iš ${Object.keys(p.items).length + Object.keys(p.photos||{}).length} patvirtinta</p></div></div>
       ${CHECKS.filter(c=>p.items[c.k]).map(c => { const it=p.items[c.k];
         return `<div class="vrow"><div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><b>${c.t}</b>
             <p class="small">${it.val?`<span class="pc">${esc(it.val)}</span>`:''}${it.how?`Per ${esc(it.how)}`:''}</p></div>${VTAG[it.st]}</div>
@@ -643,10 +704,19 @@ function renderOwner(){
             ${c.k==='rep'?'<p class="muted small">Atidarykite patikrą, įveskite kodą ir pažymėkite rezultatą. Pačios pažymos nesaugome.</p>':''}` :
             it.until?`<p class="muted small">Galioja iki ${it.until} · patikrino MB ${TODAY}</p>`:''}
         </div>`; }).join('')}
-      ${Object.values(p.items).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
+      ${p.photos ? `<div class="vrow"><b>Nuotraukos</b><p class="muted small">Ar matosi veidas, ar automobilis atitinka valstybinį numerį, ar salonas švarus ir yra kėdutės tvirtinimai.</p>
+        <div class="phs">${PHOTOS.filter(d=>p.photos[d.k]).map(d => { const ph=p.photos[d.k]; return `<div style="display:grid;gap:4px">${phTile(ph, d, p.g, {status:true})}
+          <span class="muted small" style="font-size:.72rem">${ph.w}×${ph.h}</span>
+          ${ph.st==='rev'?`<div class="row" style="flex-wrap:nowrap;gap:4px"><button class="round sm" style="width:36px;height:36px;color:var(--bad)" data-pa="bad" data-p="${pi}" data-k="${d.k}" aria-label="Netinka: ${d.t}">${ic('x')}</button><button class="round sm" style="width:36px;height:36px;color:var(--ok)" data-pa="ok" data-p="${pi}" data-k="${d.k}" aria-label="Patvirtinti: ${d.t}">${ic('check')}</button></div>`:''}</div>`; }).join('')}</div></div>` : ''}
+      ${Object.values(p.items).every(i=>i.st==='ok') && Object.values(p.photos||{}).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
     </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}
     <div class="card"><h3>Netrukus baigsis</h3><div class="row between small"><span>Rimas · draudimas (LKN 512)</span><span class="tag warn">2026-12-14</span></div>
       <p class="muted small">Likus 30 d. vairuotojui siunčiamas priminimas. Pasibaigus profilis paslepiamas automatiškai.</p></div>`;
+  view.querySelectorAll('[data-pa]').forEach(b => b.addEventListener('click', () => {
+    const p = S.queue[Number(b.dataset.p)], ph = p.photos[b.dataset.k]; ph.st = b.dataset.pa;
+    if(p.me) S.photos[ME_DRIVER][b.dataset.k].st = ph.st;
+    render();
+  }));
   view.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => {
     const p = S.queue[Number(b.dataset.p)], k = b.dataset.k, it = p.items[k];
     it.st = b.dataset.a; it.at = TODAY;
