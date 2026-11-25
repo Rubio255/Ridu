@@ -160,6 +160,17 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .pcout:empty{display:none}
 .card > *{min-width:0}
 .lvb{background:var(--info-bg);border:0}
+.rate{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--ink)}
+.rate .ico{width:14px;height:14px;color:#e0a100} .rate .ico svg{fill:currentColor}
+.stars{display:flex;gap:4px} .stars button{border:0;background:none;padding:4px;cursor:pointer;color:var(--muted);border-radius:8px}
+.trip textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);color:var(--ink);width:100%;resize:vertical}
+.stars button .ico{width:30px;height:30px} .stars button[aria-pressed="true"]{color:#e0a100} .stars button[aria-pressed="true"] svg{fill:currentColor}
+.map{position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#dfe9e6,#eef3f1);height:130px}
+.map svg{width:100%;height:100%;display:block}
+.sosbtn{color:var(--bad);border-color:var(--bad)}
+a.btn{text-decoration:none}
+.btn.sos{background:var(--bad);color:#fff;border-color:transparent}
+.trip{display:grid;gap:8px}
 .lv{display:grid;gap:12px;justify-items:center;text-align:center}
 .lv-cam{position:relative;width:190px;height:240px}
 .lv-cam .face{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#e9c9a8 0 22%,transparent 23%),radial-gradient(ellipse at 50% 92%,#2a8f7f 0 40%,transparent 41%),linear-gradient(#cfd8d6,#9fb2ae);overflow:hidden}
@@ -389,6 +400,11 @@ const I = {
   car:'<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
   qr:'<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>'
 };
+Object.assign(I, {
+  star:'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  nav:'<polygon points="3 11 22 2 13 21 11 13 3 11"/>'
+});
 const ic = (n, cls='') => `<span class="ico ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24">${I[n]}</svg></span>`;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* ---------- Kalba: LT (numatytoji) / EN ---------- */
@@ -555,6 +571,11 @@ S.live = {
   d5:{kyc:'2026-09-15', how:'Vaizdo skambutis', last:'2026-11-22T13:05', due:null, failed:0, review:false}
 };
 S.liveQueue = [];
+/* Atsiliepimai (abipusiai, matomi kai įvertina abu arba po 14 d.) ir SOS pranešimai */
+Object.assign(drivers.d1, {rate:4.9, nrev:37}); Object.assign(drivers.d2, {rate:4.8, nrev:22}); Object.assign(drivers.d5, {rate:4.7, nrev:11});
+const CLIENT_RATE = {Lina:[5,4], Paulius:[4.9,9], Ona:[5,2], Gintarė:[4.8,6], Marius:[4.6,3]};
+S.sos = [];
+const rateTxt = (r, n) => r ? `<span class="rate">${ic('star')}${String(r.toFixed(1)).replace('.', LANG==='en'?'.':',')}</span> <span class="muted">(${n})</span>` : '';
 const LIVE_WHY = {initial:'Pirminė tapatybės patikra', weekly:'Savaitinė patikra', new_client:'Pirmoji kelionė su nauju klientu', random:'Atsitiktinė patikra',
   new_device:'Prisijungėte nauju įrenginiu', profile_change:'Pakeista nuotrauka ar automobilis', report:'Gautas kliento pranešimas', inactive:'Ilgai nebuvote prisijungę', child_route:'Prasideda vaikų pastovus maršrutas'};
 const LIVE_RULES = ['Registruojantis: dokumentas ir selfis', 'Kas 7 dienas', 'Prieš pirmą kelionę su nauju klientu', 'Atsitiktinai, maždaug 1 iš 10 darbo dienų',
@@ -615,6 +636,7 @@ function badge(k){
   if(S.role==='client' && k==='reqs') return S.offers.filter(o=>reqOf(o.req).mine && o.status==='new').length;
   if(S.role==='client' && k==='convs') return clientConvs().filter(o=>{const m=lastOpen(convOf(o.id)); return m && m.by==='driver';}).length;
   if(S.role==='driver' && k==='convs') return driverConvs().filter(o=>{const m=lastOpen(convOf(o.id)); return m && m.by==='client';}).length;
+  if(S.role==='owner' && k==='verify' && S.sos.some(x=>x.st==='new')) return S.sos.filter(x=>x.st==='new').length;
   if(S.role==='owner' && k==='verify') return S.queue.reduce((n,p)=>n+[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='rev').length,0);
   return 0;
 }
@@ -752,7 +774,7 @@ function refresh(){ if(ovl.innerHTML) return; const a=document.activeElement; if
 function offerCard(o, forClient){
   const d = drivers[o.driver];
   return `<div class="card">
-    <div class="row">${avD(o.driver)}<div style="flex:1;min-width:0"><h3>${esc(d.name)}</h3><p class="muted small">Vairuoja nuo ${d.since} m. · ${d.trips} kelionės</p></div><span class="price">${eur(o.price)}</span></div>
+    <div class="row">${avD(o.driver)}<div style="flex:1;min-width:0"><h3>${esc(d.name)}</h3><p class="muted small">${rateTxt(d.rate, d.nrev)} · <span>Vairuoja nuo ${d.since} m.</span></p></div><span class="price">${eur(o.price)}</span></div>
     <span class="tag ok" style="justify-self:start">${ic('shield')} Patikimas ir patikrintas vairuotojas</span>
     ${liveOf(o.driver).last ? `<p class="muted small" data-noi18n style="margin-top:-6px">${LANG==='en'?'Identity confirmed':'Tapatybė patvirtinta'} ${liveWhen(o.driver)}</p>` : ''}
     <div class="strip">${PHOTOS.filter(p=>S.photos[o.driver]?.[p.k]?.st==='ok').map(p=>phTile(S.photos[o.driver][p.k], p, d.g, {btn:o.driver+':'+p.k})).join('')}</div>
@@ -803,10 +825,92 @@ function renderConvList(){
     }).join('')}</div>` : `<div class="empty" style="height:auto">${ic('msg')}<h3>Pokalbių dar nėra</h3><p class="muted">${S.role==='client'?'Pokalbis atsiveria, kai sutinkate kontaktuoti su vairuotoju.':'Pokalbis atsiveria, kai klientas sutinka su jumis kontaktuoti.'}</p></div>`}`;
   view.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click', ()=>{ S.open={kind:'conv', id:b.dataset.c}; render(); }));
 }
+/* ---------- Kelionė: vieta realiu laiku tėvams, „vaikas pristatytas“, SOS, atsiliepimai ---------- */
+const TRIP_ST = {none:'Dar neprasidėjo', onway:'Vairuotojas važiuoja paimti', picked:'Keleivis paimtas, vežamas', done:'Nuvežta'};
+function tripStep(o, q, cv, me, child){
+  const ready = !child || cv.meetDone, t = cv.trip ??= {st:'none'}, n = child ? 4 : 3;
+  const live = t.st==='onway' || t.st==='picked';
+  const map = live ? `<div class="map" role="img" aria-label="Vairuotojo vieta žemėlapyje"><svg viewBox="0 0 300 130" preserveAspectRatio="none">
+      <path d="M20 105 C 80 100, 90 40, 150 55 S 240 30, 280 22" fill="none" stroke="#2a8f7f" stroke-width="4" stroke-dasharray="2 8" stroke-linecap="round"/>
+      <circle cx="20" cy="105" r="7" fill="#0f4c45"/><circle cx="280" cy="22" r="7" fill="#f2b705"/>
+      <circle r="9" fill="#3f8fd6" stroke="#fff" stroke-width="3">${matchMedia('(prefers-reduced-motion: reduce)').matches?'':`<animateMotion dur="14s" repeatCount="indefinite" path="M20 105 C 80 100, 90 40, 150 55 S 240 30, 280 22"/>`}</circle></svg></div>` : '';
+  let body = '';
+  if(me==='driver'){
+    body = t.st==='none' ? `<p class="muted small">Pradėjus kelionę klientas matys jūsų vietą, kol kelionė baigsis.</p><button class="btn" data-trip="onway">${ic('nav')} Pradėti kelionę</button>`
+      : t.st==='onway' ? `<p class="small">${ic('nav')} Klientas mato jūsų vietą.</p><button class="btn" data-trip="picked">${ic('check')} Keleivis paimtas</button>`
+      : t.st==='picked' ? `<p class="small">${ic('nav')} Klientas mato jūsų vietą.</p><button class="btn" data-trip="done">${ic('check')} ${child?'Vaikas pristatytas':'Keleivis nuvežtas'}</button>`
+      : `<p class="small row">${ic('check')} <span data-noi18n>${L(child?'Vaikas pristatytas':'Keleivis nuvežtas')} ${t.at}. ${L('Klientui išsiųstas pranešimas.')}</span></p>`;
+  } else {
+    body = t.st==='none' ? `<p class="muted small">Kai vairuotojas pradės kelionę, čia matysite, kur jis yra.</p>`
+      : t.st==='done' ? `<p class="small row">${ic('check')} <span data-noi18n>${L(child?'Vaikas pristatytas':'Keleivis nuvežtas')} ${t.at}</span></p>`
+      : `<p class="small"><b>${TRIP_ST[t.st]}</b></p>${map}<button class="btn ghost" id="trip-share">${ic('copy')} Dalintis nuoroda</button>`;
+  }
+  if(me==='driver' && live) body = `<p class="small"><b>${TRIP_ST[t.st]}</b></p>` + body;
+  const sos = live ? `<button class="btn ghost sosbtn" id="sos">${ic('alert')} SOS</button>` : '';
+  const rv = t.st==='done' ? reviewBox(cv, me) : '';
+  return `<div class="step ${!ready?'':t.st==='done'?'done':'now'}"><span class="dot">${!ready?ic('lock'):t.st==='done'?ic('check'):n}</span><div class="trip"><b>Kelionė</b>
+    ${ready ? body + sos + (live?`<p class="muted small">Vieta rodoma tik kelionės metu ir ištrinama jai pasibaigus.</p>`:'') : '<p class="muted small">Prieš tai užbaikite ankstesnius žingsnius.</p>'}${rv}</div></div>`;
+}
+function reviewBox(cv, me){
+  const R = cv.rev ??= {}, mine = R[me], other = R[me==='client'?'driver':'client'];
+  if(!mine) return `<div class="inline" style="display:grid;gap:8px"><b>${me==='client'?'Įvertinkite vairuotoją':'Įvertinkite klientą'}</b>
+    <div class="stars" role="group" aria-label="Įvertinimas">${[1,2,3,4,5].map(i=>`<button type="button" data-star="${i}" aria-pressed="false" aria-label="${i} iš 5">${ic('star')}</button>`).join('')}</div>
+    <textarea id="rv-t" rows="2" maxlength="500" placeholder="Kas patiko ar ką pagerinti? (nebūtina)" aria-label="Atsiliepimas"></textarea>
+    <p class="err" id="rv-err" hidden>Pasirinkite nuo 1 iki 5 žvaigždučių.</p>
+    <button class="btn" id="rv-send">Siųsti atsiliepimą</button>
+    <p class="muted small">Atsiliepimai matomi, kai įvertina abu arba po 14 d. Taip niekas nekeršija už įvertinimą.</p></div>`;
+  const both = mine && other;
+  return `<div class="inline" style="display:grid;gap:6px"><b>Atsiliepimai</b>
+    <p class="small" data-noi18n>${L('Jūsų')}: ${'★'.repeat(mine.s)}${mine.t?` · „${esc(mine.t)}“`:''}</p>
+    ${both ? `<p class="small" data-noi18n>${L(me==='client'?'Vairuotojo':'Kliento')}: ${'★'.repeat(other.s)}${other.t?` · „${esc(other.t)}“`:''}</p>` : `<p class="muted small">Kitos pusės atsiliepimą pamatysite, kai ji įvertins arba po 14 d.</p>`}</div>`;
+}
+function bindTrip(o, q, cv, me, other){
+  const t = cv.trip; if(!t) return;
+  view.querySelectorAll('[data-trip]').forEach(b => b.addEventListener('click', () => {
+    const go = () => { t.st = b.dataset.trip; if(t.st==='done'){ t.at = nowHM(); toast(`${L('Klientui išsiųsta')}: ${L(q.type==='child'?'Vaikas pristatytas':'Keleivis nuvežtas')} ${t.at}`); } render(); };
+    if(b.dataset.trip==='onway' && liveDue(ME_DRIVER)) return openLive(go);
+    go();
+  }));
+  view.querySelector('#trip-share')?.addEventListener('click', () => { navigator.clipboard?.writeText('https://ridu.lt/k/7f3a9c').catch(()=>{}); toast('Nuoroda nukopijuota. Ji veiks tik iki kelionės pabaigos'); });
+  view.querySelector('#sos')?.addEventListener('click', () => sosOpen(o, q, me, other));
+  let star = 0;
+  view.querySelectorAll('[data-star]').forEach(b => b.addEventListener('click', () => { star = Number(b.dataset.star); view.querySelectorAll('[data-star]').forEach(x => x.setAttribute('aria-pressed', Number(x.dataset.star) <= star)); }));
+  view.querySelector('#rv-send')?.addEventListener('click', () => {
+    if(!star){ view.querySelector('#rv-err').hidden = false; return; }
+    cv.rev[me] = {s:star, t:view.querySelector('#rv-t').value.trim()};
+    // demonstracijoje kita pusė įvertina po kelių sekundžių
+    const oth = me==='client' ? 'driver' : 'client';
+    if(!cv.rev[oth]) setTimeout(() => { cv.rev[oth] = {s:5, t: oth==='driver' ? 'Mandagi šeima, viskas laiku.' : 'Punktualus ir malonus.'}; refresh(); }, 4000);
+    toast('Ačiū už atsiliepimą'); render();
+  });
+}
+function sosOpen(o, q, me, other){
+  ovReturn = () => render();
+  ovl.innerHTML = `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="sos-t"><div class="card" style="text-align:left;justify-items:stretch">
+    <div class="row" style="color:var(--bad)">${ic('alert')}<h2 id="sos-t">Pagalba</h2></div>
+    <p>Jei gresia pavojus, pirmiausia skambinkite 112.</p>
+    <a class="btn sos" href="tel:112">${ic('phone')} Skambinti 112</a>
+    <button class="btn ghost" id="sos-ridu">${ic('pin')} Pranešti Ridu su mano vieta</button>
+    <button class="btn ghost" id="sos-x">Uždaryti</button>
+    <p class="muted small">Vieta perduodama tik Ridu komandai ir saugoma 30 d., nebent jos reikia tyrimui.</p>
+  </div></div>`;
+  ovl.querySelector('#sos-x').addEventListener('click', closeOv);
+  ovl.querySelector('#sos-ridu').addEventListener('click', () => {
+    S.sos.unshift({id:nid('s'), who: me==='client' ? q.client : drivers[o.driver].name, role:me, other:other.name, pc:q.from, at:nowHM(), st:'new'});
+    ovReturn=null; ovl.innerHTML=''; toast('Ridu gavo pranešimą su jūsų vieta. Susisieksime nedelsdami'); render();
+  });
+}
+function ownerSos(){
+  if(!S.sos.length) return '';
+  return `<h3 style="color:var(--bad)">SOS pranešimai</h3>${S.sos.map((x,i) => `<div class="card" style="${x.st==='new'?'border-color:var(--bad)':''}">
+    <div class="row between" style="flex-wrap:nowrap"><b>${esc(x.who)}</b>${x.st==='new'?`<span class="tag bad">${ic('alert')} Naujas</span>`:VTAG.ok}</div>
+    <p class="small" data-noi18n>${x.at} · ${LANG==='en'?(x.role==='client'?'client':'driver'):(x.role==='client'?'klientas':'vairuotojas')} · ${LANG==='en'?'trip with':'kelionė su'} ${esc(x.other)} · ${LANG==='en'?'near':'prie'} <span class="pc">${x.pc}</span></p>
+    ${x.st==='new'?`<div class="two"><a class="btn ghost" href="tel:+37060000000">${ic('phone')} Skambinti</a><button class="btn" data-sos="${i}">${ic('check')} Išspręsta</button></div>`:''}</div>`).join('')}`;
+}
 function renderConv(id){
   const o = offOf(id), q = reqOf(o.req), cv = convOf(id), d = drivers[o.driver];
   const me = S.role==='client' ? 'client' : 'driver';
-  const other = me==='client' ? {name:d.name, g:d.g, sub:'Patikimas ir patikrintas vairuotojas'} : {name:q.client, g:q.g, sub:`${paxTxt(q)}`};
+  const other = me==='client' ? {name:d.name, g:d.g, sub:'Patikimas ir patikrintas vairuotojas', rate:[d.rate, d.nrev]} : {name:q.client, g:q.g, sub:`${paxTxt(q)}`, rate:CLIENT_RATE[q.client]};
   const open = lastOpen(cv);
   const msgs = cv.msgs.map(m => {
     const mine = m.by===me;
@@ -826,7 +930,7 @@ function renderConv(id){
   view.innerHTML = `
     <button class="btn ghost" id="back" style="justify-self:start">${ic('back')} Atgal</button>
     <div class="card">
-      <div class="row">${av(other.name[0], other.g)}<div style="min-width:0"><h2>${esc(other.name)}</h2><p class="muted small">${esc(other.sub)}</p></div></div>
+      <div class="row">${av(other.name[0], other.g)}<div style="min-width:0"><h2>${esc(other.name)}</h2><p class="muted small">${other.rate?rateTxt(...other.rate)+' · ':''}<span>${esc(other.sub)}</span></p></div></div>
       <p class="small"><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span> · ${when(q)} · ${paxTxt(q)}</p>
       ${q.repeat && q.start ? `<p class="small muted" data-noi18n>${L('Pastovus vežimas')} ${periodTxt(q)}</p>` : ''}
       <p class="small row">${ic('phone')} ${me==='client' ? '+370 612 345 67' : '+370 698 765 43'}</p>
@@ -839,6 +943,7 @@ function renderConv(id){
           <p class="muted small">Sutartį sudarote patys. Ridu nėra sutarties šalis.</p>
           <button class="btn ${has('pro')?'':'ghost'}" data-contract ${(!child||cv.meetDone)?'':'disabled'}>${ic('file')} Sutarties šablonas${has('pro')?'':' (Pro)'}</button>
 </div></div>
+        ${tripStep(o, q, cv, me, child)}
       </div>` : ''}
     </div>
     <div class="card">
@@ -877,6 +982,7 @@ function renderConv(id){
   });
   view.querySelector('#share-addr')?.addEventListener('click', ()=>{ cv.addrShared=true; cv.msgs.push({by:'client', t:`Paėmimo vieta: ${q.addr.from}. Kelionės tikslas: ${q.addr.to}.`}); toast('Adresas išsiųstas tik šiam vairuotojui'); render(); });
   view.querySelector('#met')?.addEventListener('click', ()=>{ cv.meetDone=true; render(); });
+  bindTrip(o, q, cv, me, other);
   view.querySelector('[data-contract]')?.addEventListener('click', ()=> has('pro') ? contract(o) : paywall('pro','Paruoštas pavėžėjimo sutarties šablonas su jūsų susitarimo duomenimis.'));
   const chat = view.querySelector('#chat'); chat.lastElementChild?.scrollIntoView({block:'nearest'});
 }
@@ -1192,6 +1298,13 @@ const FAQ = {
       'Pasirenkate dienas, laiką ir laikotarpį. Švenčių dienomis kelionės praleidžiamos, jei taip pažymite.']],
     ['Kiek kainuoja Ridu?', [
       `Pradėti galima nemokamai. Plus (${eur(PLANS.plus.price.client)}/mėn.) leidžia matyti visus pasiūlymus, Pro (${eur(PLANS.pro.price.client)}/mėn.) prideda sutarčių šablonus.`]],
+    ['Ar galiu matyti, kur važiuoja vaikas?', [
+      'Taip. Kai vairuotojas pradeda kelionę, pokalbyje matote jo vietą žemėlapyje. Nuoroda galite pasidalinti su kitu tėvu ar seneliu.',
+      'Kai vaikas pristatytas, gaunate pranešimą su laiku. Vieta rodoma tik kelionės metu ir ištrinama jai pasibaigus.']],
+    ['Kas yra SOS mygtukas?', [
+      'Kelionės metu SOS mygtukas leidžia iš karto skambinti 112 ir pranešti Ridu komandai su jūsų vieta. Pavojaus atveju pirmiausia skambinkite 112.']],
+    ['Kaip veikia atsiliepimai?', [
+      'Po kelionės vairuotoją įvertinate nuo 1 iki 5 žvaigždučių, o jis įvertina jus. Atsiliepimai matomi, kai įvertina abu arba po 14 d., kad niekas nekeršytų už įvertinimą.']],
     ['Kaip apsisaugoti nuo apgaulės?', [
       'Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse. Ridu neima mokesčio už keliones ir niekada neprašo kodų ar banko duomenų.',
       'Patikrinkite, ar vairuotojas ir automobilis atitinka nuotraukas. Įtartiną elgesį praneškite mygtuku „Pranešti“ pokalbyje.']],
@@ -1219,6 +1332,11 @@ const FAQ = {
       'Kainą siūlote jūs. Klientas gali pasiūlyti savo variantą, ir derinatės, kol abu sutinkate. Komisinio nėra: visas uždarbis jūsų.']],
     ['Kuo skiriasi užklausos ir pastovus maršrutas?', [
       'Užklausas skelbia klientai, o jūs pasisiūlote. Pastovų maršrutą skelbiate jūs, ir klientai jus randa patys.']],
+    ['Ar Ridu seka mano buvimo vietą?', [
+      'Ne. Vietą klientas mato tik nuo tada, kai paspaudžiate „Pradėti kelionę“, iki kelionės pabaigos. Po to ji ištrinama.',
+      'Kelionės metu turite SOS mygtuką: skambutis 112 ir pranešimas Ridu su jūsų vieta.']],
+    ['Kaip veikia atsiliepimai?', [
+      'Po kelionės jūs ir klientas vienas kitą įvertinate. Atsiliepimai matomi, kai įvertina abu arba po 14 d. Geras įvertinimas padeda gauti daugiau klientų.']],
     ['Ar galiu vežti vaikus?', [
       'Taip, jei turite tinkamas kėdutes. Prieš pirmą vaiko kelionę susitinkate su šeima. Įsitikinkite, kad atitinkate visus teisės aktų reikalavimus vežant vaikus.']],
     ['Kiek kainuoja Ridu?', [
@@ -1397,7 +1515,7 @@ function ownerLive(){
       <p class="muted small">Prašome registruojantis, kas 7 d., prieš pirmą kelionę su nauju klientu, atsitiktinai ir esant rizikos signalui. Saugomas tik rezultatas ir laikas.</p></div>`;
 }
 function renderOwner(){
-  view.innerHTML = `<h2>Ridu administravimas: vairuotojų patikra</h2>
+  view.innerHTML = `${ownerSos()}<h2>Ridu administravimas: vairuotojų patikra</h2>
     <p class="muted small">Tikrinamas tik LTSA leidimo autentiškumas: ar leidimas galioja ir ar automobilis su juo susietas. Kol nėra automatinės sąsajos, tikrinama rankiniu būdu pagal nuorodą. Išsaugomas tik numeris ir kas bei kada patikrino.</p>
     ${S.queue.length ? S.queue.map((p,pi) => `<div class="card">
       <div class="row">${av(p.driver[0], p.g)}<div><h3>${esc(p.driver)}</h3><p class="muted small">${[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='ok').length} iš ${Object.keys(p.items).length + Object.keys(p.photos||{}).length} patvirtinta</p></div></div>
@@ -1418,6 +1536,7 @@ function renderOwner(){
       ${Object.values(p.items).every(i=>i.st==='ok') && Object.values(p.photos||{}).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
     </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}
     ${ownerLive()}`;
+  view.querySelectorAll('[data-sos]').forEach(b => b.addEventListener('click', () => { S.sos[Number(b.dataset.sos)].st='ok'; render(); }));
   view.querySelectorAll('[data-lq]').forEach(b => b.addEventListener('click', () => {
     const it = S.liveQueue[Number(b.dataset.lq)], l = S.live[it.id];
     if(b.dataset.v==='ok'){ Object.assign(l, {review:false, failed:0, due:null, last:`${TODAY}T${nowHM()}`, how:l.how||'Vaizdo skambutis'}); S.liveQueue = S.liveQueue.filter(x=>x.id!==it.id); toast(`${drivers[it.id].name}: ${LANG==='en'?'identity confirmed':'tapatybė patvirtinta'}`); }
@@ -1638,6 +1757,62 @@ const EN = {
 "Pažymėkite visus privalomus punktus.": "Please tick all required boxes.",
 "Ačiū. Taisykles rasite skiltyje DUK": "Thank you. You'll find the terms in the FAQ section",
 "Išsirink savo vairuotoją": "Choose your driver",
+"Kelionė": "Trip",
+"Dar neprasidėjo": "Not started yet",
+"Vairuotojas važiuoja paimti": "Driver is on the way to pick up",
+"Keleivis paimtas, vežamas": "Passenger picked up, on the way",
+"Nuvežta": "Delivered",
+"Vairuotojo vieta žemėlapyje": "Driver location on the map",
+"Pradėjus kelionę klientas matys jūsų vietą, kol kelionė baigsis.": "Once you start the trip, the client will see your location until the trip ends.",
+"Pradėti kelionę": "Start trip",
+"Klientas mato jūsų vietą.": "The client can see your location.",
+"Keleivis paimtas": "Passenger picked up",
+"Vaikas pristatytas": "Child delivered",
+"Keleivis nuvežtas": "Passenger delivered",
+"Klientui išsiųstas pranešimas.": "The client has been notified.",
+"Klientui išsiųsta": "Sent to the client",
+"Kai vairuotojas pradės kelionę, čia matysite, kur jis yra.": "When the driver starts the trip, you'll see where they are here.",
+"Dalintis nuoroda": "Share link",
+"Vieta rodoma tik kelionės metu ir ištrinama jai pasibaigus.": "Location is shown only during the trip and deleted when it ends.",
+"Prieš tai užbaikite ankstesnius žingsnius.": "Finish the previous steps first.",
+"Įvertinkite vairuotoją": "Rate the driver",
+"Įvertinkite klientą": "Rate the client",
+"Įvertinimas": "Rating",
+"Kas patiko ar ką pagerinti? (nebūtina)": "What did you like or what could be better? (optional)",
+"Atsiliepimas": "Review",
+"Pasirinkite nuo 1 iki 5 žvaigždučių.": "Choose 1 to 5 stars.",
+"Siųsti atsiliepimą": "Send review",
+"Atsiliepimai matomi, kai įvertina abu arba po 14 d. Taip niekas nekeršija už įvertinimą.": "Reviews become visible when both sides have rated or after 14 days, so nobody retaliates.",
+"Atsiliepimai": "Reviews",
+"Jūsų": "Yours",
+"Vairuotojo": "Driver's",
+"Kliento": "Client's",
+"Kitos pusės atsiliepimą pamatysite, kai ji įvertins arba po 14 d.": "You'll see the other side's review once they rate or after 14 days.",
+"Ačiū už atsiliepimą": "Thank you for your review",
+"Nuoroda nukopijuota. Ji veiks tik iki kelionės pabaigos": "Link copied. It works only until the trip ends",
+"Pagalba": "Help",
+"Jei gresia pavojus, pirmiausia skambinkite 112.": "If you are in danger, call 112 first.",
+"Skambinti 112": "Call 112",
+"Pranešti Ridu su mano vieta": "Alert Ridu with my location",
+"Vieta perduodama tik Ridu komandai ir saugoma 30 d., nebent jos reikia tyrimui.": "Your location goes only to the Ridu team and is kept for 30 days unless needed for an investigation.",
+"Ridu gavo pranešimą su jūsų vieta. Susisieksime nedelsdami": "Ridu received your alert with your location. We'll contact you right away",
+"SOS pranešimai": "SOS alerts",
+"Naujas": "New",
+"Skambinti": "Call",
+"Išspręsta": "Resolved",
+"Ar galiu matyti, kur važiuoja vaikas?": "Can I see where my child is?",
+"Taip. Kai vairuotojas pradeda kelionę, pokalbyje matote jo vietą žemėlapyje. Nuoroda galite pasidalinti su kitu tėvu ar seneliu.": "Yes. When the driver starts the trip, you see their location on a map in the chat. You can share the link with the other parent or a grandparent.",
+"Kai vaikas pristatytas, gaunate pranešimą su laiku. Vieta rodoma tik kelionės metu ir ištrinama jai pasibaigus.": "When your child is delivered, you get a notification with the time. Location is shown only during the trip and deleted when it ends.",
+"Kas yra SOS mygtukas?": "What is the SOS button?",
+"Kelionės metu SOS mygtukas leidžia iš karto skambinti 112 ir pranešti Ridu komandai su jūsų vieta. Pavojaus atveju pirmiausia skambinkite 112.": "During a trip, the SOS button lets you call 112 straight away and alert the Ridu team with your location. In danger, call 112 first.",
+"Kaip veikia atsiliepimai?": "How do reviews work?",
+"Po kelionės vairuotoją įvertinate nuo 1 iki 5 žvaigždučių, o jis įvertina jus. Atsiliepimai matomi, kai įvertina abu arba po 14 d., kad niekas nekeršytų už įvertinimą.": "After a trip you rate the driver from 1 to 5 stars, and they rate you. Reviews become visible when both have rated or after 14 days, so nobody retaliates.",
+"Ar Ridu seka mano buvimo vietą?": "Does Ridu track my location?",
+"Ne. Vietą klientas mato tik nuo tada, kai paspaudžiate „Pradėti kelionę“, iki kelionės pabaigos. Po to ji ištrinama.": "No. The client sees your location only from when you tap “Start trip” until the trip ends. After that it is deleted.",
+"Kelionės metu turite SOS mygtuką: skambutis 112 ir pranešimas Ridu su jūsų vieta.": "During a trip you have an SOS button: call 112 and alert Ridu with your location.",
+"Po kelionės jūs ir klientas vienas kitą įvertinate. Atsiliepimai matomi, kai įvertina abu arba po 14 d. Geras įvertinimas padeda gauti daugiau klientų.": "After a trip, you and the client rate each other. Reviews become visible when both have rated or after 14 days. A good rating helps you get more clients.",
+"Mandagi šeima, viskas laiku.": "Polite family, everything on time.",
+"Punktualus ir malonus.": "Punctual and friendly.",
 "Pirminė tapatybės patikra": "Initial identity check",
 "Savaitinė patikra": "Weekly check",
 "Pirmoji kelionė su nauju klientu": "First trip with a new client",
