@@ -176,7 +176,6 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
     <div class="seg" role="group" aria-label="Kieno akimis žiūrėti">
       <button id="r-client" aria-pressed="true" data-role="client">Klientas</button>
       <button id="r-driver" aria-pressed="false" data-role="driver">Vairuotojas</button>
-      <button id="r-owner" aria-pressed="false" data-role="owner">MB</button>
     </div>
   </div>
 </header>
@@ -688,9 +687,9 @@ function renderDriverCheck(){
   }));
 }
 
-/* ---------- MB: rankinės patikros įrankis ---------- */
+/* ---------- Ridu administravimas (atskira, viešoje programėlėje nerodoma dalis) ---------- */
 function renderOwner(){
-  view.innerHTML = `<h2>Vairuotojų patikra</h2>
+  view.innerHTML = `<h2>Ridu administravimas: vairuotojų patikra</h2>
     <p class="muted small">Tapatybė patvirtinama automatiškai per Smart-ID ar banką. Kitus punktus tikrinate patys pagal nuorodas: viešo API šiems registrams neradome. Išsaugomas tik numeris, galiojimo data ir kas bei kada patikrino.</p>
     ${S.queue.length ? S.queue.map((p,pi) => `<div class="card">
       <div class="row">${av(p.driver[0], p.g)}<div><h3>${esc(p.driver)}</h3><p class="muted small">${[...Object.values(p.items),...Object.values(p.photos||{})].filter(i=>i.st==='ok').length} iš ${Object.keys(p.items).length + Object.keys(p.photos||{}).length} patvirtinta</p></div></div>
@@ -702,7 +701,7 @@ function renderOwner(){
               <button class="round sm" style="color:var(--bad)" data-a="bad" data-p="${pi}" data-k="${c.k}" aria-label="Netinka: ${c.t}">${ic('x')}</button>
               <button class="round sm" style="color:var(--ok)" data-a="ok" data-p="${pi}" data-k="${c.k}" aria-label="Patvirtinti: ${c.t}">${ic('check')}</button></div>
             ${c.k==='rep'?'<p class="muted small">Atidarykite patikrą, įveskite kodą ir pažymėkite rezultatą. Pačios pažymos nesaugome.</p>':''}` :
-            it.until?`<p class="muted small">Galioja iki ${it.until} · patikrino MB ${TODAY}</p>`:''}
+            it.until?`<p class="muted small">Galioja iki ${it.until} · patikrino Ridu ${TODAY}</p>`:''}
         </div>`; }).join('')}
       ${p.photos ? `<div class="vrow"><b>Nuotraukos</b><p class="muted small">Ar matosi veidas, ar automobilis atitinka valstybinį numerį, ar salonas švarus ir yra kėdutės tvirtinimai.</p>
         <div class="phs">${PHOTOS.filter(d=>p.photos[d.k]).map(d => { const ph=p.photos[d.k]; return `<div style="display:grid;gap:4px">${phTile(ph, d, p.g, {status:true})}
@@ -727,5 +726,14 @@ function renderOwner(){
   }));
 }
 
-render();
+/* Administravimas pasiekiamas tik atskiru adresu (#admin), viešame perjungiklyje jo nėra */
+function route(){
+  const admin = location.hash === '#admin';
+  document.querySelector('.seg').hidden = admin;
+  if(admin){ S.role='owner'; S.open=null; }
+  else if(S.role==='owner'){ S.role='client'; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.role==='client')); }
+  render();
+}
+window.addEventListener('hashchange', route);
+route();
 </script>
