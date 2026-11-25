@@ -16,7 +16,12 @@ export function SosButton({ tripId }: { tripId: string }) {
     const r = await sendSos({ tripId, lat: pos?.coords.latitude, lng: pos?.coords.longitude, accuracy: pos?.coords.accuracy });
     setMsg(r.ok ? "Ridu gavo pranešimą su jūsų vieta. Susisieksime nedelsdami." : "Nepavyko išsiųsti. Skambinkite 112.");
   });
-  if (!open) return <button type="button" onClick={() => setOpen(true)} className="btn btn-lg flex w-full items-center justify-center gap-2 border-2 border-[var(--bad)] text-[var(--bad)]"><Ico n="alert" size={18} />SOS</button>;
+  if (!open) return (
+    <div className="grid gap-1">
+      <button type="button" onClick={() => setOpen(true)} className="btn btn-lg flex w-full items-center justify-center gap-2 border-2 border-[var(--bad)] text-[var(--bad)]"><Ico n="alert" size={18} />SOS</button>
+      <p className="text-center text-xs muted">Šis mygtukas nepakeičia 112.</p>
+    </div>
+  );
   return (
     <section className="card grid gap-2 border-2 border-[var(--bad)]" role="alertdialog" aria-labelledby="sos-t">
       <h2 id="sos-t" className="flex items-center gap-2 font-bold text-[var(--bad)]"><Ico n="alert" size={18} />Pagalba</h2>

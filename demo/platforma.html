@@ -846,7 +846,7 @@ function tripStep(o, q, cv, me, child){
       : `<p class="small"><b>${TRIP_ST[t.st]}</b></p>${map}<button class="btn ghost" id="trip-share">${ic('copy')} Dalintis nuoroda</button>`;
   }
   if(me==='driver' && live) body = `<p class="small"><b>${TRIP_ST[t.st]}</b></p>` + body;
-  const sos = live ? `<button class="btn ghost sosbtn" id="sos">${ic('alert')} SOS</button>` : '';
+  const sos = live ? `<button class="btn ghost sosbtn" id="sos">${ic('alert')} SOS</button><p class="muted small" style="margin-top:-4px">Šis mygtukas nepakeičia 112.</p>` : '';
   const rv = t.st==='done' ? reviewBox(cv, me) : '';
   return `<div class="step ${!ready?'':t.st==='done'?'done':'now'}"><span class="dot">${!ready?ic('lock'):t.st==='done'?ic('check'):n}</span><div class="trip"><b>Kelionė</b>
     ${ready ? body + sos + (live?`<p class="muted small">Vieta rodoma tik kelionės metu ir ištrinama jai pasibaigus.</p>`:'') : '<p class="muted small">Prieš tai užbaikite ankstesnius žingsnius.</p>'}${rv}</div></div>`;
@@ -1791,6 +1791,7 @@ const EN = {
 "Ačiū už atsiliepimą": "Thank you for your review",
 "Nuoroda nukopijuota. Ji veiks tik iki kelionės pabaigos": "Link copied. It works only until the trip ends",
 "Pagalba": "Help",
+"Šis mygtukas nepakeičia 112.": "This does not replace 112.",
 "Jei gresia pavojus, pirmiausia skambinkite 112.": "If you are in danger, call 112 first.",
 "Skambinti 112": "Call 112",
 "Pranešti Ridu su mano vieta": "Alert Ridu with my location",
