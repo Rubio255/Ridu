@@ -166,8 +166,123 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .strip .ph{flex:0 0 96px}
 .lb{max-width:min(92vw,900px);width:100%;display:grid;gap:10px;justify-items:center}
 .lb .ph{width:100%;font-size:1rem}
+
+/* ===== Gyvas sluoksnis: judantis fonas, stiklas, mikro-animacijos ===== */
+:root{
+  --glass:rgba(255,255,255,.58); --glass-strong:rgba(255,255,255,.78); --glass-line:rgba(255,255,255,.75);
+  --glass-shadow:0 8px 32px rgba(15,76,69,.14), inset 0 1px 0 rgba(255,255,255,.7);
+  --blob1:rgba(42,143,127,.55); --blob2:rgba(242,183,5,.45); --blob3:rgba(63,143,214,.35); --base:#e6f1ee;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --glass:rgba(22,33,32,.55); --glass-strong:rgba(22,33,32,.78); --glass-line:rgba(255,255,255,.12);
+  --glass-shadow:0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  --blob1:rgba(42,143,127,.45); --blob2:rgba(245,197,58,.22); --blob3:rgba(63,143,214,.28); --base:#0b1312}}
+:root[data-theme="dark"]{
+  --glass:rgba(22,33,32,.55); --glass-strong:rgba(22,33,32,.78); --glass-line:rgba(255,255,255,.12);
+  --glass-shadow:0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  --blob1:rgba(42,143,127,.45); --blob2:rgba(245,197,58,.22); --blob3:rgba(63,143,214,.28); --base:#0b1312}
+body{background:var(--base)}
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bg i{position:absolute;border-radius:50%;filter:blur(60px);will-change:transform}
+.bg i:nth-child(1){width:420px;height:420px;background:var(--blob1);left:-120px;top:60px;animation:drift1 22s ease-in-out infinite alternate}
+.bg i:nth-child(2){width:360px;height:360px;background:var(--blob2);right:-120px;top:300px;animation:drift2 26s ease-in-out infinite alternate}
+.bg i:nth-child(3){width:380px;height:380px;background:var(--blob3);left:20%;bottom:-160px;animation:drift3 30s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(160px,220px) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-180px,-160px) scale(.9)}}
+@keyframes drift3{to{transform:translate(120px,-240px) scale(1.1)}}
+.glass,.card,.li,.sw,.offer,.empty,.round,nav.bottom,.chatform input,label.f input,label.f select,.chip{
+  background:var(--glass);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);
+  border-color:var(--glass-line)}
+.card,.li,.offer,.empty{box-shadow:var(--glass-shadow)}
+.sw{background:var(--glass-strong)}
+.card{border-radius:20px}
+header{background:color-mix(in srgb, var(--brand) 78%, transparent);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}
+body::before{background:color-mix(in srgb, var(--brand) 78%, transparent)}
+.note{background:color-mix(in srgb, var(--accent) 88%, transparent)}
+nav.bottom{border-top:1px solid var(--glass-line);background:var(--glass-strong)}
+.seg{background:rgba(255,255,255,.16)}
+.seg button{transition:background .25s var(--ease),color .25s var(--ease),transform .2s var(--spring)}
+.seg button:active{transform:scale(.94)}
+.logo circle{transform-origin:46px 19px;animation:dot 3.2s var(--spring) infinite}
+@keyframes dot{0%,70%,100%{transform:none}80%{transform:translateY(-5px) scale(1.15)}90%{transform:translateY(1px)}}
+/* ekranų perėjimas */
+#view.enter > *{animation:rise .5s var(--ease) both}
+#view.enter > *:nth-child(2){animation-delay:.05s}#view.enter > *:nth-child(3){animation-delay:.1s}#view.enter > *:nth-child(4){animation-delay:.15s}#view.enter > *:nth-child(5){animation-delay:.2s}#view.enter > *:nth-child(n+6){animation-delay:.25s}
+.list > *{animation:rise .45s var(--ease) both}
+.list > *:nth-child(2){animation-delay:.06s}.list > *:nth-child(3){animation-delay:.12s}.list > *:nth-child(n+4){animation-delay:.18s}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+/* mygtukai ir lytėjimas */
+.btn,.li,.chip,.round{transition:transform .25s var(--spring),box-shadow .25s var(--ease),background .25s var(--ease)}
+.btn:hover:not(:disabled),.li:hover{transform:translateY(-2px)}
+.btn:active:not(:disabled),.li:active,.chip:active,.round:active{transform:scale(.95)}
+.btn:not(.ghost){background:linear-gradient(135deg,var(--brand),color-mix(in srgb,var(--brand) 70%,#2a8f7f));box-shadow:0 6px 18px color-mix(in srgb,var(--brand) 35%,transparent)}
+.btn.ghost{background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.chip[aria-pressed="true"]{background:var(--brand);box-shadow:0 4px 12px color-mix(in srgb,var(--brand) 35%,transparent);animation:pop .3s var(--spring)}
+@keyframes pop{from{transform:scale(.88)}to{transform:none}}
+.round.yes{background:linear-gradient(135deg,var(--brand),#2a8f7f);position:relative}
+.round.yes::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--brand);opacity:0;animation:ring 2.4s var(--ease) infinite}
+@keyframes ring{0%{opacity:.6;transform:scale(.85)}100%{opacity:0;transform:scale(1.35)}}
+nav.bottom button{transition:color .25s var(--ease)}
+nav.bottom button .ico{transition:transform .3s var(--spring)}
+nav.bottom button[aria-current="page"] .ico{transform:translateY(-3px) scale(1.12)}
+nav.bottom button[aria-current="page"]::after{content:"";position:absolute;bottom:4px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent);animation:pop .35s var(--spring)}
+nav.bottom .badge{animation:pop .4s var(--spring)}
+/* kortelės */
+.deck .sw:not(.back){animation:deal .5s var(--spring) both}
+@keyframes deal{from{transform:translateY(30px) rotate(-3deg) scale(.94);opacity:0}to{transform:none;opacity:1}}
+.sw.back{transition:transform .35s var(--spring)}
+.sw .top{overflow:hidden}
+.sw .top::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 80% 0%,rgba(255,255,255,.35),transparent 60%);pointer-events:none}
+.fit{backdrop-filter:blur(8px);background:color-mix(in srgb,var(--accent) 88%,transparent)}
+.sw .top .av{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+/* maršruto linija su judančiu tašku */
+.route{position:relative;height:18px;margin:2px 0 6px;max-width:260px}
+.route::before{content:"";position:absolute;left:8px;right:8px;top:8px;height:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.8) 0 6px,transparent 6px 12px);background-size:12px 2px;animation:dash .8s linear infinite}
+.route .a,.route .b{position:absolute;top:3px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.3)}
+.route .a{left:0}.route .b{right:0;background:var(--accent)}
+.route .car{position:absolute;top:1px;left:0;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:go 3.2s var(--ease) infinite}
+@keyframes go{0%{left:0;opacity:0}10%{opacity:1}85%{opacity:1}100%{left:calc(100% - 16px);opacity:0}}
+@keyframes dash{to{background-position:12px 0}}
+.route.dark .a{background:var(--brand)}
+/* ženklelis su blizgesiu */
+.tag.ok{position:relative;overflow:hidden}
+.tag.ok::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);animation:shine 3.5s ease-in-out infinite}
+@keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+/* pokalbis */
+.msg,.offer{animation:msgin .35s var(--spring) both}
+@keyframes msgin{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+.msg{background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.msg.me{background:linear-gradient(135deg,var(--brand),#2a8f7f);border:0}
+.typing{display:inline-flex;gap:4px;padding:10px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--glass-line);justify-self:start}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+.offer.done{background:color-mix(in srgb,var(--ok-bg) 80%,transparent);animation:glow 1.2s var(--ease)}
+@keyframes glow{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}100%{box-shadow:0 0 0 18px transparent}}
+.step.now .dot{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}50%{box-shadow:0 0 0 8px transparent}}
+/* šventinis susitarimo blyksnis */
+.burst{position:fixed;left:50%;top:45%;width:10px;height:10px;z-index:40;pointer-events:none}
+.burst i{position:absolute;width:10px;height:10px;border-radius:3px;animation:fly 1s var(--ease) forwards}
+@keyframes fly{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.toast{animation:toastin .35s var(--spring);backdrop-filter:blur(12px);background:color-mix(in srgb,var(--fg) 88%,transparent)}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,16px) scale(.95)}to{opacity:1;transform:translate(-50%,0)}}
+.ov{background:rgba(6,30,27,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fade .25s ease}
+@keyframes fade{from{opacity:0}}
+.ov .card{background:var(--glass-strong)}
+.ph{transition:transform .3s var(--spring)}
+button.ph:hover{transform:scale(1.04)}
+.list{grid-template-columns:minmax(0,1fr)}
+.li{min-width:0}.li .tag{flex:none}.li .grow b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw{background:var(--surface)}
+.sw.back .body,.sw.back .top > *{visibility:hidden}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 </style>
 
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
 <header>
   <div class="wrap">
     <div class="logo">
@@ -281,6 +396,14 @@ S.queue[0].photos = PH_DEMO('rev');
 const view = document.getElementById('view'), nav = document.getElementById('nav'), ovl = document.getElementById('overlay');
 let toastT;
 function toast(t){ document.querySelector('.toast')?.remove(); clearTimeout(toastT); const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=t; document.body.append(el); toastT=setTimeout(()=>el.remove(),2800); }
+function burst(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const b = document.createElement('div'); b.className='burst'; b.setAttribute('aria-hidden','true');
+  const C = ['#0f4c45','#2a8f7f','#f2b705','#3f8fd6','#ffffff'];
+  for(let i=0;i<28;i++){ const a = Math.random()*Math.PI*2, r = 90 + Math.random()*120, el = document.createElement('i');
+    el.style.cssText = `--x:${Math.cos(a)*r}px;--y:${Math.sin(a)*r}px;--r:${Math.random()*540}deg;background:${C[i%C.length]};animation-delay:${Math.random()*.08}s`; b.append(el); }
+  document.body.append(b); setTimeout(()=>b.remove(), 1300);
+}
 const reqOf = id => S.reqs.find(q=>q.id===id);
 const offOf = id => S.offers.find(o=>o.id===id);
 const convOf = id => S.conv[id] ??= {msgs:[], agreed:null, meetDone:false, confirmed:false};
@@ -326,8 +449,12 @@ document.querySelector('.seg').addEventListener('click', e => {
   const b=e.target.closest('button'); if(!b) return; S.role=b.dataset.role; S.open=null; S.newReq=false;
   document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b)); render();
 });
+let lastKey = '';
 function render(){
-  renderNav(); window.scrollTo({top:0});
+  renderNav();
+  const key = S.role + S.tab[S.role] + JSON.stringify(S.open) + S.newReq;
+  if(key !== lastKey){ lastKey = key; window.scrollTo({top:0}); view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
+  else view.classList.remove('enter');
   if(S.open?.kind==='conv') return renderConv(S.open.id);
   if(S.open?.kind==='req') return renderReq(S.open.id);
   const t = S.tab[S.role];
@@ -480,7 +607,7 @@ function renderConv(id){
       </div>` : ''}
     </div>
     <div class="card">
-      <div class="chat" id="chat" style="max-height:none">${msgs}</div>
+      <div class="chat" id="chat" style="max-height:none">${msgs}${cv.typing?'<span class="typing" aria-label="Rašo"><i></i><i></i><i></i></span>':''}</div>
       ${!cv.agreed ? `<div class="inline" id="cform" hidden>
         <b>Jūsų variantas</b>
         <div class="two"><label class="f" for="co-price">Kaina už kelionę, €<input id="co-price" type="number" min="3" step="0.1" value="${open?open.price:o.price}"></label><label class="f" for="co-time">Laikas<input id="co-time" type="time" value="${open?open.time:o.time}"></label></div>
@@ -509,23 +636,25 @@ function renderConv(id){
     render(); simulateReply(o);
   });
   view.querySelector('[data-accept]')?.addEventListener('click', () => {
-    open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days};
+    open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst();
     cv.msgs.push({by:me, t:'Sutinku su šiuo variantu.'}); toast('Susitarta'); render();
   });
   view.querySelector('#met')?.addEventListener('click', ()=>{ cv.meetDone=true; render(); });
-  view.querySelector('#confirm')?.addEventListener('click', ()=>{ cv.confirmed=true; toast(q.repeat?'Abonementas patvirtintas':'Kelionė užsakyta'); render(); });
+  view.querySelector('#confirm')?.addEventListener('click', ()=>{ cv.confirmed=true; burst(); toast(q.repeat?'Abonementas patvirtintas':'Kelionė užsakyta'); render(); });
   const chat = view.querySelector('#chat'); chat.lastElementChild?.scrollIntoView({block:'nearest'});
 }
 /* Kita pusė atsako pati, jei jos nevaldome demonstracijoje */
 function simulateReply(o){
   if(persona(o)) return;
   const cv = convOf(o.id), q = reqOf(o.req);
+  cv.typing = true; setTimeout(refresh, 400);
   setTimeout(() => {
+    cv.typing = false;
     const open = lastOpen(cv); if(!open || cv.agreed) return;
     const replier = open.by==='client' ? 'driver' : 'client';
     const target = replier==='driver' ? o.price : open.price;
     if(open.price >= target*0.9 || cv.msgs.filter(m=>m.kind==='offer').length > 2){
-      open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days};
+      open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst();
       cv.msgs.push({by:replier, t:'Tinka, sutinku.'});
     } else {
       open.state='old';
@@ -549,7 +678,7 @@ function poolCard(q, back){
     <div class="top" style="background:${grad(q.g)}">
       <span class="fit">${q.repeat?'Kartojasi':'Vienkartinė'}</span>
       <div class="av">${ic(q.type==='child'?'users':'car')}</div>
-      <div><h3><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h3><div class="sub">apie ${q.km} km</div></div>
+      <div style="flex:1"><div class="route"><span class="a"></span><span class="car"></span><span class="b"></span></div><h3><span class="pc">${q.from}</span> → <span class="pc">${q.to}</span></h3><div class="sub">apie ${q.km} km</div></div>
     </div>
     <span class="stamp yes">SIŪLAUSI</span><span class="stamp no">PRALEISTI</span>
     <div class="body">
