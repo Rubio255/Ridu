@@ -12,6 +12,9 @@ From all users:
 - name, email, phone number, login and security data (such as login time, device type, IP address);
 - messages, offers and agreements in chats;
 - reports of violations and complaints;
+- chat filter flags: only the flag type and time, not the message text (see section 4c);
+- referral programme data: who invited whom and whether the reward was granted;
+- phone notification settings and the device notification token;
 - reviews after a ride (rating 1–5 and a comment);
 - your location if you tap “Alert Ridu with my location” (SOS) during a ride;
 - plan and plan payment information (we do not store card details; the payment service provider handles them).
@@ -41,9 +44,16 @@ We do not collect health data and do not store copies of documents, selfies or b
 | Preventing fraud and violations, handling reports | Legitimate interest (f) and legal obligation under the Digital Services Act (c) |
 | Paid plans, invoices, accounting | Performance of a contract and legal obligation (b and c) |
 | Responding to authorities (e.g. law enforcement, tax authority) | Legal obligation (c) |
+| Automatic scanning of chats for signs of fraud | Legitimate interest in protecting users from fraud (f) |
+| Referral programme and rewards | Performance of a contract (b) and legitimate interest in preventing abuse (f) |
+| Phone notifications about offers, messages, agreements and the ride | Your consent on the device (a); each type can be turned off |
 | News by email | Your consent (a), which you may withdraw at any time |
 
 We do not make automated decisions with legal effects on you. A person always reviews account restrictions.
+
+## 4c. Chat filter
+
+To protect against fraud, messages are automatically checked for requests for advance payment, bank or card details and invitations to continue off the platform. Phone numbers are not flagged. If such a sign is found, only a warning is shown and the message is still sent. We keep only the flag type and time, not the message text. If an account gets 3 flags within 7 days, an administrator is notified and decides. You may object to this processing by writing to info@ridu.lt.
 
 ## 4. Who sees your data
 
@@ -105,6 +115,10 @@ Write to info@ridu.lt. We reply within 1 month. If you think we have breached yo
 ## 8. Security
 
 We use encrypted connections, access restrictions in the database, and two-factor login for drivers and administration. Staff see only what their work requires.
+
+## 8a. Phone notifications
+
+We send notifications only after you switch them on in the app and allow them on your device. You can turn off each type of notification in settings. The device token is deleted when you turn notifications off or delete your account.
 
 ## 9. Cookies
 

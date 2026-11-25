@@ -130,6 +130,14 @@ Apie galimai neteisėtą veiklą, pavyzdžiui, suklastotus dokumentus ar sukčia
 - Kainas galime keisti įspėję prieš 30 dienų. Jei nesutinkate, galite atšaukti prenumeratą.
 - Plano mokestis yra mokestis Ridu už platformos funkcijas. Tai nėra mokestis už keliones ir nesuteikia teisės į keliones.
 
+## 12a. Kvietimų programa „Pakviesk draugą“
+
+- Jei pakviestas draugas užsiregistruoja ir patvirtina el. paštą bei telefoną, jūs abu gaunate 1 mėnesį Plus plano nemokamai.
+- Dovana suteikiama tik už naują paskyrą, sukurtą ne anksčiau kaip prieš 30 dienų. Negalima kviesti savęs ar paskyros su tuo pačiu el. paštu ar telefonu. Kiekvieną asmenį galima pakviesti tik kartą. Per mėnesį galima gauti ne daugiau kaip 5 dovanas.
+- Dovana nekeičiama į pinigus ir neperleidžiama.
+- Jei kvietimais piktnaudžiaujama (netikros ar kelios paskyros, kvietimų pardavimas, šlamštas), Ridu gali atšaukti dovaną ir apriboti dalyvavimą programoje. Apie tai pranešame ir nurodome priežastį.
+- Programą galime pakeisti ar nutraukti įspėję prieš 15 dienų. Jau gautos dovanos lieka.
+
 ## 13. Atsakomybė
 
 Ridu atsako už platformos veikimą ir už tai, kad laikytųsi šių taisyklių ir teisės aktų.

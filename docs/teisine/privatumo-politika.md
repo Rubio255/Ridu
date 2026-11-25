@@ -12,6 +12,9 @@ Visų naudotojų:
 - vardą, el. paštą, telefono numerį, prisijungimo ir saugumo duomenis (pvz. prisijungimo laiką, įrenginio tipą, IP adresą);
 - žinutes, pasiūlymus ir susitarimus pokalbiuose;
 - pranešimus apie pažeidimus ir skundus;
+- pokalbių filtro žymas: tik žymos tipą ir laiką, ne žinutės tekstą (žr. 4c skyrių);
+- kvietimų programos duomenis: kas ką pakvietė ir ar dovana suteikta;
+- pranešimų telefone nustatymus ir įrenginio pranešimų žymą (token);
 - atsiliepimus po kelionės (įvertinimas 1–5 ir komentaras);
 - vietą, jei kelionės metu paspaudžiate „Pranešti Ridu su mano vieta“ (SOS);
 - plano ir mokėjimo už planą informaciją (banko kortelės duomenų nesaugome, juos tvarko mokėjimų paslaugų teikėjas).
@@ -41,9 +44,16 @@ Mes nerenkame sveikatos duomenų ir nesaugome dokumentų kopijų, selfių ar bio
 | Sukčiavimo, pažeidimų prevencija, pranešimų nagrinėjimas | Teisėtas interesas (f p.) ir teisinė prievolė pagal Skaitmeninių paslaugų aktą (c p.) |
 | Mokami planai, sąskaitos, apskaita | Sutarties vykdymas ir teisinė prievolė (b ir c p.) |
 | Atsakymai institucijoms (pvz. teisėsaugai, VMI) | Teisinė prievolė (c p.) |
+| Automatinis pokalbių tikrinimas dėl sukčiavimo požymių | Teisėtas interesas apsaugoti naudotojus nuo sukčiavimo (f p.) |
+| Kvietimų programa ir dovanos | Sutarties vykdymas (b p.) ir teisėtas interesas užkirsti kelią piktnaudžiavimui (f p.) |
+| Pranešimai telefone apie pasiūlymus, žinutes, susitarimus ir kelionę | Jūsų sutikimas įrenginyje (a p.); kiekvieną tipą galite išjungti |
 | Naujienos el. paštu | Jūsų sutikimas (a p.), jį galite atšaukti bet kada |
 
 Automatizuotų sprendimų, kurie jums turėtų teisinių pasekmių, nepriimame. Paskyrų apribojimus visada peržiūri žmogus.
+
+## 4c. Pokalbių filtras
+
+Kad apsaugotume nuo sukčiavimo, žinutės automatiškai tikrinamos, ar jose nėra prašymo mokėti iš anksto, banko ar kortelės duomenų ir kvietimo tęsti už platformos ribų. Telefono numeriai nežymimi. Radus tokį požymį, rodomas tik įspėjimas, o žinutė vis tiek išsiunčiama. Išsaugome tik žymos tipą ir laiką, ne žinutės tekstą. Jei per 7 dienas paskyroje atsiranda 3 žymos, apie tai pranešama administratoriui, kuris sprendžia pats. Galite prieštarauti šiam tvarkymui parašę info@ridu.lt.
 
 ## 4. Kas mato jūsų duomenis
 
@@ -105,6 +115,10 @@ Rašykite info@ridu.lt. Atsakome per 1 mėnesį. Jei manote, kad pažeidėme jū
 ## 8. Saugumas
 
 Naudojame šifruotą ryšį, prieigos ribojimą duomenų bazėje, dviejų veiksnių prisijungimą vairuotojams ir administravimui. Darbuotojai mato tik tai, ko reikia jų darbui.
+
+## 8a. Pranešimai telefone
+
+Pranešimus siunčiame tik įjungus juos programėlėje ir leidus įrenginyje. Kiekvieną pranešimų tipą galite išjungti nustatymuose. Įrenginio žyma ištrinama išjungus pranešimus ar ištrynus paskyrą.
 
 ## 9. Slapukai
 

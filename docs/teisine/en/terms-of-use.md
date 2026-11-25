@@ -130,6 +130,14 @@ We may report possibly illegal activity, such as forged documents or fraud, to L
 - We may change prices with 30 days’ notice. If you disagree, you may cancel the subscription.
 - The plan fee is a fee to Ridu for platform features. It is not a fee for rides and gives no right to rides.
 
+## 12a. “Invite a friend” referral programme
+
+- If an invited friend signs up and confirms their email and phone, you both get 1 month of the Plus plan free.
+- The reward is given only for a new account created no more than 30 days ago. You may not invite yourself or an account with the same email or phone. Each person may be invited only once. Up to 5 rewards may be received per month.
+- The reward cannot be exchanged for money or transferred.
+- If invitations are abused (fake or multiple accounts, selling invitations, spam), Ridu may cancel the reward and restrict participation in the programme. We will tell you and give the reason.
+- We may change or end the programme with 15 days’ notice. Rewards already received are kept.
+
 ## 13. Liability
 
 Ridu is responsible for the operation of the platform and for complying with these terms and the law.
