@@ -158,6 +158,9 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 .ext .ico{width:15px;height:15px}
 .pc{font-variant-numeric:tabular-nums;font-weight:700}
 .pcout:empty{display:none}
+.slogan{margin:4px 0 -4px;font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em;
+  background:linear-gradient(100deg,var(--brand) 0%,#2a8f7f 45%,var(--accent) 60%,var(--brand) 100%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sl 6s ease-in-out infinite}
+@keyframes sl{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
 .cal{border:1px solid var(--glass-line);border-radius:16px;padding:10px;display:grid;gap:8px}
 .cal-h{display:flex;align-items:center;justify-content:space-between}.cal-h b{font-family:var(--display);font-size:1.02rem}
 .cal-h .round.sm{width:36px;height:36px}.cal-h .flip .ico{transform:scaleX(-1)}
@@ -608,6 +611,7 @@ function render(){
 function renderMyReqs(){
   const mine = S.reqs.filter(q=>q.mine);
   view.innerHTML = `
+    <p class="slogan">Išsirink savo vairuotoją</p>
     <div class="card"><h2>Kur reikia nuvežti?</h2><p class="muted">Nurodykite adresus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.</p>
       <button class="btn block" id="new">${ic('plus')} Nauja užklausa</button></div>
     ${S.routes.length ? `<h3>Vairuotojų pastovūs maršrutai</h3><div class="list">${S.routes.map(r=>`<button class="li" data-r="${r.id}">${avD(r.driver)}<span class="grow"><b><span class="pc">${mpc(r.from)}</span> → <span class="pc">${mpc(r.to)}</span></b><span>${esc(drivers[r.driver].name)} · ${daysTxt(r.days)}, ${r.time} · ${r.seats} ${r.seats===1?'vieta':'vietos'}</span></span>${r.price?`<span class="tag info">${eur(r.price)}</span>`:''}</button>`).join('')}</div>` : ''}
@@ -888,7 +892,7 @@ function poolCard(q, back){
 function renderPool(){
   if(!driverOk()){ view.innerHTML = `<div class="empty">${ic('lock')}<h3>Užbaikite patikrą</h3><p class="muted">Užklausas matysite, kai patvirtinsime jūsų duomenis.</p><button class="btn" id="goc">Į patikrą</button></div>`; view.querySelector('#goc').addEventListener('click',()=>{S.tab.driver='check'; render();}); return; }
   const items = poolItems();
-  const head = `<div class="row between"><div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>
+  const head = `<p class="slogan">Išsirink savo keleivį</p><div class="row between"><div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>
     <span class="tag ${has('plus')?'ok':S.daily?'info':'bad'}">${has('plus')?'Neribota':`Liko ${S.daily} iš ${FREE_DAILY}`}</span></div>`;
   if(!items.length){
     view.innerHTML = head + `<div class="empty">${ic('search')}<h3>Naujų užklausų nėra</h3><p class="muted">Pranešime, kai atsiras naujų. Užklausą galite paskelbti ir patys: perjunkite į „Man reikia važiuoti“.</p>${S.history.length?`<button class="btn ghost" id="undo">${ic('undo')} Grąžinti paskutinę</button>`:''}</div>`;
@@ -1472,6 +1476,8 @@ const EN = {
 "Noriu gauti naujienas el. paštu (nebūtina).": "I'd like to receive news by email (optional).",
 "Pažymėkite visus privalomus punktus.": "Please tick all required boxes.",
 "Ačiū. Taisykles rasite skiltyje DUK": "Thank you. You'll find the terms in the FAQ section",
+"Išsirink savo vairuotoją": "Choose your driver",
+"Išsirink savo keleivį": "Choose your passenger",
 "Kur reikia nuvežti?": "Where do you need to go?",
 "Nurodykite adresus, laiką ir keleivius. Patikrinti vairuotojai patys pasiūlys kainą.": "Enter the addresses, time and passengers. Verified drivers will offer a price.",
 "Nauja užklausa": "New request",
