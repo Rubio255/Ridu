@@ -34,14 +34,15 @@ button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .wrap{max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-fg)}
-header .wrap{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-block:10px}
+header .wrap{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;justify-content:space-between;padding-block:10px}
+header .wrap > .seg{order:3;flex:1 0 100%;margin-left:0}
+header .wrap > .seg button{flex:1;padding:7px 8px;font-size:.86rem}
 .logo{display:flex;gap:10px;align-items:center}
 .logo svg{width:32px;height:32px;display:block}
 .logo h1{font-size:1.15rem}
 .langbtn{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;border-radius:10px;padding:5px 8px;font-size:.78rem;font-weight:700;letter-spacing:.04em;flex:none;transition:transform .2s var(--spring,ease)}
 .langbtn.dark{border-color:var(--line);background:var(--surface-2);color:var(--fg)}
 .langbtn:active{transform:scale(.92)}
-header .wrap > .seg{margin-left:auto}
 .seg{display:flex;background:rgba(255,255,255,.14);border-radius:10px;padding:3px;gap:2px}
 .seg button{border:0;background:none;color:inherit;padding:5px 9px;border-radius:8px;font-size:.82rem;font-weight:600;opacity:.85}
 .seg button[aria-pressed="true"]{background:var(--brand-fg);color:var(--brand);opacity:1}
@@ -334,8 +335,8 @@ button.ph:hover{transform:scale(1.04)}
       <h1>Ridu</h1>
     </div>
     <div class="seg" role="group" aria-label="Kieno akimis žiūrėti">
-      <button id="r-client" aria-pressed="true" data-role="client">Klientas</button>
-      <button id="r-driver" aria-pressed="false" data-role="driver">Vairuotojas</button>
+      <button id="r-client" aria-pressed="true" data-role="client">Man reikia važiuoti</button>
+      <button id="r-driver" aria-pressed="false" data-role="driver">Galiu pavežti</button>
     </div>
     <button class="langbtn" id="lang" type="button" data-noi18n aria-label="English" title="English">EN</button>
   </div>
@@ -890,7 +891,7 @@ function renderPool(){
   const head = `<div class="row between"><div><h2>Užklausos jūsų zonoje</h2><p class="muted small">Zona: ${drivers[ME_DRIVER].zones.map(z=>z+'xxx').join(', ')}</p></div>
     <span class="tag ${has('plus')?'ok':S.daily?'info':'bad'}">${has('plus')?'Neribota':`Liko ${S.daily} iš ${FREE_DAILY}`}</span></div>`;
   if(!items.length){
-    view.innerHTML = head + `<div class="empty">${ic('search')}<h3>Naujų užklausų nėra</h3><p class="muted">Pranešime, kai atsiras naujų. Klientas gali paskelbti užklausą ir dabar: perjunkite į „Klientas“.</p>${S.history.length?`<button class="btn ghost" id="undo">${ic('undo')} Grąžinti paskutinę</button>`:''}</div>`;
+    view.innerHTML = head + `<div class="empty">${ic('search')}<h3>Naujų užklausų nėra</h3><p class="muted">Pranešime, kai atsiras naujų. Užklausą galite paskelbti ir patys: perjunkite į „Man reikia važiuoti“.</p>${S.history.length?`<button class="btn ghost" id="undo">${ic('undo')} Grąžinti paskutinę</button>`:''}</div>`;
     view.querySelector('#undo')?.addEventListener('click', undo); return;
   }
   view.innerHTML = head + `<div class="deck" id="deck" style="height:400px">${items[1]?poolCard(items[1],true):''}${poolCard(items[0],false)}</div>
@@ -948,7 +949,7 @@ function offerForm(q, el){
     e.preventDefault();
     const o = {id:nid('o'), req:q.id, driver:ME_DRIVER, price:Number(price.value)||9, time:ovl.querySelector('#of-time').value||q.time, note:ovl.querySelector('#of-note').value.trim(), status:'new'};
     S.offers.push(o); ovReturn=null; ovl.innerHTML=''; if(!has('plus')) S.daily = Math.max(0, S.daily-1);
-    toast(q.mine ? 'Pasiūlymas išsiųstas. Perjunkite į „Klientas“, kad pamatytumėte' : 'Pasiūlymas išsiųstas klientui');
+    toast(q.mine ? 'Pasiūlymas išsiųstas. Perjunkite į „Man reikia važiuoti“, kad pamatytumėte' : 'Pasiūlymas išsiųstas klientui');
     if(!q.mine) setTimeout(() => { if(o.status!=='new') return; if(q.willContact){ startConv(o); cv_note(o); toast(`${q.client} sutiko kontaktuoti`); } else o.status='declined'; refresh(); }, 3500);
     render();
   });
@@ -1414,6 +1415,8 @@ const EN = {
 "Prototipas: visi žmonės ir duomenys pavyzdiniai, niekas nesaugoma.": "Prototype: all people and data are examples, nothing is saved.",
 "Kieno akimis žiūrėti": "View as",
 "Klientas": "Client",
+"Man reikia važiuoti": "I need a ride",
+"Galiu pavežti": "I can give a ride",
 "Vairuotojas": "Driver",
 "Užklausos": "Requests",
 "Pokalbiai": "Chats",
@@ -1658,14 +1661,14 @@ const EN = {
 "Neribota": "Unlimited",
 "Braukite į dešinę, kad pasisiūlytumėte, į kairę, kad praleistumėte.": "Swipe right to make an offer, left to skip.",
 "Naujų užklausų nėra": "No new requests",
-"Pranešime, kai atsiras naujų. Klientas gali paskelbti užklausą ir dabar: perjunkite į „Klientas“.": "We'll let you know when new ones arrive. A client can post a request now: switch to “Client”.",
+"Pranešime, kai atsiras naujų. Užklausą galite paskelbti ir patys: perjunkite į „Man reikia važiuoti“.": "We'll let you know when new ones arrive. You can post a request yourself: switch to “I need a ride”.",
 "Užbaikite patikrą": "Finish verification",
 "Užklausas matysite, kai patvirtinsime jūsų duomenis.": "You'll see requests once we've confirmed your details.",
 "Į patikrą": "Go to verification",
 "Jūsų pasiūlymas": "Your offer",
 "Žinutė klientui (nebūtina)": "Message to the client (optional)",
 "Pvz. galiu ir 15 min. anksčiau": "E.g. I can also come 15 min earlier",
-"Pasiūlymas išsiųstas. Perjunkite į „Klientas“, kad pamatytumėte": "Offer sent. Switch to “Client” to see it",
+"Pasiūlymas išsiųstas. Perjunkite į „Man reikia važiuoti“, kad pamatytumėte": "Offer sent. Switch to “I need a ride” to see it",
 "Pasiūlymas išsiųstas klientui": "Offer sent to the client",
 "Klientui pateikite savo rekvizitus ir sąlygas.": "Give the client your business details and terms.",
 "Profilis matomas klientams": "Profile visible to clients",
