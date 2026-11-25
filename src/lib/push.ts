@@ -56,3 +56,13 @@ export async function notifyGuardians(childId: string, title: string, body: stri
 }
 
 export const whenLt = (iso: string) => new Date(iso).toLocaleString("lt-LT", { timeZone: "Europe/Vilnius", weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// Pranešimas pagal naudotojo nustatymus (Nustatymai -> Pranešimai). Išjungę tos rūšies pranešimų negauna.
+export type NotifyKind = "offers" | "messages" | "agreements" | "trips";
+export async function notifyKind(ids: (string | null | undefined)[], kind: NotifyKind, title: string, body: string, url = "/") {
+  const list = [...new Set(ids.filter(Boolean) as string[])];
+  if (!list.length) return;
+  const { data } = await supabaseAdmin().from("profiles").select("id, notify_prefs").in("id", list);
+  const on = (data ?? []).filter((p) => (p.notify_prefs as Record<string, boolean> | null)?.[kind] !== false).map((p) => p.id);
+  await sendTo(on, title, body, url);
+}

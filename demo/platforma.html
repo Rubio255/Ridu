@@ -171,6 +171,14 @@ nav.bottom .badge{position:absolute;top:4px;right:calc(50% - 22px);background:va
 a.btn{text-decoration:none}
 .btn.sos{background:var(--bad);color:#fff;border-color:transparent}
 .trip{display:grid;gap:8px}
+.push{position:fixed;left:50%;top:10px;transform:translateX(-50%);width:min(380px,calc(100% - 24px));z-index:40;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.18);animation:pushin .35s var(--spring)}
+.push img,.push .pi{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--brand);color:#fff}
+.push .pi .ico{width:18px;height:18px} .push b{display:block;font-size:.88rem} .push span{font-size:.84rem}
+@keyframes pushin{from{transform:translate(-50%,-120%)}}
+.msgwarn{display:flex;gap:6px;align-items:flex-start;font-size:.8rem;color:var(--warn);background:var(--warn-bg);border-radius:10px;padding:6px 10px;max-width:92%}
+.msgwarn.me{justify-self:end} .msgwarn .ico{width:15px;height:15px;flex:none;margin-top:1px}
+.tgl{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0}
+.refcode{font-family:var(--display);font-weight:700;font-size:1.3rem;letter-spacing:.08em}
 .lv{display:grid;gap:12px;justify-items:center;text-align:center}
 .lv-cam{position:relative;width:190px;height:240px}
 .lv-cam .face{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#e9c9a8 0 22%,transparent 23%),radial-gradient(ellipse at 50% 92%,#2a8f7f 0 40%,transparent 41%),linear-gradient(#cfd8d6,#9fb2ae);overflow:hidden}
@@ -403,7 +411,9 @@ const I = {
 Object.assign(I, {
   star:'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
-  nav:'<polygon points="3 11 22 2 13 21 11 13 3 11"/>'
+  nav:'<polygon points="3 11 22 2 13 21 11 13 3 11"/>',
+  bell:'<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+  gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>'
 });
 const ic = (n, cls='') => `<span class="ico ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24">${I[n]}</svg></span>`;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -575,6 +585,28 @@ S.liveQueue = [];
 Object.assign(drivers.d1, {rate:4.9, nrev:37}); Object.assign(drivers.d2, {rate:4.8, nrev:22}); Object.assign(drivers.d5, {rate:4.7, nrev:11});
 const CLIENT_RATE = {Lina:[5,4], Paulius:[4.9,9], Ona:[5,2], Gintarė:[4.8,6], Marius:[4.6,3]};
 S.sos = [];
+/* Pranešimai telefone (demonstracijoje – juosta viršuje), rekomendacijos, pokalbių filtras */
+S.notify = {on:false, offers:true, messages:true, agreements:true, trips:true};
+S.ref = {code:'LINA7K', invited:[{name:'Rūta', st:'pending'}], months:0, plusUntil:null};
+S.chatFlags = {};   // vardas -> pažymėtų žinučių skaičius per 7 d.
+const NOTIFY_KINDS = [['offers','Nauji pasiūlymai ir užklausos'],['messages','Žinutės'],['agreements','Susitarimai ir sutartys'],['trips','Kelionės eiga: pradėta, pristatyta']];
+let pushT;
+function push(kind, title, body){
+  if(!S.notify.on || !S.notify[kind]) return;
+  document.querySelector('.push')?.remove(); clearTimeout(pushT);
+  const el = document.createElement('div'); el.className='push'; el.setAttribute('role','status');
+  el.innerHTML = `<span class="pi">${ic('bell')}</span><div><b>${esc(L(title))}</b><span>${esc(body)}</span></div>`;
+  el.setAttribute('data-noi18n',''); document.body.append(el); pushT = setTimeout(()=>el.remove(), 4200);
+}
+/* Pokalbių filtras: įspėja, bet neblokuoja. Telefono numeriai neatpažįstami (jais dalinamasi teisėtai). */
+const CF = {
+  prepay:/(avans|i[šs]\s*anksto|prie[šs]\s+(kelion|susitikim|pirm)|pervesk|pervedim|u[žz]stat|depozit|prepay|upfront|in advance|deposit|mok[ėe]jimo nuorod|payment link)/i,
+  bank:/(kortel[ėe]s\s*(numer|duomen|kod)|cvv|cvc|pin\s*kod|s[ąa]skaitos numer|card number|bank details|iban|\bLT\d{2}\s?(\d{4}\s?){3}\d{4}\b)/i,
+  offplatform:/(whats\s?app|viber|telegram|signal\b|messenger|instagram|facebook|be\s+ridu|apeiti\s+ridu|ne\s+per\s+ridu|outside\s+ridu|without\s+ridu|[\w.+-]+@[\w-]+\.[\w.]{2,})/i
+};
+const CF_TXT = {prepay:'Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse.', bank:'Niekada nesiųskite kortelės duomenų, kodų ar slaptažodžių. Ridu jų niekada neprašo.', offplatform:'Likite Ridu pokalbyje: čia veikia atsiliepimai, pranešimai apie pažeidimus ir pagalba.'};
+const scanMsg = t => Object.keys(CF).filter(k => CF[k].test(t));
+function flagSender(name){ const n = S.chatFlags[name] = (S.chatFlags[name]||0) + 1; if(n===3) toast(LANG==='en'?'Ridu team will review this conversation':'Ridu komanda peržiūrės šį pokalbį'); }
 const rateTxt = (r, n) => r ? `<span class="rate">${ic('star')}${String(r.toFixed(1)).replace('.', LANG==='en'?'.':',')}</span> <span class="muted">(${n})</span>` : '';
 const LIVE_WHY = {initial:'Pirminė tapatybės patikra', weekly:'Savaitinė patikra', new_client:'Pirmoji kelionė su nauju klientu', random:'Atsitiktinė patikra',
   new_device:'Prisijungėte nauju įrenginiu', profile_change:'Pakeista nuotrauka ar automobilis', report:'Gautas kliento pranešimas', inactive:'Ilgai nebuvote prisijungę', child_route:'Prasideda vaikų pastovus maršrutas'};
@@ -765,7 +797,7 @@ function renderReqForm(){
     S.reqs.unshift(q); S.newReq=false; S.open={kind:'req', id:q.id};
     toast('Užklausa paskelbta. Vairuotojai jau mato ją');
     // kiti vairuotojai pasisiūlo po kelių sekundžių
-    setTimeout(()=>{ S.offers.push({id:nid('o'), req:q.id, driver:'d2', price:9.5*q.pax, time:q.time, note:'Galiu šiuo laiku.', status:'new'}); refresh(); toast('Gavote naują pasiūlymą'); }, 3500);
+    setTimeout(()=>{ S.offers.push({id:nid('o'), req:q.id, driver:'d2', price:9.5*q.pax, time:q.time, note:'Galiu šiuo laiku.', status:'new'}); refresh(); toast('Gavote naują pasiūlymą'); push('offers','Naujas pasiūlymas', `${drivers.d2.name}: ${eur(9.5*q.pax)}, ${q.time}`); }, 3500);
     render();
   });
 }
@@ -867,7 +899,7 @@ function reviewBox(cv, me){
 function bindTrip(o, q, cv, me, other){
   const t = cv.trip; if(!t) return;
   view.querySelectorAll('[data-trip]').forEach(b => b.addEventListener('click', () => {
-    const go = () => { t.st = b.dataset.trip; if(t.st==='done'){ t.at = nowHM(); toast(`${L('Klientui išsiųsta')}: ${L(q.type==='child'?'Vaikas pristatytas':'Keleivis nuvežtas')} ${t.at}`); } render(); };
+    const go = () => { t.st = b.dataset.trip; if(t.st==='onway') push('trips', 'Kelionė prasidėjo', drivers[o.driver].name); if(t.st==='done'){ t.at = nowHM(); push('trips', q.type==='child'?'Vaikas pristatytas':'Keleivis nuvežtas', `${t.at} · ${q.to}`); toast(`${L('Klientui išsiųsta')}: ${L(q.type==='child'?'Vaikas pristatytas':'Keleivis nuvežtas')} ${t.at}`); } render(); };
     if(b.dataset.trip==='onway' && liveDue(ME_DRIVER)) return openLive(go);
     go();
   }));
@@ -900,6 +932,12 @@ function sosOpen(o, q, me, other){
     ovReturn=null; ovl.innerHTML=''; toast('Ridu gavo pranešimą su jūsų vieta. Susisieksime nedelsdami'); render();
   });
 }
+function ownerFlags(){
+  const list = Object.entries(S.chatFlags).filter(([,n]) => n >= 3);
+  if(!list.length) return '';
+  return `<h3>Pokalbių filtras</h3><div class="card">${list.map(([name,n]) => `<div class="row between" style="flex-wrap:nowrap"><b>${esc(name)}</b><span class="tag warn" data-noi18n>${ic('alert')} ${n} ${LANG==='en'?'flagged messages in 7 days':'įtartinos žinutės per 7 d.'}</span></div>`).join('')}
+    <p class="muted small">Matote tik žymą ir skaičių, ne žinučių tekstą. Jei reikia, peržiūrėkite pagal pranešimą apie pažeidimą.</p></div>`;
+}
 function ownerSos(){
   if(!S.sos.length) return '';
   return `<h3 style="color:var(--bad)">SOS pranešimai</h3>${S.sos.map((x,i) => `<div class="card" style="${x.st==='new'?'border-color:var(--bad)':''}">
@@ -924,7 +962,7 @@ function renderConv(id){
         ${m.state==='open' && mine ? `<span class="small muted">Laukiama atsakymo${persona(o)?' (perjunkite viršuje, kad atsakytumėte kitos pusės vardu)':''}</span>` : ''}
       </div>`;
     }
-    return `<div class="msg ${mine?'me':''}">${esc(m.t)}</div>`;
+    return `<div class="msg ${mine?'me':''}">${esc(m.t)}</div>` + (m.flags?.length ? m.flags.map(f=>`<div class="msgwarn ${mine?'me':''}">${ic('alert')}<span>${L(CF_TXT[f])}</span></div>`).join('') : '');
   }).join('');
   const child = q.type==='child';
   view.innerHTML = `
@@ -961,7 +999,9 @@ function renderConv(id){
     </div>`;
   view.querySelector('#back').addEventListener('click', ()=>{ S.open=null; render(); });
   view.querySelector('[data-report-conv]').addEventListener('click', ()=>report(other.name));
-  view.querySelector('#cf').addEventListener('submit', e => { e.preventDefault(); const v=view.querySelector('#cmsg').value.trim(); if(!v) return; cv.msgs.push({by:me, t:v}); render(); view.querySelector('#cmsg')?.focus(); });
+  view.querySelector('#cf').addEventListener('submit', e => { e.preventDefault(); const v=view.querySelector('#cmsg').value.trim(); if(!v) return;
+    const flags = scanMsg(v); cv.msgs.push({by:me, t:v, flags}); if(flags.length) flagSender(me==='client'?q.client:d.name);
+    render(); view.querySelector('#cmsg')?.focus(); });
   const form = view.querySelector('#cform');
   const showForm = () => { form.hidden=false; view.querySelector('#co-price').focus(); };
   view.querySelector('#propose')?.addEventListener('click', showForm);
@@ -1003,12 +1043,12 @@ function simulateReply(o){
     const target = replier==='driver' ? o.price : open.price;
     if(open.price >= target*0.9 || cv.msgs.filter(m=>m.kind==='offer').length > 2){
       open.state='accepted'; cv.agreed={price:open.price, time:open.time, days:open.days}; burst(); newClientCheck(o);
-      cv.msgs.push({by:replier, t:'Tinka, sutinku.'});
+      cv.msgs.push({by:replier, t:'Tinka, sutinku.'}); push('agreements','Susitarta', `${eur(open.price)}, ${open.time}`);
     } else {
       open.state='old';
       const mid = Math.round(((open.price + target)/2)*2)/2;
       cv.msgs.push({kind:'offer', by:replier, price:mid, time:open.time, days:open.days, state:'open'});
-      cv.msgs.push({by:replier, t:'Gal susitinkame per vidurį?'});
+      cv.msgs.push({by:replier, t:'Gal susitinkame per vidurį?'}); push('messages', replier==='driver'?drivers[o.driver].name:q.client, L('Gal susitinkame per vidurį?'));
     }
     refresh();
   }, 2500);
@@ -1305,7 +1345,12 @@ const FAQ = {
       'Kelionės metu SOS mygtukas leidžia iš karto skambinti 112 ir pranešti Ridu komandai su jūsų vieta. Pavojaus atveju pirmiausia skambinkite 112.']],
     ['Kaip veikia atsiliepimai?', [
       'Po kelionės vairuotoją įvertinate nuo 1 iki 5 žvaigždučių, o jis įvertina jus. Atsiliepimai matomi, kai įvertina abu arba po 14 d., kad niekas nekeršytų už įvertinimą.']],
+    ['Kaip veikia „Pakviesk draugą“?', [
+      'Planų skiltyje rasite savo kodą ir nuorodą. Kai draugas užsiregistruoja ir patvirtina el. paštą bei telefoną, abu gaunate 1 mėn. Plus nemokamai. Per mėnesį galima gauti iki 5 dovanų.']],
+    ['Kokius pranešimus gausiu?', [
+      'Įjungę pranešimus gausite žinią apie naujus pasiūlymus, žinutes, susitarimus ir kelionės eigą. Kiekvieną rūšį galite išjungti planų skiltyje.']],
     ['Kaip apsisaugoti nuo apgaulės?', [
+      'Pokalbyje įspėjame, jei kas nors prašo mokėti iš anksto, banko duomenų ar siūlo bendrauti už Ridu ribų. Žinutės neblokuojamos, bet pasikartojus Ridu komanda peržiūri pokalbį.',
       'Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse. Ridu neima mokesčio už keliones ir niekada neprašo kodų ar banko duomenų.',
       'Patikrinkite, ar vairuotojas ir automobilis atitinka nuotraukas. Įtartiną elgesį praneškite mygtuku „Pranešti“ pokalbyje.']],
     ['Ką daryti, jei vairuotojas netinka?', [
@@ -1337,6 +1382,9 @@ const FAQ = {
       'Kelionės metu turite SOS mygtuką: skambutis 112 ir pranešimas Ridu su jūsų vieta.']],
     ['Kaip veikia atsiliepimai?', [
       'Po kelionės jūs ir klientas vienas kitą įvertinate. Atsiliepimai matomi, kai įvertina abu arba po 14 d. Geras įvertinimas padeda gauti daugiau klientų.']],
+    ['Kodėl pokalbyje matau įspėjimą?', [
+      'Įspėjame, kai žinutėje prašoma mokėti iš anksto, siunčiami banko duomenys ar siūloma bendrauti kitur. Taip saugome abi puses. Žinutė vis tiek išsiunčiama.',
+      'Ridu mato tik įspėjimo žymą, ne jūsų žinutės tekstą. Telefono numeriais po sutikimo kontaktuoti dalintis galima.']],
     ['Ar galiu vežti vaikus?', [
       'Taip, jei turite tinkamas kėdutes. Prieš pirmą vaiko kelionę susitinkate su šeima. Įsitikinkite, kad atitinkate visus teisės aktų reikalavimus vežant vaikus.']],
     ['Kiek kainuoja Ridu?', [
@@ -1535,7 +1583,7 @@ function renderOwner(){
           ${ph.st==='rev'?`<div class="row" style="flex-wrap:nowrap;gap:4px"><button class="round sm" style="width:36px;height:36px;color:var(--bad)" data-pa="bad" data-p="${pi}" data-k="${d.k}" aria-label="Netinka: ${d.t}">${ic('x')}</button><button class="round sm" style="width:36px;height:36px;color:var(--ok)" data-pa="ok" data-p="${pi}" data-k="${d.k}" aria-label="Patvirtinti: ${d.t}">${ic('check')}</button></div>`:''}</div>`; }).join('')}</div></div>` : ''}
       ${Object.values(p.items).every(i=>i.st==='ok') && Object.values(p.photos||{}).every(i=>i.st==='ok') ? `<span class="tag ok" style="justify-self:start">${ic('shield')} Viskas patvirtinta</span>` : ''}
     </div>`).join('') : `<div class="empty" style="height:auto">${ic('shield')}<h3>Nieko netikrinti</h3></div>`}
-    ${ownerLive()}`;
+    ${ownerFlags()}${ownerLive()}`;
   view.querySelectorAll('[data-sos]').forEach(b => b.addEventListener('click', () => { S.sos[Number(b.dataset.sos)].st='ok'; render(); }));
   view.querySelectorAll('[data-lq]').forEach(b => b.addEventListener('click', () => {
     const it = S.liveQueue[Number(b.dataset.lq)], l = S.live[it.id];
@@ -1558,6 +1606,35 @@ function renderOwner(){
   }));
 }
 
+/* ---------- Pranešimai ir rekomendacijos ---------- */
+function notifyCard(){
+  return `<div class="card"><div class="row">${ic('bell')}<h3>Pranešimai telefone</h3></div>
+    ${S.notify.on ? `<p class="muted small">Įjungta. Pasirinkite, ką norite gauti.</p>
+      ${NOTIFY_KINDS.map(([k,t]) => `<label class="tgl"><span>${t}</span><input type="checkbox" data-nk="${k}" ${S.notify[k]?'checked':''}></label>`).join('')}`
+    : `<p class="muted small">Sužinokite iš karto apie naujus pasiūlymus, žinutes ir kelionės eigą.</p><button class="btn" id="nt-on">${ic('bell')} Įjungti pranešimus</button>`}
+  </div>`;
+}
+function referralCard(){
+  const R = S.ref, link = `ridu.lt/p/${R.code}`;
+  return `<div class="card"><div class="row">${ic('gift')}<h3>Pakviesk draugą</h3></div>
+    <p class="small">Kai draugas užsiregistruos ir patvirtins paskyrą, abu gausite 1 mėn. Plus nemokamai.</p>
+    <div class="row between" style="flex-wrap:nowrap"><span class="refcode" data-noi18n>${R.code}</span><button class="btn ghost" id="ref-copy">${ic('copy')} Kopijuoti nuorodą</button></div>
+    <div class="list">${R.invited.map((x,i) => `<div class="row between" style="flex-wrap:nowrap"><span>${esc(x.name)}</span>${x.st==='ok'?`<span class="tag ok">${ic('check')} +1 mėn. Plus</span>`:`<span class="tag info">${ic('clock')} Laukia patvirtinimo</span>`}</div>`).join('')}</div>
+    ${R.invited.some(x=>x.st==='pending') ? `<button class="btn ghost" id="ref-demo">Imituoti: draugas patvirtino paskyrą</button>` : ''}
+    ${R.plusUntil ? `<p class="small" data-noi18n>${LANG==='en'?'Free Plus until':'Nemokamas Plus iki'} ${dateTxt(R.plusUntil, true)}</p>` : ''}
+    <p class="muted small">Skaičiuojami tik nauji, el. paštą ir telefoną patvirtinę naudotojai. Per mėnesį – iki 5 dovanų.</p></div>`;
+}
+function bindEngage(r){
+  view.querySelector('#nt-on')?.addEventListener('click', () => { S.notify.on = true; toast('Pranešimai įjungti'); render(); setTimeout(()=>push('offers','Pranešimai veikia','Taip atrodys nauji pasiūlymai ir žinutės.'), 600); });
+  view.querySelectorAll('[data-nk]').forEach(c => c.addEventListener('change', () => { S.notify[c.dataset.nk] = c.checked; }));
+  view.querySelector('#ref-copy')?.addEventListener('click', () => { navigator.clipboard?.writeText(`https://ridu.lt/p/${S.ref.code}`).catch(()=>{}); toast('Nuoroda nukopijuota'); });
+  view.querySelector('#ref-demo')?.addEventListener('click', () => {
+    const x = S.ref.invited.find(i=>i.st==='pending'); x.st='ok'; S.ref.months++;
+    const base = S.ref.plusUntil && S.ref.plusUntil > TODAY ? S.ref.plusUntil : TODAY; const d = pIso(base); d.setUTCMonth(d.getUTCMonth()+1); S.ref.plusUntil = d.toISOString().slice(0,10);
+    if(S.plan[r]==='free') S.plan[r]='plus'; burst(); toast(`${x.name} ${LANG==='en'?'joined. You both get 1 month of Plus':'prisijungė. Abu gavote 1 mėn. Plus'}`); render();
+  });
+}
+
 /* ---------- Planai, ribos ir sutarties šablonas ---------- */
 function renderPlans(){
   const r = S.role === 'owner' ? 'client' : S.role;
@@ -1568,8 +1645,9 @@ function renderPlans(){
         <ul class="feat">${FEAT[r][k].map(f=>`<li>${ic('check')}<span>${f}</span></li>`).join('')}</ul>
         ${cur ? `<span class="tag ok" style="justify-self:start">${ic('check')} Jūsų planas</span>` : `<button class="btn ${k==='free'?'ghost':''}" data-plan="${k}">${k==='free'?'Grįžti į nemokamą':'Rinktis '+P.n}</button>`}
       </div>`; }).join('')}
+    ${referralCard()}${notifyCard()}
     ${planLegal(r)}`;
-  bindPlanLegal(r);
+  bindPlanLegal(r); bindEngage(r);
   view.querySelectorAll('[data-plan]').forEach(b => b.addEventListener('click', () => {
     if(b.dataset.plan!=='free' && !consent('base', () => b.click(), 'Prieš įsigyjant planą')) return;
     S.plan[r] = b.dataset.plan; if(b.dataset.plan!=='free') burst(); toast(`Įjungtas planas ${PLANS[b.dataset.plan].n}`); render();
@@ -1757,6 +1835,40 @@ const EN = {
 "Pažymėkite visus privalomus punktus.": "Please tick all required boxes.",
 "Ačiū. Taisykles rasite skiltyje DUK": "Thank you. You'll find the terms in the FAQ section",
 "Išsirink savo vairuotoją": "Choose your driver",
+"Nauji pasiūlymai ir užklausos": "New offers and requests",
+"Žinutės": "Messages",
+"Susitarimai ir sutartys": "Agreements and contracts",
+"Kelionės eiga: pradėta, pristatyta": "Trip progress: started, delivered",
+"Pranešimai telefone": "Phone notifications",
+"Įjungta. Pasirinkite, ką norite gauti.": "On. Choose what you want to receive.",
+"Sužinokite iš karto apie naujus pasiūlymus, žinutes ir kelionės eigą.": "Hear right away about new offers, messages and trip progress.",
+"Įjungti pranešimus": "Turn on notifications",
+"Pranešimai įjungti": "Notifications on",
+"Pranešimai veikia": "Notifications work",
+"Naujas pasiūlymas": "New offer",
+"Susitarta": "Agreed",
+"Kelionė prasidėjo": "Trip started",
+"Pakviesk draugą": "Invite a friend",
+"Kai draugas užsiregistruos ir patvirtins paskyrą, abu gausite 1 mėn. Plus nemokamai.": "When your friend signs up and confirms their account, you both get 1 month of Plus free.",
+"Kopijuoti nuorodą": "Copy link",
+"Laukia patvirtinimo": "Awaiting confirmation",
+"+1 mėn. Plus": "+1 month Plus",
+"Imituoti: draugas patvirtino paskyrą": "Simulate: friend confirmed account",
+"Skaičiuojami tik nauji, el. paštą ir telefoną patvirtinę naudotojai. Per mėnesį – iki 5 dovanų.": "Only new users who confirmed their email and phone count. Up to 5 rewards a month.",
+"Nuoroda nukopijuota": "Link copied",
+"Pokalbių filtras": "Chat filter",
+"Matote tik žymą ir skaičių, ne žinučių tekstą. Jei reikia, peržiūrėkite pagal pranešimą apie pažeidimą.": "You see only the flag and count, not the message text. If needed, review it via a violation report.",
+"Nemokėkite iš anksto prieš pirmą susitikimą ir nespauskite mokėjimo nuorodų žinutėse.": "Don't pay in advance before the first meeting and don't tap payment links in messages.",
+"Niekada nesiųskite kortelės duomenų, kodų ar slaptažodžių. Ridu jų niekada neprašo.": "Never send card details, codes or passwords. Ridu never asks for them.",
+"Likite Ridu pokalbyje: čia veikia atsiliepimai, pranešimai apie pažeidimus ir pagalba.": "Stay in the Ridu chat: reviews, violation reports and help work here.",
+"Kaip veikia „Pakviesk draugą“?": "How does “Invite a friend” work?",
+"Planų skiltyje rasite savo kodą ir nuorodą. Kai draugas užsiregistruoja ir patvirtina el. paštą bei telefoną, abu gaunate 1 mėn. Plus nemokamai. Per mėnesį galima gauti iki 5 dovanų.": "You'll find your code and link in Plans. When a friend signs up and confirms their email and phone, you both get 1 month of Plus free. Up to 5 rewards a month.",
+"Kokius pranešimus gausiu?": "Which notifications will I get?",
+"Įjungę pranešimus gausite žinią apie naujus pasiūlymus, žinutes, susitarimus ir kelionės eigą. Kiekvieną rūšį galite išjungti planų skiltyje.": "With notifications on, you'll hear about new offers, messages, agreements and trip progress. You can turn off each type in Plans.",
+"Pokalbyje įspėjame, jei kas nors prašo mokėti iš anksto, banko duomenų ar siūlo bendrauti už Ridu ribų. Žinutės neblokuojamos, bet pasikartojus Ridu komanda peržiūri pokalbį.": "In chat we warn you if someone asks for advance payment or bank details, or suggests talking outside Ridu. Messages aren't blocked, but if it repeats the Ridu team reviews the chat.",
+"Kodėl pokalbyje matau įspėjimą?": "Why do I see a warning in the chat?",
+"Įspėjame, kai žinutėje prašoma mokėti iš anksto, siunčiami banko duomenys ar siūloma bendrauti kitur. Taip saugome abi puses. Žinutė vis tiek išsiunčiama.": "We warn you when a message asks for advance payment, shares bank details or suggests talking elsewhere. This protects both sides. The message is still sent.",
+"Ridu mato tik įspėjimo žymą, ne jūsų žinutės tekstą. Telefono numeriais po sutikimo kontaktuoti dalintis galima.": "Ridu sees only the warning flag, not your message text. Sharing phone numbers after agreeing to contact is fine.",
 "Kelionė": "Trip",
 "Dar neprasidėjo": "Not started yet",
 "Vairuotojas važiuoja paimti": "Driver is on the way to pick up",
