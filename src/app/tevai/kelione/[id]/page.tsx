@@ -14,6 +14,9 @@ import { LiveMap } from "@/components/live-map";
 import { LiveEta } from "@/components/live-eta";
 import { ShareTrip } from "@/components/share-trip";
 import { isLive } from "@/lib/live";
+import { SosButton } from "@/components/sos-button";
+import { ReviewForm } from "@/components/review-form";
+import { canReview } from "@/lib/reviews";
 
 // „Kelionė vyksta“: būsena, gyvas vairuotojo vietos žemėlapis, žingsniai, vairuotojas su skambučiu ir žinute, „Dalintis kelione“.
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +42,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ["Kelionė", ""];
   const tel = d?.phone?.replace(/\s+/g, "");
   const live = isLive(t);
+  const { data: myReview } = t.status === "delivered" ? await sb.from("trip_reviews").select("id").eq("trip_id", t.id).eq("author_id", me.id).maybeSingle() : { data: null };
+  const reviewed = !!myReview;
 
   return (
     <>
@@ -98,6 +103,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       )}
 
       {(t.status === "scheduled" || t.status === "picked_up") && <ShareTrip tripId={t.id} title={`${t.child.first_name}: ${t.from_label} → ${t.to_label}, ${fmtTime(t.pickup_at)}`} />}
+
+      {live && <SosButton tripId={t.id} />}
+      {d && t.payer_id === me.id && canReview(t) && !reviewed && <ReviewForm tripId={t.id} who={d.name} />}
 
       {names.length > 0 && <p className="text-sm muted">Pranešimus gauna: {names.join(", ")}</p>}
 

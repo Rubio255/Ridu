@@ -7,6 +7,7 @@ import { respondOffer } from "@/app/actions";
 import { eur, fmtDay, fmtTime, vilniusToday } from "@/lib/time";
 import { VISIT_HOW, VISIT_WHO } from "@/lib/welcome";
 import { DriverLocation } from "@/components/driver-location";
+import { SosButton } from "@/components/sos-button";
 import { isLive } from "@/lib/live";
 
 export default async function Page() {
@@ -27,6 +28,7 @@ export default async function Page() {
           <h2 className="font-bold">{live.status === "picked_up" ? "Vežate dabar" : "Artimiausia kelionė"}: {fmtTime(live.pickup_at)} · {(live.child as unknown as { first_name: string }).first_name}</h2>
           <p className="text-sm muted">{live.from_label} → {live.to_label}</p>
           <DriverLocation tripId={live.id} />
+          <SosButton tripId={live.id} />
         </section>
       )}
       {(offers ?? []).length > 0 && (
