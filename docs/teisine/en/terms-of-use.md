@@ -92,13 +92,20 @@ On the platform it is prohibited to:
 
 More tips are in “Safety and prohibited conduct”.
 
+## 9a. Reviews
+
+- A review may be written only after a ride that the parties agreed on through Ridu. This ensures that reviews come from people who actually travelled or drove.
+- Both sides rate each other from 1 to 5 and may write a comment of up to 500 characters. Reviews are published once both sides have rated or after 14 days, so that no one can retaliate.
+- Write honestly and about the ride. It is prohibited to write fake reviews, offer or ask for a reward for a review, threaten a bad review, or post other people’s personal data, insults or illegal content.
+- Ridu does not edit reviews or order them by whether they are positive. We may hide a review that breaches these terms and explain why. You may contest an unfair review with the “Report” button.
+
 ## 10. Reporting violations
 
 Report illegal content or conduct with the “Report” button in the chat or profile, or by email at info@ridu.lt. Say what the violation is, why, and where to find it.
 
 We review reports without delay, urgent ones (concerning the safety of children or people) first. We tell the person who reported what we decided.
 
-If someone’s life or safety is at risk, call 112. We also inform law enforcement of such cases.
+If someone’s life or safety is at risk, call 112. During a ride you may also tap “Alert Ridu with my location”. This button does not replace 112; Ridu is not an emergency service and cannot guarantee that the alert is reviewed at once. We inform law enforcement of such cases.
 
 ## 11. What Ridu may do about violations
 

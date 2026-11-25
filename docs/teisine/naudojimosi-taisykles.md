@@ -92,13 +92,20 @@ Platformoje draudžiama:
 
 Daugiau patarimų rasite skiltyje „Saugumas ir draudžiamas elgesys“.
 
+## 9a. Atsiliepimai
+
+- Atsiliepimą galima parašyti tik po kelionės, dėl kurios šalys susitarė per Ridu. Taip užtikriname, kad atsiliepimus rašo tie, kurie iš tiesų keliavo ar vežė.
+- Abi pusės vertina viena kitą nuo 1 iki 5 ir gali parašyti iki 500 ženklų komentarą. Atsiliepimai paskelbiami, kai įvertino abi pusės arba praėjus 14 dienų, kad niekas negalėtų atsakyti kerštu.
+- Rašykite sąžiningai ir apie kelionę. Draudžiama rašyti netikrus atsiliepimus, siūlyti ar prašyti atlygio už atsiliepimą, grasinti blogu atsiliepimu, skelbti kitų asmens duomenis, įžeidimus ar neteisėtą turinį.
+- Ridu atsiliepimų neredaguoja ir nerikiuoja pagal tai, ar jie teigiami. Atsiliepimą galime paslėpti, jei jis pažeidžia šias taisykles, ir paaiškiname priežastį. Neteisingą atsiliepimą galite apskųsti mygtuku „Pranešti“.
+
 ## 10. Pranešimai apie pažeidimus
 
 Apie neteisėtą turinį ar elgesį praneškite mygtuku „Pranešti“ pokalbyje ar profilyje arba el. paštu info@ridu.lt. Nurodykite, kas ir kodėl yra pažeidimas, ir kur jį rasti.
 
 Pranešimus peržiūrime nedelsdami, o skubius (susijusius su vaikų ar žmonių saugumu) – pirmiausia. Pranešusiam asmeniui pranešame, ką nusprendėme.
 
-Jei yra grėsmė žmogaus gyvybei ar saugumui, skambinkite 112. Apie tokius atvejus taip pat informuojame teisėsaugą.
+Jei yra grėsmė žmogaus gyvybei ar saugumui, skambinkite 112. Kelionės metu taip pat galite paspausti „Pranešti Ridu su mano vieta“. Šis mygtukas nepakeičia 112, o Ridu nėra skubiosios pagalbos tarnyba ir negali garantuoti, kad pranešimą peržiūrės iš karto. Apie tokius atvejus informuojame teisėsaugą.
 
 ## 11. Ką Ridu gali daryti dėl pažeidimų
 

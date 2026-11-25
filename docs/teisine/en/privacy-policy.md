@@ -12,6 +12,8 @@ From all users:
 - name, email, phone number, login and security data (such as login time, device type, IP address);
 - messages, offers and agreements in chats;
 - reports of violations and complaints;
+- reviews after a ride (rating 1–5 and a comment);
+- your location if you tap “Alert Ridu with my location” (SOS) during a ride;
 - plan and plan payment information (we do not store card details; the payment service provider handles them).
 
 From clients:
@@ -19,6 +21,7 @@ From clients:
 - number and type of passengers (child, adult, senior), the child’s age or height if a seat is needed, and notes for the driver.
 
 From drivers:
+- location during a ride: from “Start trip” until the ride ends;
 - the result and time of the identity and liveness check (see section “Identity and liveness check”);
 - name, surname, business certificate number, LTSA permit number, vehicle registration number and the result of the check;
 - photos of themselves and the vehicle.
@@ -32,6 +35,9 @@ We do not collect health data and do not store copies of documents, selfies or b
 | Account, requests, offers, chats | Performance of a contract (GDPR Art. 6(1)(b)) |
 | Checking drivers’ LTSA permits and photos | Legitimate interest in safety and fraud prevention (Art. 6(1)(f)) |
 | Driver identity and liveness check via Didit (biometric data) | Explicit consent (GDPR Art. 9(2)(a)); without it, a video call with Ridu is available instead |
+| Driver location during a ride, shown to the client and via their link | Performance of a contract and legitimate interest in the safety of passengers, especially children (b and f) |
+| SOS alert with location | Vital interests (d) and legitimate interest in safety (f) |
+| Reviews after a ride | Legitimate interest in helping users choose and keeping a trustworthy community (f) |
 | Preventing fraud and violations, handling reports | Legitimate interest (f) and legal obligation under the Digital Services Act (c) |
 | Paid plans, invoices, accounting | Performance of a contract and legal obligation (b and c) |
 | Responding to authorities (e.g. law enforcement, tax authority) | Legal obligation (c) |
@@ -43,6 +49,9 @@ We do not make automated decisions with legal effects on you. A person always re
 
 - Other users see only what is needed to agree. Until the client agrees to be contacted, the driver sees only the postal code, time and number of passengers. The driver sees the exact address only when the client shares it in the chat.
 - Clients see the driver’s first name, approved photos and the verification badge. We do not show the permit number to clients.
+- During a ride, the client sees the driver’s location. The client may share a link with another person (e.g. the other parent); it works only until the ride ends.
+- Other users see reviews once both sides have rated or after 14 days. The first name, rating, comment and date are shown.
+- A Ridu administrator sees an SOS alert with location. If needed, we pass it on to emergency services or the police.
 - Service providers who help us: data storage and servers (Supabase, Vercel), driver identity and liveness checks (Didit), email delivery, plan payments. They process data only on our instructions under contracts.
 - Authorities, where the law requires (e.g. law enforcement, LTSA, the tax authority).
 
@@ -58,11 +67,20 @@ Comparing facial images is processing of biometric data, so we ask for your expl
 
 After 2 failed attempts the profile is hidden until an administrator reviews the case. A person always makes the decision.
 
+## 4b. Location during a ride and SOS
+
+The driver’s location is processed only from the “Start trip” button until the ride ends. When the ride ends, the location is deleted and the sharing link stops working. We do not track location at other times.
+
+The “Alert Ridu with my location” button sends your location to a Ridu administrator. It does not replace calling 112: in danger, call 112 first.
+
 ## 5. How long we keep it
 
 - Account data: for as long as you have an account.
 - Requests and chats: 12 months after the last message, so that disputes can be resolved.
 - Exact addresses: while the request is active; afterwards only the postal code remains.
+- Driver location during a ride: until the ride ends, then deleted.
+- SOS alert with location: 30 days, or longer while needed for an investigation or dispute.
+- Reviews: while the account of the user who wrote them exists.
 - Identity and liveness check results and times: while the driver account exists; failed ones for 3 years.
 - Data on violations, blocked accounts and fraud: 3 years.
 - Accounting documents: 10 years, as the law requires.
